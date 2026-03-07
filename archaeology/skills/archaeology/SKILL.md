@@ -60,8 +60,9 @@ All paths in this skill and its referenced workflows resolve against these two b
 ```javascript
 // The directory containing this SKILL.md file (follows symlink)
 SKILL_DIR = '~/.claude/skills/archaeology';
-// The plugin root (one level above skills/archaeology/)
-PLUGIN_ROOT = '~/.claude/skills/archaeology/../..';  // resolves to the archaeology plugin dir
+// The plugin root — two levels up from the skill dir (skills/archaeology/ → archaeology/)
+// Resolve via: realpath(SKILL_DIR + '/../..')
+PLUGIN_ROOT = realpath(`${SKILL_DIR}/../..`);
 ```
 
 ### Command Routing
