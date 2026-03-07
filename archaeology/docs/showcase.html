@@ -258,6 +258,12 @@
     50% { transform: translateY(-5px); }
   }
 
+  .hero-grounding {
+    color: var(--slate-300);
+    font-size: 1rem;
+    margin-bottom: var(--space-md);
+  }
+
   .hero-tagline {
     font-family: var(--font-display);
     font-size: clamp(1.6rem, 4vw, 2.6rem);
@@ -637,6 +643,32 @@
   }
 
   /* ============================================
+     GET STARTED
+     ============================================ */
+
+  .get-started-list {
+    list-style: none;
+    padding: 0;
+    max-width: 640px;
+    margin: var(--space-md) auto;
+  }
+
+  .get-started-list li {
+    color: var(--slate-300);
+    font-size: 0.92rem;
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid var(--amber-border);
+  }
+
+  .get-started-list li:last-child {
+    border-bottom: none;
+  }
+
+  .get-started-list strong {
+    color: var(--amber-300);
+  }
+
+  /* ============================================
      FUTURE VISION
      ============================================ */
 
@@ -787,6 +819,7 @@
     <li><a href="#journey">Journey</a></li>
     <li><a href="#framework">Framework</a></li>
     <li><a href="#future">Vision</a></li>
+    <li><a href="#get-started">Get Started</a></li>
   </ul>
 </nav>
 
@@ -854,6 +887,8 @@
   </div>
 
   <h1 class="hero-tagline">Your project history has stories worth preserving</h1>
+
+  <p class="hero-grounding">You ran 40 sessions with Claude. The patterns that worked, the decisions that mattered — they're still in there.</p>
 
   <p class="hero-pitch">
     Archaeology is a Claude Code skill that treats your session history as a site worth excavating. It scans, scores, extracts, and preserves the patterns, decisions, incidents, and discoveries buried in your work &mdash; turning ephemeral conversations into a durable, structured knowledge base.
@@ -1061,14 +1096,14 @@
 
   <div class="framework-features reveal">
     <div class="feature-item">
-      <h3>Schema-Driven</h3>
-      <p>Four versioned schemas govern all output: Domain File Schema v1.0, Finding Object Schema v2, Workstyle Object Schema v1, and Artifact Object Schema v1. Every field, every type, every enum is specified.</p>
+      <h3>Output You Can Trust</h3>
+      <p>Every finding, artifact, and pattern follows a strict schema. Fields are typed, values are constrained, and the structure is versioned — so downstream tools and future sessions can rely on the output without guessing at format.</p>
       <div class="feature-stat">6 artifact types &middot; 9 finding fields &middot; 7 workstyle dimensions</div>
     </div>
     <div class="feature-item reveal-delay-1">
-      <h3>Validated</h3>
-      <p>Automated validation scripts (bash 3.2 compatible) check output structure, frontmatter integrity, cross-references, and content contracts. Conservation alone runs 78 checks per project.</p>
-      <div class="feature-stat">78 checks &middot; bash 3.2 compat &middot; idempotent reruns</div>
+      <h3>Catches Its Own Mistakes</h3>
+      <p>Automated validation checks structure, frontmatter, cross-references, and content contracts after every run. If something is malformed or missing, archaeology flags it — not you, three weeks later.</p>
+      <div class="feature-stat">structure + content checks &middot; bash 3.2 compatible &middot; safe to rerun</div>
     </div>
     <div class="feature-item reveal-delay-2">
       <h3>Progressive Disclosure</h3>
@@ -1076,9 +1111,9 @@
       <div class="feature-stat">6 reading levels &middot; stop-here-if guidance &middot; AI + human paths</div>
     </div>
     <div class="feature-item reveal-delay-3">
-      <h3>Central Registry</h3>
-      <p>A global <code>artifacts-registry.json</code> tracks every artifact across every project with tag and type indices. Cross-project discovery is a single JSON parse, not a filesystem crawl.</p>
-      <div class="feature-stat">tag_index &middot; type_index &middot; URI-addressable artifacts</div>
+      <h3>Find Anything Across Projects</h3>
+      <p>A central registry tracks every artifact across every project you've excavated. Looking for that error-handling pattern from three projects ago? One lookup — not a filesystem crawl through old sessions.</p>
+      <div class="feature-stat">tag + type indices &middot; cross-project search &middot; URI-addressable artifacts</div>
     </div>
   </div>
 
@@ -1212,6 +1247,32 @@
       </div>
     </div>
   </div>
+</section>
+
+<hr class="sediment-divider">
+
+<!-- ============================================
+     GET STARTED
+     ============================================ -->
+<section id="get-started" aria-labelledby="get-started-title">
+  <div class="reveal">
+    <div class="section-label">Get Started</div>
+    <h2 class="section-title" id="get-started-title">Start digging</h2>
+  </div>
+
+  <div class="sample-output reveal">
+    <code>/archaeology</code>
+  </div>
+
+  <ul class="get-started-list reveal">
+    <li><strong>Claude Code</strong> — the skill runs inside Claude Code as a slash command.</li>
+    <li><strong>A project with session history</strong> — archaeology needs something to excavate.</li>
+    <li><strong>~30 seconds per mode</strong> — survey, workstyle, conserve, excavation, or domain extraction.</li>
+  </ul>
+
+  <p class="section-subtitle reveal">Output lands in <code>~/.claude/archaeology/</code> — structured files you can read, query, or feed back into future sessions.</p>
+
+  <p class="section-subtitle reveal">Works best with 10+ sessions of history. On sparse projects, expect thin results — there's only so much to find in shallow ground.</p>
 </section>
 
 <!-- ============================================
