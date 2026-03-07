@@ -14,8 +14,8 @@ Before submitting a new domain:
 - [ ] At least 2 working examples included
 - [ ] Search commands tested against real codebase
 - [ ] Entry added to `registry.yaml`
-- [ ] Validation script passes: `scripts/validate-domains.sh`
-- [ ] Registry sync verified: `scripts/check-registry-sync.sh`
+- [ ] Validation script passes: `${PLUGIN_ROOT}/scripts/validate-domains.sh`
+- [ ] Registry sync verified: `${PLUGIN_ROOT}/scripts/check-registry-sync.sh`
 - [ ] Status set to `active`
 - [ ] Maintainer identified
 
@@ -52,7 +52,7 @@ Before submitting a new domain:
 ### Step 2: Copy an Existing Domain
 
 ```bash
-cd references/domains/
+cd ${SKILL_DIR}/references/domains/
 
 # Copy a similar existing domain as your starting point
 # (has correct YAML frontmatter format and real working structure)
@@ -235,10 +235,10 @@ Run validation scripts:
 
 ```bash
 # Check domain file structure
-scripts/validate-domains.sh
+${PLUGIN_ROOT}/scripts/validate-domains.sh
 
 # Verify registry sync
-scripts/check-registry-sync.sh
+${PLUGIN_ROOT}/scripts/check-registry-sync.sh
 ```
 
 Fix any errors reported.
@@ -367,10 +367,10 @@ grep -B 2 -A 10 "@GetMapping\|@PostMapping" src/controllers/UserController.java
 **Fix:** Check existing domains first:
 ```bash
 # List all domains
-ls references/domains/*.md
+ls ${SKILL_DIR}/references/domains/*.md
 
 # Check registry for similar
-grep -i "api\|endpoint" references/domains/registry.yaml
+grep -i "api\|endpoint" ${SKILL_DIR}/references/domains/registry.yaml
 ```
 
 If overlap is unavoidable, clearly document boundaries in both domains' "Related Domains" section.
@@ -382,7 +382,7 @@ If overlap is unavoidable, clearly document boundaries in both domains' "Related
 ### Check Domain File Structure
 
 ```bash
-scripts/validate-domains.sh
+${PLUGIN_ROOT}/scripts/validate-domains.sh
 ```
 
 **Checks:**
@@ -398,7 +398,7 @@ scripts/validate-domains.sh
 ### Check Registry Sync
 
 ```bash
-scripts/check-registry-sync.sh
+${PLUGIN_ROOT}/scripts/check-registry-sync.sh
 ```
 
 **Checks:**
@@ -415,19 +415,19 @@ scripts/check-registry-sync.sh
 
 ```bash
 # Count domains
-ls references/domains/*.md | wc -l
-grep "^  - id:" references/domains/registry.yaml | wc -l
+ls ${SKILL_DIR}/references/domains/*.md | wc -l
+grep "^  - id:" ${SKILL_DIR}/references/domains/registry.yaml | wc -l
 # These should match (minus template and this guide)
 
 # Find domains missing examples
-for f in references/domains/*.md; do
+for f in ${SKILL_DIR}/references/domains/*.md; do
   if ! grep -q "^## Examples" "$f"; then
     echo "Missing examples: $f"
   fi
 done
 
 # Find planned domains
-grep -B 1 "Status.*planned" references/domains/*.md
+grep -B 1 "Status.*planned" ${SKILL_DIR}/references/domains/*.md
 ```
 
 ---
@@ -531,7 +531,7 @@ Don't write entire domain definition before testing. Iterative approach:
 
 Before creating a new domain, read 2-3 existing ones:
 ```bash
-ls references/domains/
+ls ${SKILL_DIR}/references/domains/
 ```
 
 See how they structure examples, what level of detail they provide, how they handle ambiguity.
@@ -598,5 +598,5 @@ If any answer is "no", the domain needs more work.
 - [DOMAIN-TEMPLATE.md](./DOMAIN-TEMPLATE.md) - Template file
 - [registry.yaml](./registry.yaml) - Domain registry
 - [output-templates.md](../output-templates.md) - Formatting standards
-- Validation script: `scripts/validate-domains.sh`
-- Registry sync script: `scripts/check-registry-sync.sh`
+- Validation script: `${PLUGIN_ROOT}/scripts/validate-domains.sh`
+- Registry sync script: `${PLUGIN_ROOT}/scripts/check-registry-sync.sh`

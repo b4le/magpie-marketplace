@@ -2,6 +2,7 @@
 
 > This file is referenced from `SKILL.md`. It defines the full survey workflow (Steps S1-S7).
 > Context variables (`PROJECT_NAME`, `PROJECT_SLUG`, `ARCHAEOLOGY_DIR`, `CENTRAL_BASE`, etc.) are set by SKILL.md Step 1 / routing logic before this workflow executes.
+> Path variables `SKILL_DIR` and `PLUGIN_ROOT` are set by SKILL.md Path Resolution before this workflow executes.
 
 ## Survey Workflow
 
@@ -104,12 +105,12 @@ Load all domains from registry and score each against conversation history.
 
 ```javascript
 // Read registry
-REGISTRY_PATH = `references/domains/registry.yaml`;  // relative to skill dir
+REGISTRY_PATH = `${SKILL_DIR}/references/domains/registry.yaml`;
 registry = Read(REGISTRY_PATH);
 all_domains = parse_yaml(registry).domains.filter(d => d.status === 'active');
 
 // jq filter for extracting conversation text (excludes system prompts, meta, toolUseResult)
-JQ_FILTER_PATH = `references/jsonl-filter.jq`;  // relative to skill dir
+JQ_FILTER_PATH = `${SKILL_DIR}/references/jsonl-filter.jq`;
 
 // Scoring strategy depends on project size (determined in S2)
 // For LARGE_PROJECT: batch conversation_files into slices of ~10,
@@ -140,7 +141,7 @@ SECONDARY_CAP_PER_SESSION = 3;
 domain_scores = [];
 for (domain of all_domains) {
   // Load domain definition to get full keyword lists
-  domain_def = Read(`references/domains/${domain.file}`);  // relative to skill dir
+  domain_def = Read(`${SKILL_DIR}/references/domains/${domain.file}`);
   keywords = parse_frontmatter(domain_def).keywords;
 
   primary_score = 0;
@@ -370,7 +371,7 @@ Identify high-frequency tools/patterns not covered by any existing domain. Two-s
 // Extract tool call names using jq structured filter
 // This extracts .name from tool_use content blocks in non-meta assistant records only.
 // Excludes system prompt tool definitions and meta injections.
-JQ_TOOL_FILTER_PATH = `references/jsonl-tool-names.jq`;  // relative to skill dir
+JQ_TOOL_FILTER_PATH = `${SKILL_DIR}/references/jsonl-tool-names.jq`;
 
 // Bash equivalent:
 //   find $HISTORY_DIR -name "*.jsonl" -print0 |
@@ -392,7 +393,7 @@ for (file of conversation_files) {
 // Collect all keywords from all domains
 all_domain_keywords = [];
 for (domain of all_domains) {
-  domain_def = Read(`references/domains/${domain.file}`);  // relative to skill dir
+  domain_def = Read(`${SKILL_DIR}/references/domains/${domain.file}`);
   kw = parse_frontmatter(domain_def).keywords;
   all_domain_keywords.push(...kw.primary, ...kw.secondary);
 }

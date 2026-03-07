@@ -3,6 +3,7 @@
 > This file is referenced from `SKILL.md`. It defines the full excavation workflow (Steps E1-E6).
 > The shell script `scripts/archaeology-excavation.sh` handles discovery and subprocess management.
 > This workflow handles the skill-side aggregation after the script completes.
+> Path variables `SKILL_DIR` and `PLUGIN_ROOT` are set by SKILL.md Path Resolution before this workflow executes.
 
 ## Excavation Workflow
 
@@ -19,7 +20,7 @@ MAX_CONCURRENT = extract_flag_value(args, '--max-concurrent') || 3;
 SCAN_PATHS = extract_flag_value(args, '--scan-paths') || null;
 MAX_AGE = extract_flag_value(args, '--max-age') || 7;
 
-SCRIPT_PATH = 'scripts/archaeology-excavation.sh';  // relative to plugin root
+SCRIPT_PATH = `${PLUGIN_ROOT}/scripts/archaeology-excavation.sh`;
 
 // Build command
 cmd = `${SCRIPT_PATH}`;

@@ -53,6 +53,17 @@ Extract and document patterns from Claude Code usage history across multiple kno
 
 ## Execution Workflow
 
+### Path Resolution
+
+All paths in this skill and its referenced workflows resolve against these two base variables. Set them once before any command routing. Sub-agents that receive prompts from this skill must receive these as explicit context — they cannot infer the skill directory.
+
+```javascript
+// The directory containing this SKILL.md file (follows symlink)
+SKILL_DIR = '~/.claude/skills/archaeology';
+// The plugin root (one level above skills/archaeology/)
+PLUGIN_ROOT = '~/.claude/skills/archaeology/../..';  // resolves to the archaeology plugin dir
+```
+
 ### Command Routing
 
 When invoked with no arguments or `survey`, branch to survey workflow:
@@ -127,7 +138,7 @@ if (!NO_EXPORT) mkdir -p ${CENTRAL_OUTPUT_DIR}
 ### Step 2: Load Domain Definition
 
 ```javascript
-DOMAIN_FILE = `references/domains/${domain}.md`;  // relative to skill dir
+DOMAIN_FILE = `${SKILL_DIR}/references/domains/${domain}.md`;
 domain_spec = Read(DOMAIN_FILE);
 domain_config = parse_frontmatter(domain_spec);
 
@@ -341,7 +352,7 @@ Archaeology run is complete when:
 
 When invoked with no arguments or `survey`, execute the survey workflow.
 
-Read and follow the full specification in `references/survey-workflow.md`.
+Read and follow the full specification in `${SKILL_DIR}/references/survey-workflow.md`.
 
 Survey produces `survey.md` locally and in the central work-log, then updates INDEX.md files.
 
@@ -349,7 +360,7 @@ Survey produces `survey.md` locally and in the central work-log, then updates IN
 
 When invoked with `workstyle`, execute the workstyle workflow.
 
-Read and follow the full specification in `references/workstyle-workflow.md`.
+Read and follow the full specification in `${SKILL_DIR}/references/workstyle-workflow.md`.
 
 Workstyle produces `workstyle.md` and `workstyle.json` locally and in the central work-log, then updates INDEX.md files. Supports `--global` flag for cross-project aggregation.
 
@@ -357,7 +368,7 @@ Workstyle produces `workstyle.md` and `workstyle.json` locally and in the centra
 
 When invoked with `conserve`, execute the conservation workflow.
 
-Read and follow the full specification in `references/conserve-workflow.md`.
+Read and follow the full specification in `${SKILL_DIR}/references/conserve-workflow.md`.
 
 Conservation extracts atomic narrative artifacts from project history, generates a default exhibition, and exports to the central work-log. Produces `exhibition.md`, individual artifact files in `artifacts/`, and updates the global artifacts registry. Supports `--no-export` flag.
 
@@ -365,7 +376,7 @@ Conservation extracts atomic narrative artifacts from project history, generates
 
 When invoked with `excavation`, execute the excavation workflow.
 
-Read and follow the full specification in `references/excavation-workflow.md`.
+Read and follow the full specification in `${SKILL_DIR}/references/excavation-workflow.md`.
 
 Excavation discovers all projects, surveys each via independent subprocesses using `scripts/archaeology-excavation.sh`, and generates a cross-project portfolio report at the central work-log root. The `--no-export` flag is not supported because excavation's purpose is cross-project aggregation to the central work-log.
 
