@@ -423,9 +423,17 @@
   .step-connector {
     width: 1px;
     flex: 1;
-    background: linear-gradient(to bottom, var(--amber-border), transparent);
+    background: linear-gradient(to bottom, var(--step-accent, var(--amber-border)), transparent);
     margin-top: 0.5rem;
     min-height: 0;
+  }
+
+  .step-connector-workstyle {
+    --step-accent: rgba(180, 83, 9, 0.25);
+  }
+
+  .step-connector-conserve {
+    --step-accent: rgba(252, 211, 77, 0.2);
   }
 
   .mode-content { padding-top: 0.4rem; }
@@ -482,6 +490,27 @@
     color: var(--amber-500);
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    margin-bottom: var(--space-sm);
+  }
+
+  .sample-toggle {
+    margin-top: var(--space-sm);
+  }
+
+  .sample-toggle summary {
+    font-family: var(--font-mono);
+    color: var(--amber-500);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .sample-toggle summary:hover {
+    color: var(--amber-300);
+  }
+
+  .sample-toggle[open] summary {
     margin-bottom: var(--space-sm);
   }
 
@@ -949,7 +978,7 @@
   <div class="mode-step reveal">
     <div class="step-line">
       <div class="step-number">W</div>
-      <div class="step-connector"></div>
+      <div class="step-connector step-connector-workstyle"></div>
     </div>
     <div class="mode-content">
       <h3 class="mode-name">Workstyle</h3>
@@ -959,8 +988,10 @@
         <p>The output profiles your dominant working pattern (plan-first, iterative refinement, deep exploration, delegation-heavy, or direct execution), your tool usage fingerprint, delegation preferences, communication style, and how all of these have evolved over time. It even detects preferences that contradict your CLAUDE.md configuration.</p>
       </div>
 
-      <div class="sample-output">
-        <div class="sample-label">Dimension schema &mdash; workstyle.json</div>
+      <details class="sample-toggle">
+        <summary>View sample output</summary>
+        <div class="sample-output">
+          <div class="sample-label">Dimension schema &mdash; workstyle.json</div>
 <pre>{
   <span class="type-tag">"session_patterns"</span>: {
     <span class="string">"plan_first_pct"</span>: <span class="value">0.35</span>,
@@ -979,7 +1010,8 @@
     <span class="string">"contradicted"</span>: []
   }
 }</pre>
-      </div>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -987,7 +1019,7 @@
   <div class="mode-step reveal">
     <div class="step-line">
       <div class="step-number">C</div>
-      <div class="step-connector"></div>
+      <div class="step-connector step-connector-conserve"></div>
     </div>
     <div class="mode-content">
       <h3 class="mode-name">Conserve</h3>
@@ -1057,8 +1089,10 @@
         <p>The results are synthesised into a portfolio report: a ranked table of all projects, cross-project domain patterns (which domains appear in multiple projects and what that means), and a prioritised list of recommended next steps. This is the view from above the dig site &mdash; every project laid out, every signal visible.</p>
       </div>
 
-      <div class="sample-output">
-        <div class="sample-label">Portfolio output structure</div>
+      <details class="sample-toggle">
+        <summary>View sample output</summary>
+        <div class="sample-output">
+          <div class="sample-label">Portfolio output structure</div>
 <pre><span class="highlight"># Archaeology Portfolio &mdash; 2026-03-07</span>
 
 <span class="dim">&gt; Scanned 41 projects | 38 newly surveyed | 2 skipped | 1 failed</span>
@@ -1077,7 +1111,8 @@
 <span class="highlight">## Recommended Next Steps</span>
   <span class="value">/archaeology orchestration</span> on content-mgmt-planning &mdash; strongest signal
   <span class="value">/archaeology prompting</span> on claude-code-dev-kit &mdash; 6 sessions with signal</pre>
-      </div>
+        </div>
+      </details>
     </div>
   </div>
 </section>
