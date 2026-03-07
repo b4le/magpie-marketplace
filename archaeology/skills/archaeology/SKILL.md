@@ -65,6 +65,38 @@ SKILL_DIR = '~/.claude/skills/archaeology';
 PLUGIN_ROOT = realpath(`${SKILL_DIR}/../..`);
 ```
 
+### Init Banner
+
+Before command routing, display the branded init banner. Read the branding spec from `${SKILL_DIR}/references/branding.md` for the full design language.
+
+```javascript
+// Resolve mode label for banner
+mode_label = args.command || 'survey';
+project_label = user_provided_project_name || basename(cwd);
+
+// Display init banner (see references/branding.md)
+// Resolve sigil from branding (references/branding.md)
+SIGILS = { survey: '◈', extraction: '◆', workstyle: '●', conserve: '◇', excavation: '✦', list: '◈' };
+sigil = SIGILS[mode_label] || '◈';
+
+// Spaced-letter mode name (mirrors logo rhythm)
+spaced_mode = mode_label.toUpperCase().split('').join(' ');
+
+// Mode line: MODE  sigil  project (or just MODE  sigil if no project)
+mode_line = project_label && mode_label !== 'list'
+  ? `${spaced_mode}  ${sigil}  ${project_label}`
+  : `${spaced_mode}  ${sigil}`;
+
+// Display init banner (see references/branding.md)
+print(`
+░░░▒▒▒▓▓▓███▓▓▓▒▒▒░░░
+A R C H A E O L O G Y
+·· extract · conserve · preserve
+
+${mode_line}
+`);
+```
+
 ### Command Routing
 
 When invoked with no arguments or `survey`, branch to survey workflow:
@@ -74,6 +106,22 @@ When invoked with no arguments or `survey`, branch to survey workflow:
 args = parse_arguments(user_input);
 
 if (args.command === 'list') {
+  // Display init banner first, then list output.
+  // List output format:
+  //
+  // ## Commands
+  // | Command | Description |
+  // |---------|-------------|
+  // | survey | Scan project, score domain signal strength, suggest next steps |
+  // | list | Display available commands and domains |
+  // | ... | ... |
+  //
+  // ## Domains
+  // | Domain | Status | Description |
+  // |--------|--------|-------------|
+  // | orchestration | active | Agent orchestration patterns... |
+  //
+  // IMPORTANT: Do NOT put sigils in the domains table — they are for mode states only.
   list_domains();
   return;
 }

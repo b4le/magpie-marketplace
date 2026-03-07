@@ -1110,10 +1110,18 @@ Terminal output shown to the user after each mode completes. These are **contrac
 - MUST NOT add decorative formatting beyond what the template specifies
 - Each domain/item line MUST be indented with exactly 2 spaces
 
+**Branding (applies to ALL completion displays):**
+
+Resolve these from `references/branding.md` Variables section:
+- **Title sigil:** Prefix the first line with `SIGIL_{MODE}` (e.g., `SIGIL_SURVEY` = `◈`)
+- **Sign-off:** Append `SIGNOFF_TEMPLATE` as the final line, substituting `{mode}`
+
+If the branding variables in `references/branding.md` change, all completion displays update automatically — do not hardcode sigils or sign-off text anywhere else.
+
 ### Survey Completion Display {#survey-completion}
 
 ```
-Archaeology Survey Complete
+{SIGIL_SURVEY} Archaeology Survey Complete
 
 Scanned {project_size.conversations} conversations, {project_size.source_files} source files
 
@@ -1129,6 +1137,8 @@ Central: ~/.claude/data/visibility-toolkit/work-log/archaeology/{PROJECT_SLUG}/s
          ~/.claude/data/visibility-toolkit/work-log/archaeology/INDEX.md
 
 Next: /archaeology {domains_with_signal[0].id}
+
+{SIGNOFF}
 ```
 
 **Variables:**
@@ -1144,7 +1154,7 @@ Next: /archaeology {domains_with_signal[0].id}
 ### Extraction Completion Display {#extraction-completion}
 
 ```
-Archaeology Complete
+{SIGIL_EXTRACTION} Archaeology Complete
 
 Local outputs in .claude/archaeology/{domain}/
   README.md
@@ -1158,6 +1168,8 @@ Exported to ~/.claude/data/visibility-toolkit/work-log/archaeology/{PROJECT_SLUG
 
 Project summary: ~/.claude/data/visibility-toolkit/work-log/archaeology/{PROJECT_SLUG}/SUMMARY.md
 Central index: ~/.claude/data/visibility-toolkit/work-log/archaeology/INDEX.md
+
+{SIGNOFF}
 ```
 
 **Variables:**
@@ -1170,7 +1182,7 @@ Central index: ~/.claude/data/visibility-toolkit/work-log/archaeology/INDEX.md
 ### Excavation Completion Display {#excavation-completion}
 
 ```
-Archaeology Excavation Complete
+{SIGIL_EXCAVATION} Archaeology Excavation Complete
 
 Discovered {manifest.projects_discovered} projects | Surveyed {manifest.projects_surveyed} | Skipped {manifest.projects_skipped} | Failed {manifest.projects_failed}
 
@@ -1182,6 +1194,8 @@ Top recommendations:
   /archaeology {domain3} on {project3} — {rationale3}
 
 Run /archaeology {domain} in a project directory to extract patterns.
+
+{SIGNOFF}
 ```
 
 **Variables:**
@@ -1192,7 +1206,7 @@ Run /archaeology {domain} in a project directory to extract patterns.
 ### Workstyle Completion Display {#workstyle-completion}
 
 ```
-Archaeology Workstyle Complete
+{SIGIL_WORKSTYLE} Archaeology Workstyle Complete
 
 Analysed {session_count} sessions | {date_range} | {confidence} confidence
 
@@ -1204,6 +1218,8 @@ Local:   .claude/archaeology/workstyle.md
          .claude/archaeology/workstyle.json
 Central: ~/.claude/data/visibility-toolkit/work-log/archaeology/{PROJECT_SLUG}/workstyle.md
          ~/.claude/data/visibility-toolkit/work-log/archaeology/{PROJECT_SLUG}/workstyle.json
+
+{SIGNOFF}
 ```
 
 **Variables:**
@@ -1215,7 +1231,7 @@ Central: ~/.claude/data/visibility-toolkit/work-log/archaeology/{PROJECT_SLUG}/w
 **If `--global`:** Use this variant (same enforcement rules apply):
 
 ```
-Archaeology Workstyle Complete (global)
+{SIGIL_WORKSTYLE} Archaeology Workstyle Complete (global)
 
 Analysed {session_count} sessions across {project_count} projects | {date_range}
 
@@ -1225,6 +1241,8 @@ Delegation: {solo_pct}% solo, {delegated_pct}% delegated, {team_pct}% team
 
 Central: ~/.claude/data/visibility-toolkit/work-log/archaeology/workstyle-global.md
          ~/.claude/data/visibility-toolkit/work-log/archaeology/workstyle-global.json
+
+{SIGNOFF}
 ```
 
 - `{project_count}` — number of project directories discovered in W1 global mode.
@@ -1232,7 +1250,7 @@ Central: ~/.claude/data/visibility-toolkit/work-log/archaeology/workstyle-global
 ### Conservation Completion Display {#conserve-completion}
 
 ```
-Archaeology Conservation Complete
+{SIGIL_CONSERVE} Archaeology Conservation Complete
 
 Conserved {artifact_count} artifacts | {high_count} high confidence, {medium_count} medium, {low_count} low
 
@@ -1245,6 +1263,8 @@ Central: ~/.claude/data/visibility-toolkit/work-log/archaeology/{PROJECT_SLUG}/a
          ~/.claude/data/visibility-toolkit/work-log/archaeology/{PROJECT_SLUG}/exhibition.md
 
 Next: /archaeology curate (when available)
+
+{SIGNOFF}
 ```
 
 **Variables:**
@@ -1257,7 +1277,7 @@ Next: /archaeology curate (when available)
 
 **If 0 artifacts extracted:** Do not show this template. Instead display:
 ```
-Archaeology Conservation Complete
+{SIGIL_CONSERVE} Archaeology Conservation Complete
 
 No artifacts extracted. Project history may lack sufficient narrative content.
 
@@ -1265,6 +1285,8 @@ Suggestions:
   Run /archaeology survey to check domain signal strength
   Run /archaeology {domain} to extract findings first
   Try a project with more session history (5+ sessions recommended)
+
+{SIGNOFF}
 ```
 
 ---
