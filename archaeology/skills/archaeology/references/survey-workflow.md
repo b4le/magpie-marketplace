@@ -104,12 +104,12 @@ Load all domains from registry and score each against conversation history.
 
 ```javascript
 // Read registry
-REGISTRY_PATH = `~/.claude/skills/archaeology/references/domains/registry.yaml`;
+REGISTRY_PATH = `references/domains/registry.yaml`;  // relative to skill dir
 registry = Read(REGISTRY_PATH);
 all_domains = parse_yaml(registry).domains.filter(d => d.status === 'active');
 
 // jq filter for extracting conversation text (excludes system prompts, meta, toolUseResult)
-JQ_FILTER_PATH = `~/.claude/skills/archaeology/references/jsonl-filter.jq`;
+JQ_FILTER_PATH = `references/jsonl-filter.jq`;  // relative to skill dir
 
 // Scoring strategy depends on project size (determined in S2)
 // For LARGE_PROJECT: batch conversation_files into slices of ~10,
@@ -140,7 +140,7 @@ SECONDARY_CAP_PER_SESSION = 3;
 domain_scores = [];
 for (domain of all_domains) {
   // Load domain definition to get full keyword lists
-  domain_def = Read(`~/.claude/skills/archaeology/references/domains/${domain.file}`);
+  domain_def = Read(`references/domains/${domain.file}`);  // relative to skill dir
   keywords = parse_frontmatter(domain_def).keywords;
 
   primary_score = 0;
@@ -370,7 +370,7 @@ Identify high-frequency tools/patterns not covered by any existing domain. Two-s
 // Extract tool call names using jq structured filter
 // This extracts .name from tool_use content blocks in non-meta assistant records only.
 // Excludes system prompt tool definitions and meta injections.
-JQ_TOOL_FILTER_PATH = `~/.claude/skills/archaeology/references/jsonl-tool-names.jq`;
+JQ_TOOL_FILTER_PATH = `references/jsonl-tool-names.jq`;  // relative to skill dir
 
 // Bash equivalent:
 //   find $HISTORY_DIR -name "*.jsonl" -print0 |
@@ -392,7 +392,7 @@ for (file of conversation_files) {
 // Collect all keywords from all domains
 all_domain_keywords = [];
 for (domain of all_domains) {
-  domain_def = Read(`~/.claude/skills/archaeology/references/domains/${domain.file}`);
+  domain_def = Read(`references/domains/${domain.file}`);  // relative to skill dir
   kw = parse_frontmatter(domain_def).keywords;
   all_domain_keywords.push(...kw.primary, ...kw.secondary);
 }

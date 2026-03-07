@@ -1,7 +1,9 @@
 #!/bin/bash
 # Validate domain files against SCHEMA.md
 
-DOMAIN_DIR="${HOME}/.claude/skills/archaeology/references/domains"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+DOMAIN_DIR="$PLUGIN_ROOT/skills/archaeology/references/domains"
 ERRORS=0
 
 for domain_file in "$DOMAIN_DIR"/*.md; do

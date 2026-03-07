@@ -127,7 +127,7 @@ if (!NO_EXPORT) mkdir -p ${CENTRAL_OUTPUT_DIR}
 ### Step 2: Load Domain Definition
 
 ```javascript
-DOMAIN_FILE = `~/.claude/skills/archaeology/references/domains/${domain}.md`;
+DOMAIN_FILE = `references/domains/${domain}.md`;  // relative to skill dir
 domain_spec = Read(DOMAIN_FILE);
 domain_config = parse_frontmatter(domain_spec);
 

@@ -52,7 +52,7 @@ Before submitting a new domain:
 ### Step 2: Copy an Existing Domain
 
 ```bash
-cd ~/.claude/skills/archaeology/references/domains/
+cd references/domains/
 
 # Copy a similar existing domain as your starting point
 # (has correct YAML frontmatter format and real working structure)
@@ -235,10 +235,10 @@ Run validation scripts:
 
 ```bash
 # Check domain file structure
-~/.claude/skills/archaeology/scripts/validate-domains.sh
+scripts/validate-domains.sh
 
 # Verify registry sync
-~/.claude/skills/archaeology/scripts/check-registry-sync.sh
+scripts/check-registry-sync.sh
 ```
 
 Fix any errors reported.
@@ -367,10 +367,10 @@ grep -B 2 -A 10 "@GetMapping\|@PostMapping" src/controllers/UserController.java
 **Fix:** Check existing domains first:
 ```bash
 # List all domains
-ls ~/.claude/skills/archaeology/references/domains/*.md
+ls references/domains/*.md
 
 # Check registry for similar
-grep -i "api\|endpoint" ~/.claude/skills/archaeology/references/domains/registry.yaml
+grep -i "api\|endpoint" references/domains/registry.yaml
 ```
 
 If overlap is unavoidable, clearly document boundaries in both domains' "Related Domains" section.
@@ -382,7 +382,7 @@ If overlap is unavoidable, clearly document boundaries in both domains' "Related
 ### Check Domain File Structure
 
 ```bash
-~/.claude/skills/archaeology/scripts/validate-domains.sh
+scripts/validate-domains.sh
 ```
 
 **Checks:**
@@ -398,7 +398,7 @@ If overlap is unavoidable, clearly document boundaries in both domains' "Related
 ### Check Registry Sync
 
 ```bash
-~/.claude/skills/archaeology/scripts/check-registry-sync.sh
+scripts/check-registry-sync.sh
 ```
 
 **Checks:**
@@ -415,19 +415,19 @@ If overlap is unavoidable, clearly document boundaries in both domains' "Related
 
 ```bash
 # Count domains
-ls ~/.claude/skills/archaeology/references/domains/*.md | wc -l
-grep "^  - id:" ~/.claude/skills/archaeology/references/domains/registry.yaml | wc -l
+ls references/domains/*.md | wc -l
+grep "^  - id:" references/domains/registry.yaml | wc -l
 # These should match (minus template and this guide)
 
 # Find domains missing examples
-for f in ~/.claude/skills/archaeology/references/domains/*.md; do
+for f in references/domains/*.md; do
   if ! grep -q "^## Examples" "$f"; then
     echo "Missing examples: $f"
   fi
 done
 
 # Find planned domains
-grep -B 1 "Status.*planned" ~/.claude/skills/archaeology/references/domains/*.md
+grep -B 1 "Status.*planned" references/domains/*.md
 ```
 
 ---
@@ -531,7 +531,7 @@ Don't write entire domain definition before testing. Iterative approach:
 
 Before creating a new domain, read 2-3 existing ones:
 ```bash
-ls ~/.claude/skills/archaeology/references/domains/
+ls references/domains/
 ```
 
 See how they structure examples, what level of detail they provide, how they handle ambiguity.

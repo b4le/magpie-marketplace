@@ -1,0 +1,7 @@
+{
+  "name": "archaeology",
+  "version": "1.3.0",
+  "description": "Dig through Claude Code session history — survey projects, extract domain patterns, analyse workstyles, and conserve narrative artifacts.",
+  "author": { "name": "Ben Purslow" },
+  "keywords": ["archaeology", "history", "patterns", "survey", "workstyle", "conservation", "excavation"]
+}

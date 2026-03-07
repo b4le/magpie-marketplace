@@ -1,7 +1,9 @@
 #!/bin/bash
 # Check registry.yaml is in sync with domain files
 
-DOMAIN_DIR="${HOME}/.claude/skills/archaeology/references/domains"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+DOMAIN_DIR="$PLUGIN_ROOT/skills/archaeology/references/domains"
 REGISTRY="$DOMAIN_DIR/registry.yaml"
 ERRORS=0
 

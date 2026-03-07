@@ -19,7 +19,7 @@ MAX_CONCURRENT = extract_flag_value(args, '--max-concurrent') || 3;
 SCAN_PATHS = extract_flag_value(args, '--scan-paths') || null;
 MAX_AGE = extract_flag_value(args, '--max-age') || 7;
 
-SCRIPT_PATH = '~/.claude/skills/archaeology/scripts/archaeology-excavation.sh';
+SCRIPT_PATH = 'scripts/archaeology-excavation.sh';  // relative to plugin root
 
 // Build command
 cmd = `${SCRIPT_PATH}`;
