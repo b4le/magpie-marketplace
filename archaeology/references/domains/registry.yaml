@@ -1,0 +1,87 @@
+# Domain Registry
+# Schema Version: 1.0.0
+# Generated: 2026-02-26
+
+schema_version: "1.0.0"
+
+domains:
+  # Active domains (have definition files)
+  - id: orchestration
+    name: Orchestration Patterns
+    file: orchestration.md
+    version: "1.0.0"
+    status: active
+    description: Agent orchestration patterns (sub-agents, teams, parallel execution)
+    pattern_types:
+      - "Sub-Agents (Star)"
+      - "Agent Teams (Mesh)"
+      - "Background Tasks"
+    keywords:
+      - Task
+      - subagent_type
+      - TeamCreate
+      - SendMessage
+
+  - id: prompting-patterns
+    name: Prompting Patterns
+    file: prompting-patterns.md
+    version: "1.0.0"
+    status: active
+    description: Claude usage patterns, prompt engineering, CLAUDE.md evolution
+    pattern_types:
+      - "System Prompts"
+      - "Prompt Engineering"
+      - "Skill Usage"
+    keywords:
+      - CLAUDE.md
+      - system prompt
+      - skill
+      - "mode:"
+
+  - id: python-practices
+    name: Python Code Patterns
+    file: python-practices.md
+    version: "1.0.0"
+    status: active
+    description: Python coding patterns, testing practices, type hints
+    pattern_types:
+      - "Code Patterns"
+      - "Testing Patterns"
+      - "Type Annotations"
+    keywords:
+      - pytest
+      - type hint
+      - dataclass
+      - async def
+      - class
+      - def
+
+  - id: git-workflows
+    name: Git Workflow Patterns
+    file: git-workflows.md
+    version: "1.0.0"
+    status: active
+    description: Git commit patterns, PR workflows, branching strategies
+    pattern_types:
+      - "Commit Patterns"
+      - "PR Patterns"
+      - "Hook Configurations"
+    keywords:
+      - git commit
+      - gh pr
+      - git branch
+      - HEREDOC
+
+# Schema validation rules
+validation:
+  required_fields:
+    - id
+    - name
+    - status
+    - description
+
+  valid_statuses:
+    - active        # Production-ready, has definition file
+    - planned       # In development, no file yet
+    - deprecated    # Do not use
+    - archived      # Historical reference only

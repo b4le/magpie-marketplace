@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archaeology — Your project history has stories worth preserving</title>
+<style>
+  /* ============================================
+     DESIGN SYSTEM: Excavation Palette
+     Dark slate with warm amber/gold accents
+     ============================================ */
+
+  :root {
+    /* Core palette */
+    --slate-950: #0c0f14;
+    --slate-900: #111520;
+    --slate-800: #1a1f2e;
+    --slate-700: #242b3d;
+    --slate-600: #3a4259;
+    --slate-500: #525d78;
+    --slate-400: #7a839a;
+    --slate-300: #a3aabe;
+
+    /* Amber/Gold excavation tones */
+    --amber-100: #fef3c7;
+    --amber-200: #fde68a;
+    --amber-300: #fcd34d;
+    --amber-400: #f59e0b;
+    --amber-500: #d97706;
+    --amber-600: #b45309;
+    --amber-glow: rgba(245, 158, 11, 0.08);
+    --amber-glow-strong: rgba(245, 158, 11, 0.15);
+    --amber-border: rgba(245, 158, 11, 0.2);
+
+    /* Accent sediment layers */
+    --terracotta: #c2410c;
+    --ochre: #a16207;
+    --fossil: #78716c;
+
+    /* Typography */
+    --font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+    --leading-body: 1.72;
+    --leading-tight: 1.35;
+
+    /* Spacing */
+    --space-xs: 0.5rem;
+    --space-sm: 1rem;
+    --space-md: 1.5rem;
+    --space-lg: 3rem;
+    --space-xl: 5rem;
+    --space-2xl: 8rem;
+
+    /* Layout */
+    --max-width: 52rem;
+    --max-width-wide: 64rem;
+  }
+
+  /* ============================================
+     BASE
+     ============================================ */
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 17px;
+  }
+
+  body {
+    background: var(--slate-950);
+    color: var(--slate-300);
+    font-family: var(--font-body);
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgba(245, 158, 11, 0.3);
+    color: var(--amber-100);
+  }
+
+  a {
+    color: var(--amber-400);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  a:hover { color: var(--amber-200); }
+
+  /* ============================================
+     SCROLL REVEAL ANIMATIONS
+     ============================================ */
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+
+  /* ============================================
+     NAVIGATION
+     ============================================ */
+
+  nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(12, 15, 20, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.08);
+    padding: 0.75rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.3s ease;
+  }
+
+  nav .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--amber-300);
+    letter-spacing: 0.04em;
+  }
+
+  nav .nav-logo svg { width: 22px; height: 22px; }
+
+  nav .nav-links {
+    display: flex;
+    gap: 1.8rem;
+    list-style: none;
+  }
+
+  nav .nav-links a {
+    font-size: 0.82rem;
+    color: var(--slate-400);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    transition: color 0.2s ease;
+  }
+
+  nav .nav-links a:hover { color: var(--amber-300); }
+
+  /* ============================================
+     HERO
+     ============================================ */
+
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-xl) var(--space-md);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Sediment texture background */
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(180, 83, 9, 0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 30% 80%, rgba(245, 158, 11, 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 70% 90%, rgba(194, 65, 12, 0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* Horizontal strata lines */
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 28px,
+        rgba(245, 158, 11, 0.02) 28px,
+        rgba(245, 158, 11, 0.02) 29px
+      );
+    mask-image: linear-gradient(to bottom, transparent, black 30%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 30%);
+    pointer-events: none;
+  }
+
+  .hero-icon {
+    margin-bottom: var(--space-lg);
+    animation: float 6s ease-in-out infinite;
+    filter: drop-shadow(0 0 30px rgba(245, 158, 11, 0.15));
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .hero-tagline {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    color: var(--amber-100);
+    line-height: var(--leading-tight);
+    max-width: 36rem;
+    margin-bottom: var(--space-md);
+    font-weight: normal;
+    font-style: italic;
+  }
+
+  .hero-pitch {
+    max-width: 34rem;
+    font-size: 1.05rem;
+    color: var(--slate-400);
+    line-height: var(--leading-body);
+    margin-bottom: var(--space-lg);
+  }
+
+  .hero-version {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--slate-600);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--slate-600);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: pulse-down 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-down {
+    0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+    50% { opacity: 0.8; transform: translateX(-50%) translateY(4px); }
+  }
+
+  /* ============================================
+     SECTIONS
+     ============================================ */
+
+  section {
+    padding: var(--space-2xl) var(--space-md);
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  section.wide { max-width: var(--max-width-wide); }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--amber-500);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: var(--space-xs);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    color: var(--amber-100);
+    line-height: var(--leading-tight);
+    margin-bottom: var(--space-md);
+    font-weight: normal;
+  }
+
+  .section-subtitle {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    color: var(--slate-300);
+    font-style: italic;
+    margin-bottom: var(--space-lg);
+    max-width: 38rem;
+  }
+
+  /* ============================================
+     DIVIDER (sediment layers)
+     ============================================ */
+
+  .sediment-divider {
+    width: 100%;
+    height: 3px;
+    margin: var(--space-xl) auto;
+    max-width: var(--max-width);
+    position: relative;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--amber-border) 20%,
+      rgba(194, 65, 12, 0.15) 50%,
+      var(--amber-border) 80%,
+      transparent
+    );
+  }
+
+  /* ============================================
+     MODE CARDS (Journey steps)
+     ============================================ */
+
+  .mode-step {
+    display: grid;
+    grid-template-columns: 3.2rem 1fr;
+    gap: var(--space-md);
+    margin-bottom: var(--space-2xl);
+    position: relative;
+  }
+
+  .mode-step:last-child { margin-bottom: 0; }
+
+  .step-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .step-number {
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 50%;
+    background: var(--slate-800);
+    border: 1.5px solid var(--amber-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--amber-400);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .step-number::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.08), transparent 70%);
+    z-index: -1;
+  }
+
+  .step-connector {
+    width: 1px;
+    flex: 1;
+    background: linear-gradient(to bottom, var(--amber-border), transparent);
+    margin-top: 0.5rem;
+    min-height: 2rem;
+  }
+
+  .mode-content { padding-top: 0.4rem; }
+
+  .mode-name {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--amber-200);
+    margin-bottom: 0.3rem;
+    font-weight: normal;
+  }
+
+  .mode-philosophy {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--slate-400);
+    font-size: 0.95rem;
+    margin-bottom: var(--space-sm);
+  }
+
+  .mode-description {
+    margin-bottom: var(--space-md);
+    color: var(--slate-300);
+    max-width: 40rem;
+  }
+
+  .mode-description p { margin-bottom: 0.8rem; }
+
+  /* Sample output blocks */
+  .sample-output {
+    background: var(--slate-900);
+    border: 1px solid var(--amber-border);
+    border-radius: 6px;
+    padding: var(--space-md);
+    margin-top: var(--space-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sample-output::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--amber-600), var(--amber-400), var(--amber-600));
+  }
+
+  .sample-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--amber-500);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--space-sm);
+  }
+
+  .sample-output pre {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--slate-300);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .sample-output pre .highlight { color: var(--amber-300); }
+  .sample-output pre .dim { color: var(--slate-600); }
+  .sample-output pre .type-tag { color: var(--amber-400); }
+  .sample-output pre .value { color: #a5b4fc; }
+  .sample-output pre .string { color: #86efac; }
+
+  /* ============================================
+     SCHEMA DISPLAY
+     ============================================ */
+
+  .schema-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+  }
+
+  .schema-card {
+    background: var(--slate-900);
+    border: 1px solid rgba(245, 158, 11, 0.1);
+    border-radius: 6px;
+    padding: var(--space-md);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .schema-card:hover {
+    border-color: var(--amber-border);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.05);
+  }
+
+  .schema-card h4 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--amber-200);
+    margin-bottom: 0.5rem;
+    font-weight: normal;
+  }
+
+  .schema-card p {
+    font-size: 0.88rem;
+    color: var(--slate-400);
+    line-height: 1.5;
+  }
+
+  .schema-card code {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--amber-400);
+    background: rgba(245, 158, 11, 0.08);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* ============================================
+     FRAMEWORK SECTION
+     ============================================ */
+
+  .framework-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+  }
+
+  .feature-item {
+    padding: var(--space-md);
+    border-left: 2px solid var(--amber-border);
+    transition: border-color 0.3s ease;
+  }
+
+  .feature-item:hover { border-left-color: var(--amber-400); }
+
+  .feature-item h4 {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--amber-300);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+  }
+
+  .feature-item p {
+    font-size: 0.88rem;
+    color: var(--slate-400);
+    line-height: 1.5;
+  }
+
+  .feature-stat {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--slate-500);
+    margin-top: 0.5rem;
+  }
+
+  /* ============================================
+     READING PATH
+     ============================================ */
+
+  .reading-path {
+    margin-top: var(--space-lg);
+  }
+
+  .reading-level {
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    gap: var(--space-sm);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.06);
+  }
+
+  .reading-level:last-child { border-bottom: none; }
+
+  .level-number {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--amber-500);
+    padding-top: 0.15rem;
+  }
+
+  .level-content h4 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--amber-200);
+    font-weight: normal;
+    margin-bottom: 0.2rem;
+  }
+
+  .level-content p {
+    font-size: 0.85rem;
+    color: var(--slate-400);
+  }
+
+  .level-file {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--slate-500);
+    margin-top: 0.2rem;
+  }
+
+  /* ============================================
+     FUTURE VISION
+     ============================================ */
+
+  .future-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+  }
+
+  .future-item {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: flex-start;
+  }
+
+  .future-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--slate-700);
+    border: 1px solid var(--amber-border);
+    margin-top: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .future-item h4 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--slate-300);
+    font-weight: normal;
+    margin-bottom: 0.2rem;
+  }
+
+  .future-item p {
+    font-size: 0.88rem;
+    color: var(--slate-500);
+  }
+
+  /* ============================================
+     EXHIBITION SAMPLE
+     ============================================ */
+
+  .exhibition-list {
+    list-style: none;
+    margin-top: var(--space-sm);
+  }
+
+  .exhibition-list li {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-sm);
+  }
+
+  .exhibition-list li:last-child { border-bottom: none; }
+
+  .exhibition-title {
+    font-size: 0.88rem;
+    color: var(--slate-300);
+  }
+
+  .exhibition-tags {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--slate-600);
+    flex-shrink: 0;
+  }
+
+  .exhibition-type {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--amber-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: var(--space-md);
+    margin-bottom: 0.3rem;
+  }
+
+  /* ============================================
+     FOOTER
+     ============================================ */
+
+  footer {
+    text-align: center;
+    padding: var(--space-xl) var(--space-md);
+    border-top: 1px solid rgba(245, 158, 11, 0.06);
+    margin-top: var(--space-xl);
+  }
+
+  footer p {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--slate-600);
+    letter-spacing: 0.04em;
+  }
+
+  footer .footer-command {
+    font-size: 0.85rem;
+    color: var(--amber-400);
+    margin-bottom: var(--space-sm);
+    display: block;
+  }
+
+  /* ============================================
+     RESPONSIVE
+     ============================================ */
+
+  @media (max-width: 768px) {
+    html { font-size: 15px; }
+
+    nav { padding: 0.6rem 1rem; }
+    nav .nav-links { gap: 1rem; }
+    nav .nav-links a { font-size: 0.72rem; }
+
+    .hero { min-height: 90vh; }
+
+    section { padding: var(--space-xl) var(--space-sm); }
+
+    .mode-step {
+      grid-template-columns: 2.4rem 1fr;
+      gap: var(--space-sm);
+    }
+
+    .step-number { width: 2.4rem; height: 2.4rem; font-size: 0.72rem; }
+
+    .schema-grid { grid-template-columns: 1fr; }
+    .framework-features { grid-template-columns: 1fr; }
+
+    .exhibition-list li { flex-direction: column; gap: 0.2rem; }
+
+    .reading-level { grid-template-columns: 3rem 1fr; }
+  }
+
+  @media (max-width: 480px) {
+    nav .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     NAVIGATION
+     ============================================ -->
+<nav>
+  <div class="nav-logo">
+    <!-- Inline logo (small) -->
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="16" width="20" height="2.5" rx="0.5" fill="#78716c" opacity="0.5"/>
+      <rect x="3" y="13" width="18" height="2.5" rx="0.5" fill="#a16207" opacity="0.6"/>
+      <rect x="4" y="10" width="16" height="2.5" rx="0.5" fill="#b45309" opacity="0.7"/>
+      <rect x="5" y="7" width="14" height="2.5" rx="0.5" fill="#d97706" opacity="0.8"/>
+      <rect x="6" y="4" width="12" height="2.5" rx="0.5" fill="#f59e0b" opacity="0.9"/>
+      <circle cx="12" cy="11.5" r="2.5" fill="#fcd34d" opacity="0.95"/>
+      <circle cx="12" cy="11.5" r="1.2" fill="#fef3c7"/>
+    </svg>
+    archaeology
+  </div>
+  <ul class="nav-links">
+    <li><a href="#journey">Journey</a></li>
+    <li><a href="#framework">Framework</a></li>
+    <li><a href="#future">Vision</a></li>
+  </ul>
+</nav>
+
+<!-- ============================================
+     HERO
+     ============================================ -->
+<section class="hero" id="top">
+
+  <!-- Main SVG Logo — Sediment cross-section with embedded artifact -->
+  <div class="hero-icon">
+    <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Archaeology skill logo: layered sediment cross-section with a glowing artifact">
+      <!-- Outer circle frame -->
+      <circle cx="70" cy="70" r="67" stroke="#3a4259" stroke-width="0.5" opacity="0.6"/>
+      <circle cx="70" cy="70" r="62" stroke="url(#ring-gradient)" stroke-width="1"/>
+
+      <!-- Sediment layers (bottom to top, darker to lighter) -->
+      <!-- Layer 1: Deep bedrock -->
+      <path d="M25 105 Q45 102, 70 104 Q95 106, 115 103 L115 115 Q95 118, 70 116 Q45 114, 25 117 Z" fill="#44403c" opacity="0.4"/>
+      <!-- Layer 2: Ancient sediment -->
+      <path d="M22 95 Q42 91, 70 93 Q98 95, 118 92 L118 105 Q95 102, 70 104 Q45 106, 22 103 Z" fill="#78716c" opacity="0.45"/>
+      <!-- Layer 3: Clay -->
+      <path d="M20 84 Q40 80, 70 82 Q100 84, 120 81 L118 95 Q98 92, 70 93 Q42 95, 22 92 Z" fill="#92400e" opacity="0.35"/>
+      <!-- Layer 4: Rich earth -->
+      <path d="M20 73 Q38 70, 70 71 Q102 72, 120 70 L120 84 Q100 81, 70 82 Q40 84, 20 81 Z" fill="#a16207" opacity="0.4"/>
+      <!-- Layer 5: Upper sediment -->
+      <path d="M22 63 Q40 60, 70 61 Q100 62, 118 60 L120 73 Q102 70, 70 71 Q38 73, 20 70 Z" fill="#b45309" opacity="0.35"/>
+      <!-- Layer 6: Surface -->
+      <path d="M25 54 Q43 51, 70 52 Q97 53, 115 51 L118 63 Q100 60, 70 61 Q40 63, 22 60 Z" fill="#d97706" opacity="0.25"/>
+
+      <!-- Embedded artifact glow -->
+      <circle cx="70" cy="78" r="18" fill="url(#artifact-glow)" opacity="0.6"/>
+      <circle cx="70" cy="78" r="10" fill="url(#artifact-glow-inner)" opacity="0.8"/>
+
+      <!-- The artifact: a faceted gemstone shape -->
+      <path d="M70 68 L78 76 L74 88 L66 88 L62 76 Z"
+            fill="url(#artifact-fill)" stroke="#fcd34d" stroke-width="0.8" opacity="0.95"/>
+      <path d="M70 68 L66 76 L74 76 Z" fill="#fef3c7" opacity="0.5"/>
+      <circle cx="70" cy="78" r="2" fill="#fef3c7" opacity="0.9"/>
+
+      <!-- Surface detail: small fossil fragments -->
+      <circle cx="45" cy="64" r="1.5" fill="#d97706" opacity="0.2"/>
+      <circle cx="90" cy="58" r="1" fill="#d97706" opacity="0.15"/>
+      <circle cx="55" cy="56" r="0.8" fill="#f59e0b" opacity="0.15"/>
+      <circle cx="85" cy="67" r="1.2" fill="#b45309" opacity="0.2"/>
+
+      <!-- Top: excavation marks / brush strokes -->
+      <line x1="35" y1="42" x2="50" y2="42" stroke="#f59e0b" stroke-width="0.4" opacity="0.2"/>
+      <line x1="55" y1="39" x2="85" y2="39" stroke="#f59e0b" stroke-width="0.4" opacity="0.15"/>
+      <line x1="60" y1="44" x2="78" y2="44" stroke="#d97706" stroke-width="0.3" opacity="0.2"/>
+
+      <!-- Label arc at top -->
+      <defs>
+        <linearGradient id="ring-gradient" x1="0" y1="0" x2="140" y2="140">
+          <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.3"/>
+          <stop offset="50%" stop-color="#d97706" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="#b45309" stop-opacity="0.3"/>
+        </linearGradient>
+        <radialGradient id="artifact-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="artifact-glow-inner" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fcd34d" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="artifact-fill" x1="62" y1="68" x2="78" y2="88">
+          <stop offset="0%" stop-color="#fcd34d"/>
+          <stop offset="100%" stop-color="#d97706"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <h1 class="hero-tagline">Your project history has stories worth preserving</h1>
+
+  <p class="hero-pitch">
+    Archaeology is a Claude Code skill that treats your session history as a site worth excavating. It scans, scores, extracts, and preserves the patterns, decisions, incidents, and discoveries buried in your work &mdash; turning ephemeral conversations into a durable, structured knowledge base.
+  </p>
+
+  <span class="hero-version">v1.3.0 &middot; survey &middot; workstyle &middot; conserve &middot; excavation</span>
+
+  <div class="scroll-indicator">
+    <span>Dig deeper</span>
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v8m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.2"/></svg>
+  </div>
+</section>
+
+<div class="sediment-divider"></div>
+
+<!-- ============================================
+     THE JOURNEY (4 Modes)
+     ============================================ -->
+<section id="journey">
+  <div class="reveal">
+    <div class="section-label">The Journey</div>
+    <h2 class="section-title">Four modes. One archaeological method.</h2>
+    <p class="section-subtitle">Each mode builds on the last. Survey to understand, reflect on your process, preserve what matters, then see the whole picture.</p>
+  </div>
+
+  <!-- MODE 1: Survey -->
+  <div class="mode-step reveal">
+    <div class="step-line">
+      <div class="step-number">S</div>
+      <div class="step-connector"></div>
+    </div>
+    <div class="mode-content">
+      <h3 class="mode-name">Survey</h3>
+      <p class="mode-philosophy">"First, you listen."</p>
+      <div class="mode-description">
+        <p>Survey scans a project's conversation history and scores every knowledge domain against it. Primary keywords are weighted 3x, secondary keywords 1x, with per-session caps to prevent any single conversation from dominating the signal. The result is a ranked map of where your project's real expertise lives.</p>
+        <p>Each domain gets a signal strength (strong, moderate, weak, none) and a confidence level based on how many distinct sessions contributed evidence. A single-session project can never claim "strong" signal &mdash; the scoring contract enforces intellectual honesty.</p>
+      </div>
+
+      <div class="sample-output">
+        <div class="sample-label">Real output &mdash; survey.md</div>
+<pre><span class="highlight"># Archaeology Survey &mdash; content-management-planning</span>
+
+<span class="dim">&gt; Scanned on 2026-03-07 | 24 conversation files | 312 source files</span>
+
+<span class="highlight">## Recommended Domains</span>
+
+| Domain        | Signal   | Confidence | Score | Rationale                              |
+|---------------|----------|------------|-------|----------------------------------------|
+| orchestration | <span class="type-tag">strong</span>   | high       | 42.3  | 14 primary hits across 5 sessions      |
+| prompting     | <span class="type-tag">moderate</span> | medium     | 12.1  | 6 prompt-template refs in 2 sessions   |
+| git-workflows | <span class="type-tag">weak</span>     | low        |  3.2  | 1 pre-commit config found              |</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODE 2: Workstyle -->
+  <div class="mode-step reveal">
+    <div class="step-line">
+      <div class="step-number">W</div>
+      <div class="step-connector"></div>
+    </div>
+    <div class="mode-content">
+      <h3 class="mode-name">Workstyle</h3>
+      <p class="mode-philosophy">"Then, you reflect."</p>
+      <div class="mode-description">
+        <p>Workstyle analyses how you work with Claude, not just what you build. It parses every session through a seven-step pipeline (W1&ndash;W7): metadata extraction, dimension scoring, representative session sampling, and sub-agent deep dives into instruction style, feedback patterns, session arcs, and complexity handling.</p>
+        <p>The output profiles your dominant working pattern (plan-first, iterative refinement, deep exploration, delegation-heavy, or direct execution), your tool usage fingerprint, delegation preferences, communication style, and how all of these have evolved over time. It even detects preferences that contradict your CLAUDE.md configuration.</p>
+      </div>
+
+      <div class="sample-output">
+        <div class="sample-label">Dimension schema &mdash; workstyle.json</div>
+<pre>{
+  <span class="type-tag">"session_patterns"</span>: {
+    <span class="string">"plan_first_pct"</span>: <span class="value">0.35</span>,
+    <span class="string">"iterative_refinement_pct"</span>: <span class="value">0.28</span>,
+    <span class="string">"delegation_heavy_pct"</span>: <span class="value">0.22</span>,
+    <span class="string">"dominant_pattern"</span>: <span class="value">"plan_first"</span>
+  },
+  <span class="type-tag">"delegation"</span>: {
+    <span class="string">"solo_pct"</span>: <span class="value">45</span>,
+    <span class="string">"delegated_pct"</span>: <span class="value">38</span>,
+    <span class="string">"team_pct"</span>: <span class="value">17</span>
+  },
+  <span class="type-tag">"preferences"</span>: {
+    <span class="string">"confirmed"</span>: [<span class="value">"worktree usage"</span>, <span class="value">"plan-first approach"</span>],
+    <span class="string">"detected"</span>: [<span class="value">"prefers sub-agents over teams for &lt;3 tasks"</span>],
+    <span class="string">"contradicted"</span>: []
+  }
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODE 3: Conserve -->
+  <div class="mode-step reveal">
+    <div class="step-line">
+      <div class="step-number">C</div>
+      <div class="step-connector"></div>
+    </div>
+    <div class="mode-content">
+      <h3 class="mode-name">Conserve</h3>
+      <p class="mode-philosophy">"Now, you preserve."</p>
+      <div class="mode-description">
+        <p>Conservation extracts the stories worth keeping. Five parallel agents each search for a different narrative type &mdash; shipments (things delivered), decisions (choices made), incidents (things that broke), discoveries (surprises found), tales (stories with arcs), and practices (processes that emerged). Each agent reads selected sessions and returns structured artifacts in XML format.</p>
+        <p>Every artifact is an atomic narrative object: 150&ndash;300 words with YAML frontmatter, a unique URI (<code>arch://project/art-001</code>), confidence scoring grounded in source evidence, and editorial significance weighting for curation. Artifacts are assembled into an exhibition &mdash; a curated reading of the project's history, grouped by type.</p>
+      </div>
+
+      <div class="sample-output">
+        <div class="sample-label">Real exhibition &mdash; content-management-planning</div>
+<pre><span class="highlight"># content-management-planning -- Conservation</span>
+
+<span class="dim">&gt; 10 artifacts conserved on 2026-03-07 | 2 shipments, 4 decisions, 1 incident, 3 discoveries</span>
+
+<span class="exhibition-type">Shipments</span>
+<span class="type-tag">art-001</span>  10 Spring 2026 Product Briefs for CoCaM Engineering Roadmap
+<span class="type-tag">art-007</span>  Orchestration Archaeology Report: 5-Session Workflow Analysis
+
+<span class="exhibition-type">Decisions</span>
+<span class="type-tag">art-002</span>  Intent-Based Topology Selection: Sub-Agents vs Agent Teams
+<span class="type-tag">art-003</span>  Single-Message Parallel Dispatch for 10x Execution Speedup
+<span class="type-tag">art-005</span>  Checkpoint-Based Workflow Resumability with Phase Skipping
+<span class="type-tag">art-008</span>  Model Selection by Task Complexity: Haiku, Sonnet, Opus
+
+<span class="exhibition-type">Incidents</span>
+<span class="type-tag">art-009</span>  Background agents unable to access MCP tools
+
+<span class="exhibition-type">Discoveries</span>
+<span class="type-tag">art-004</span>  Parallel Execution Reduced ERID Processing from 5m to 45s
+<span class="type-tag">art-006</span>  80% Context Reduction via Progressive Disclosure
+<span class="type-tag">art-010</span>  Sub-Agent Topology Standardized to Exclusive Star Pattern</pre>
+      </div>
+
+      <div class="sample-output" style="margin-top: var(--space-sm)">
+        <div class="sample-label">Artifact frontmatter schema</div>
+<pre><span class="dim">---</span>
+<span class="type-tag">id</span>: <span class="string">"art-001"</span>
+<span class="type-tag">project</span>: <span class="string">"content-management-planning"</span>
+<span class="type-tag">uri</span>: <span class="string">"arch://content-management-planning/art-001"</span>
+<span class="type-tag">type</span>: <span class="value">"shipment"</span>
+<span class="type-tag">title</span>: <span class="string">"10 Spring 2026 Product Briefs for CoCaM Engineering Roadmap"</span>
+<span class="type-tag">confidence</span>: <span class="value">"high"</span>
+<span class="type-tag">significance</span>: <span class="value">9</span>
+<span class="type-tag">tags</span>: [<span class="string">"product-briefs"</span>, <span class="string">"ERID"</span>, <span class="string">"spring-2026"</span>]
+<span class="type-tag">conserved_at</span>: <span class="string">"2026-03-07"</span>
+<span class="type-tag">session_date</span>: <span class="string">"2025-11-26"</span>
+<span class="type-tag">status</span>: <span class="value">"draft"</span>
+<span class="type-tag">sources</span>:
+  <span class="type-tag">sessions</span>:
+    - <span class="type-tag">path</span>: <span class="string">"d9690230-a965-4c40-aba2-4c2a5b1aeec1.jsonl"</span>
+<span class="dim">---</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODE 4: Excavation -->
+  <div class="mode-step reveal">
+    <div class="step-line">
+      <div class="step-number">E</div>
+    </div>
+    <div class="mode-content">
+      <h3 class="mode-name">Excavation</h3>
+      <p class="mode-philosophy">"Finally, you see the whole picture."</p>
+      <div class="mode-description">
+        <p>Excavation is the cross-project portfolio scan. A bash script (compatible with bash 3.2) discovers every project with Claude Code history, then launches concurrent <code>claude -p</code> subprocesses to survey each one. It respects freshness thresholds &mdash; projects surveyed within the last 7 days are skipped by default.</p>
+        <p>The results are synthesised into a portfolio report: a ranked table of all projects, cross-project domain patterns (which domains appear in multiple projects and what that means), and a prioritised list of recommended next steps. This is the view from above the dig site &mdash; every project laid out, every signal visible.</p>
+      </div>
+
+      <div class="sample-output">
+        <div class="sample-label">Portfolio output structure</div>
+<pre><span class="highlight"># Archaeology Portfolio &mdash; 2026-03-07</span>
+
+<span class="dim">&gt; Scanned 41 projects | 38 newly surveyed | 2 skipped | 1 failed</span>
+
+<span class="highlight">## Project Overview</span>
+
+| Project               | Sessions | Top Domain    | Signal   | Action                       |
+|-----------------------|----------|---------------|----------|------------------------------|
+| content-mgmt-planning | 24       | orchestration | <span class="type-tag">strong</span>   | <span class="value">/archaeology orchestration</span>  |
+| claude-code-dev-kit   | 18       | prompting     | <span class="type-tag">moderate</span> | <span class="value">/archaeology prompting</span>      |
+| workspace-mcp         | 12       | git-workflows | <span class="type-tag">moderate</span> | <span class="value">/archaeology git-workflows</span>  |
+
+<span class="highlight">## Cross-Project Patterns</span>
+  orchestration appears in 8/41 projects (strongest cross-project signal)
+
+<span class="highlight">## Recommended Next Steps</span>
+  <span class="value">/archaeology orchestration</span> on content-mgmt-planning &mdash; strongest signal
+  <span class="value">/archaeology prompting</span> on claude-code-dev-kit &mdash; 6 sessions with signal</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sediment-divider"></div>
+
+<!-- ============================================
+     THE FRAMEWORK
+     ============================================ -->
+<section id="framework" class="wide">
+  <div class="reveal">
+    <div class="section-label">The Framework</div>
+    <h2 class="section-title">Engineered for confidence</h2>
+    <p class="section-subtitle">Every output is schema-driven, validated, and designed for progressive consumption.</p>
+  </div>
+
+  <div class="framework-features reveal">
+    <div class="feature-item">
+      <h4>Schema-Driven</h4>
+      <p>Four versioned schemas govern all output: Domain File Schema v1.0, Finding Object Schema v2, Workstyle Object Schema v1, and Artifact Object Schema v1. Every field, every type, every enum is specified.</p>
+      <div class="feature-stat">6 artifact types &middot; 9 finding fields &middot; 7 workstyle dimensions</div>
+    </div>
+    <div class="feature-item reveal-delay-1">
+      <h4>Validated</h4>
+      <p>Automated validation scripts (bash 3.2 compatible) check output structure, frontmatter integrity, cross-references, and content contracts. Conservation alone runs 78 checks per project.</p>
+      <div class="feature-stat">78 checks &middot; bash 3.2 compat &middot; idempotent reruns</div>
+    </div>
+    <div class="feature-item reveal-delay-2">
+      <h4>Progressive Disclosure</h4>
+      <p>A 6-tier reading path means you never read more than you need. Route at INDEX.md, orient at SUMMARY.md, understand at patterns.md, narrate at exhibition.md, act on findings.json, automate from workstyle.json.</p>
+      <div class="feature-stat">6 reading levels &middot; stop-here-if guidance &middot; AI + human paths</div>
+    </div>
+    <div class="feature-item reveal-delay-3">
+      <h4>Central Registry</h4>
+      <p>A global <code>artifacts-registry.json</code> tracks every artifact across every project with tag and type indices. Cross-project discovery is a single JSON parse, not a filesystem crawl.</p>
+      <div class="feature-stat">tag_index &middot; type_index &middot; URI-addressable artifacts</div>
+    </div>
+  </div>
+
+  <!-- Reading Path Detail -->
+  <div class="reading-path reveal">
+    <div class="section-label" style="margin-top: var(--space-xl); margin-bottom: var(--space-md);">Progressive reading path</div>
+    <div class="reading-level">
+      <div class="level-number">L1</div>
+      <div class="level-content">
+        <h4>Route</h4>
+        <p>What domains exist for a project?</p>
+        <div class="level-file">INDEX.md</div>
+      </div>
+    </div>
+    <div class="reading-level">
+      <div class="level-number">L2</div>
+      <div class="level-content">
+        <h4>Orient</h4>
+        <p>Cross-domain highlights and tag connections</p>
+        <div class="level-file">{project}/SUMMARY.md</div>
+      </div>
+    </div>
+    <div class="reading-level">
+      <div class="level-number">L3</div>
+      <div class="level-content">
+        <h4>Understand</h4>
+        <p>Domain-specific detail, start with Highlights section</p>
+        <div class="level-file">{project}/{domain}/patterns.md</div>
+      </div>
+    </div>
+    <div class="reading-level">
+      <div class="level-number">L3.5</div>
+      <div class="level-content">
+        <h4>Narrate</h4>
+        <p>Explain what was built, the decisions and stories</p>
+        <div class="level-file">{project}/exhibition.md + artifacts/</div>
+      </div>
+    </div>
+    <div class="reading-level">
+      <div class="level-number">L4</div>
+      <div class="level-content">
+        <h4>Act</h4>
+        <p>Build on findings programmatically</p>
+        <div class="level-file">{project}/{domain}/findings.json</div>
+      </div>
+    </div>
+    <div class="reading-level">
+      <div class="level-number">L5</div>
+      <div class="level-content">
+        <h4>Adapt</h4>
+        <p>Understand and adapt to user working style</p>
+        <div class="level-file">{project}/workstyle.md</div>
+      </div>
+    </div>
+    <div class="reading-level">
+      <div class="level-number">L6</div>
+      <div class="level-content">
+        <h4>Automate</h4>
+        <p>Programmatic workstyle consumption</p>
+        <div class="level-file">{project}/workstyle.json</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Artifact type schema -->
+  <div class="reveal" style="margin-top: var(--space-xl);">
+    <div class="section-label">Artifact types</div>
+    <p style="color: var(--slate-400); margin-bottom: var(--space-md); font-size: 0.92rem;">Six narrative types, each with natural sections that guide extraction agents.</p>
+  </div>
+
+  <div class="schema-grid reveal">
+    <div class="schema-card">
+      <h4>Shipment</h4>
+      <p>A feature, launch, or milestone delivered. Sections: what was built, why it matters, the result.</p>
+    </div>
+    <div class="schema-card reveal-delay-1">
+      <h4>Decision</h4>
+      <p>A choice made and why. Sections: the options, the constraints, the choice, what happened next.</p>
+    </div>
+    <div class="schema-card reveal-delay-2">
+      <h4>Incident</h4>
+      <p>Something broke and what we learned. Sections: what broke, the response, the fix, the systemic change.</p>
+    </div>
+    <div class="schema-card reveal-delay-3">
+      <h4>Discovery</h4>
+      <p>A surprise, insight, or busted assumption. Sections: the assumption, the evidence, the new understanding.</p>
+    </div>
+    <div class="schema-card reveal-delay-1">
+      <h4>Tale</h4>
+      <p>A story worth telling for its arc. Sections: the setup, the complication, the resolution.</p>
+    </div>
+    <div class="schema-card reveal-delay-2">
+      <h4>Practice</h4>
+      <p>How we work &mdash; a process or workflow. Sections: what we do, why it emerged, what problem it solves.</p>
+    </div>
+  </div>
+</section>
+
+<div class="sediment-divider"></div>
+
+<!-- ============================================
+     FUTURE VISION
+     ============================================ -->
+<section id="future">
+  <div class="reveal">
+    <div class="section-label">Deeper Strata</div>
+    <h2 class="section-title">What's still buried</h2>
+    <p class="section-subtitle">Modes planned for the layers below.</p>
+  </div>
+
+  <div class="future-items">
+    <div class="future-item reveal">
+      <div class="future-dot"></div>
+      <div>
+        <h4>Deep Dive</h4>
+        <p>Detailed investigation of specific artifacts or findings. Follow a single thread through every session it touched, reconstruct the full timeline, surface the evidence chain.</p>
+      </div>
+    </div>
+    <div class="future-item reveal reveal-delay-1">
+      <div class="future-dot"></div>
+      <div>
+        <h4>Curate</h4>
+        <p>Editorial curation of exhibitions. Reorder, annotate, connect, and write connective tissue between artifacts. Turn raw conservation into a crafted narrative.</p>
+      </div>
+    </div>
+    <div class="future-item reveal reveal-delay-2">
+      <div class="future-dot"></div>
+      <div>
+        <h4>Cross-Project Pattern Detection</h4>
+        <p>Go beyond portfolio listing. Detect recurring patterns, decisions, and practices that span projects. Surface the meta-patterns: the decisions you make over and over, the practices that spread.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     FOOTER
+     ============================================ -->
+<footer>
+  <span class="footer-command">/archaeology</span>
+  <p>A Claude Code skill for treating project history with the respect it deserves.</p>
+</footer>
+
+<!-- ============================================
+     SCROLL REVEAL SCRIPT
+     ============================================ -->
+<script>
+  (function () {
+    const reveals = document.querySelectorAll('.reveal');
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    reveals.forEach((el) => observer.observe(el));
+  })();
+</script>
+
+</body>
+</html>
