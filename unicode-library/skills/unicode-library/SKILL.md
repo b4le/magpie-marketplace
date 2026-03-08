@@ -43,8 +43,8 @@ Curated reference library of ~50 approved Unicode characters for CLI visual desi
 Set these paths once before any command routing:
 
 ```javascript
-// The directory containing this SKILL.md file (follows symlink)
-SKILL_DIR = '~/.claude/skills/unicode-library';
+// The directory containing this SKILL.md file (resolve from the loaded skill path)
+SKILL_DIR = dirname(this_skill_file);  // Do NOT hardcode — resolve relative to loaded SKILL.md
 // Reference files
 REGISTRY    = `${SKILL_DIR}/references/registry.md`;
 PALETTES    = `${SKILL_DIR}/references/palettes.md`;
@@ -205,7 +205,11 @@ Read `${ANTI}`. For each extracted character:
 - Check against Category 1 (operator lookalikes): FAIL if found
 - Check against Category 2 (smart quotes): FAIL if found
 - Check against Category 3 (emoji): WARN if found
-- Check against Categories 4-8: WARN if applicable
+- Check against Category 4 (braille for layout): WARN if found
+- Check against Category 5 (unapproved dingbats): WARN if found
+- Check against Category 6 (outside BMP): FAIL if found
+- Check against Category 7 (combining characters): FAIL if found
+- Check against Category 8 (width-ambiguous in alignment): INFO if found
 
 **Step 5: Display results**
 

@@ -21,6 +21,8 @@ Minimal:  ○ Auth   ● Tests   ✓ Build   ✗ Deploy
 Standard: ○ Pending  ● In Progress  ✓ Complete  ✗ Failed
 ```
 
+**CJK note:** `●` and `○` are EAW=Ambiguous — they may render double-width in CJK locales. Avoid in column-aligned output targeting CJK environments.
+
 **Extended status** (when you need more states):
 | State | Character |
 |-------|-----------|
@@ -84,6 +86,8 @@ Full:
     ▪ Leaf item
     ▫ Empty leaf
 ```
+
+**CJK note:** `•`, `◆`, `◇`, and `◈` are EAW=Ambiguous — they may render double-width in CJK locales. The Safe alternatives `▸`, `▪`, `▫` are EAW=Neutral.
 
 ---
 
@@ -156,6 +160,8 @@ Show direction, sequence, or transformation.
 | **Drill-down** | `▸ Expand this section` |
 | **Collapse** | `▾ Collapse this section` |
 
+**CJK note:** `→ ← ↑ ↓` are EAW=Ambiguous — they may render double-width in CJK locales. Avoid in column-aligned output targeting CJK environments.
+
 ---
 
 ## Stars & Emphasis
@@ -209,7 +215,7 @@ For agents that just need quick, safe output without designing a full visual sys
 | Inline separator | `·` | `name · value` |
 | Direction | `→` | `input → output` |
 
-This 7-character set covers 90% of CLI output needs.
+This 7-character set covers 90% of CLI output needs. Note that `•`, `→`, and `·` are EAW=Ambiguous and may render double-width in CJK locales — for alignment-sensitive output in CJK environments, substitute `▸` for `•` and use ASCII `->` for `→`.
 
 ---
 

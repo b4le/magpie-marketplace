@@ -88,10 +88,12 @@ Most characters in the Dingbats block (U+2700-27BF) have poor coverage in monosp
 - Style clash (serif dingbat next to monospace text)
 - Tofu on minimal systems
 
-**Exceptions (safe to use):**
+**Exceptions (in registry, safe to use):**
 - `✓` (U+2713), `✗` (U+2717) -- check/cross
-- `✔` (U+2714), `✘` (U+2718) -- heavy check/cross (but CAUTION: emoji presentation risk)
 - `✦` (U+2726), `✧` (U+2727) -- four-pointed stars
+
+**Not in registry but lower risk:**
+- `✔` (U+2714), `✘` (U+2718) -- heavy check/cross. NOT in the approved registry. Prefer `✓`/`✗` instead. These have emoji presentation risk (U+FE0F could change rendering) and are not approved for branded output.
 
 **Avoid everything else in U+2700-27BF** unless you've verified font coverage.
 
@@ -131,11 +133,15 @@ These characters are in the registry but must NOT be used where column alignment
 
 | Char | Issue | Safe usage | Unsafe usage |
 |------|-------|------------|-------------|
-| `░▒▓█` | EAW=Ambiguous | Own line, gradient, progress bar | Inline with text needing alignment |
+| `→←↑↓` | EAW=Ambiguous | Flow diagrams (Western locales) | Column-aligned tables in CJK contexts |
+| `•` | EAW=Ambiguous | Bullet lists (Western locales) | Column-aligned lists in CJK contexts |
+| `△▽` | EAW=Ambiguous | Decorative indicators (Western locales) | Column-aligned output in CJK contexts |
+| `◆◇◈` | EAW=Ambiguous | Hierarchy markers (Western locales) | Column-aligned hierarchies in CJK contexts |
+| `●○` | EAW=Ambiguous | Status indicators (Western locales) | Column-aligned status in CJK contexts |
+| `▒▓█` | EAW=Ambiguous | Own line, gradient, progress bar | Inline with text needing alignment |
 | `·` | EAW=Ambiguous | Inline separator (Western locales) | Column-aligned tables |
 | `★☆` | EAW=Ambiguous | Decorative, non-aligned | Rating displays with other text |
-| `✓✗` | EAW=Ambiguous | Status prefix (start of line) | Mid-line column alignment |
-| `♦♠♥♣` | EAW=Ambiguous | Decorative accents | Anywhere alignment matters |
+| `♠♥♣` | EAW=Ambiguous | Decorative accents | Anywhere alignment matters |
 
 **Rule:** Ambiguous-width characters are fine for decoration. They are NOT fine for structured, column-aligned output.
 

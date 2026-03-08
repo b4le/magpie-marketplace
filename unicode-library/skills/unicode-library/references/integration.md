@@ -46,10 +46,12 @@ Match decoration level to the context:
 
 | Context | Level | Characters |
 |---------|-------|-----------|
-| Agent output, ephemeral messages | **Minimal** | `• ▸ ✓ ✗ → ─ ·` (7 chars) |
+| Agent output, ephemeral messages | **Minimal** | `• ▸ ✓ ✗ → ─ ·` (7 chars) ¹ |
 | Skill completion displays | **Standard** | Add `◆ ◇ ✦ ░▒▓` |
 | Branded experiences (e.g., archaeology) | **Full** | Full registry as needed |
 | Data files, JSON output | **None** | Plain text only |
+
+¹ `•`, `→`, and `·` are EAW=Ambiguous — see palettes.md Recommended Defaults for CJK substitutions.
 
 **Principle:** Decoration should be proportional to the permanence and visibility of the output. Ephemeral agent messages need less; polished skill completions deserve more.
 
@@ -154,7 +156,7 @@ The archaeology plugin was the first consumer of this library. Its character usa
 | `LABEL_PREFIX` | `··` | Separators & Dividers |
 | `SIGNOFF_TEMPLATE` | `░▒▓ ··` | Progress + Separators |
 
-All characters validated. No anti-pattern violations.
+All characters validated. No anti-pattern violations. Note: `◈`, `◆`, `●`, `◇` are EAW=Ambiguous (Caution) — they may render double-width in CJK locales. This is acceptable for archaeology's non-aligned decorative usage.
 
 ---
 

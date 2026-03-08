@@ -15,11 +15,11 @@ Characters not in this registry should not be used in branded output without exp
 
 | Char | Codepoint | Name | Role | Safety | Issues |
 |------|-----------|------|------|--------|--------|
-| `✓` | U+2713 | Check mark | Success, complete, pass | Caution | EAW=Ambiguous; double-width in CJK locales. Append U+FE0E for defensive text presentation. |
-| `✗` | U+2717 | Ballot X | Failure, error, reject | Caution | EAW=Ambiguous; same CJK caveat as `✓`. |
-| `●` | U+25CF | Black circle | Active, current, selected | Safe | Industry standard for radio-on / active state. |
-| `○` | U+25CB | White circle | Inactive, pending, unselected | Safe | Pair with `●` for on/off states. |
-| `•` | U+2022 | Bullet | In-progress, list item | Universal | EAW=Neutral. The safest bullet character. |
+| `✓` | U+2713 | Check mark | Success, complete, pass | Safe | EAW=Neutral. Check mark for success/completion. |
+| `✗` | U+2717 | Ballot X | Failure, error, reject | Safe | EAW=Neutral. Ballot X for failure/rejection. |
+| `●` | U+25CF | Black circle | Active, current, selected | Caution | EAW=Ambiguous; double-width in CJK locales. Industry standard for radio-on / active state. |
+| `○` | U+25CB | White circle | Inactive, pending, unselected | Caution | EAW=Ambiguous; double-width in CJK locales. Pair with `●` for on/off states. |
+| `•` | U+2022 | Bullet | In-progress, list item | Caution | EAW=Ambiguous; double-width in CJK locales. The safest bullet character. |
 | `◦` | U+25E6 | White bullet | Secondary item, sub-list | Safe | EAW=Neutral. Lighter weight than `•`. |
 
 **Usage example:**
@@ -35,10 +35,10 @@ Characters not in this registry should not be used in branded output without exp
 
 | Char | Codepoint | Name | Role | Safety | Issues |
 |------|-----------|------|------|--------|--------|
-| `░` | U+2591 | Light shade | Empty, faint, deep | Safe | Ambiguous-width in some fonts. Keep on own line or use only in sequences. |
-| `▒` | U+2592 | Medium shade | Partial, moderate | Safe | Same width caveat as `░`. |
-| `▓` | U+2593 | Dark shade | Mostly full, dense, surface | Safe | Same width caveat as `░`. |
-| `█` | U+2588 | Full block | Complete, filled, maximum | Safe | Same width caveat. Built-in rendering in Alacritty/Kitty/Windows Terminal. |
+| `░` | U+2591 | Light shade | Empty, faint, deep | Safe | EAW=Neutral. Keep on own line or use only in sequences. |
+| `▒` | U+2592 | Medium shade | Partial, moderate | Safe | EAW=Ambiguous; same width caveat as block elements. Keep on own line. |
+| `▓` | U+2593 | Dark shade | Mostly full, dense, surface | Safe | EAW=Ambiguous; same width caveat as block elements. Keep on own line. |
+| `█` | U+2588 | Full block | Complete, filled, maximum | Safe | EAW=Ambiguous. Built-in rendering in Alacritty/Kitty/Windows Terminal. Keep on own line. |
 
 **Width rule:** Block elements may render as 1 or 2 columns depending on font/terminal settings. Never place inline with text that needs column alignment. Use on their own line.
 
@@ -54,15 +54,15 @@ Progress: ████████░░ 80%   (progress bar -- own line only)
 
 | Char | Codepoint | Name | Role | Safety | Issues |
 |------|-----------|------|------|--------|--------|
-| `◆` | U+25C6 | Black diamond | Primary, top-level finding | Safe | Strong visual weight. |
-| `◇` | U+25C7 | White diamond | Secondary, preserved | Safe | Lighter pair to `◆`. |
-| `◈` | U+25C8 | Diamond containing dot | Annotated, catalogued | Safe | Distinct from `◆`/`◇`; good for indexed items. |
+| `◆` | U+25C6 | Black diamond | Primary, top-level finding | Caution | EAW=Ambiguous; double-width in CJK locales. Strong visual weight. |
+| `◇` | U+25C7 | White diamond | Secondary, preserved | Caution | EAW=Ambiguous; double-width in CJK locales. Lighter pair to `◆`. |
+| `◈` | U+25C8 | Diamond containing dot | Annotated, catalogued | Caution | EAW=Ambiguous; double-width in CJK locales. Distinct from `◆`/`◇`; good for indexed items. |
 | `▸` | U+25B8 | Small right triangle | Child, nested, drill-down | Safe | EAW=Neutral. Industry standard for tree child. |
 | `▾` | U+25BE | Small down triangle | Expandable, collapsible | Safe | EAW=Neutral. Pair with `▸` for expand/collapse. |
 | `▪` | U+25AA | Small black square | Leaf item, terminal node | Safe | EAW=Neutral. Compact marker for list endpoints. |
 | `▫` | U+25AB | Small white square | Empty leaf, placeholder | Safe | EAW=Neutral. Lighter pair to `▪`. |
-| `△` | U+25B3 | White up triangle | Increase, expand, parent | Safe | EAW=Neutral. |
-| `▽` | U+25BD | White down triangle | Decrease, collapse, child | Safe | EAW=Neutral. |
+| `△` | U+25B3 | White up triangle | Increase, expand, parent | Caution | EAW=Ambiguous; double-width in CJK locales. |
+| `▽` | U+25BD | White down triangle | Decrease, collapse, child | Caution | EAW=Ambiguous; double-width in CJK locales. |
 
 **Usage example:**
 ```
@@ -80,10 +80,10 @@ Progress: ████████░░ 80%   (progress bar -- own line only)
 
 | Char | Codepoint | Name | Role | Safety | Issues |
 |------|-----------|------|------|--------|--------|
-| `→` | U+2192 | Rightwards arrow | Next, flow, yields | Universal | EAW=Narrow. The primary directional indicator. |
-| `←` | U+2190 | Leftwards arrow | Back, previous, from | Universal | EAW=Narrow. |
-| `↑` | U+2191 | Upwards arrow | Increase, upload, parent | Universal | EAW=Narrow. |
-| `↓` | U+2193 | Downwards arrow | Decrease, download, child | Universal | EAW=Narrow. |
+| `→` | U+2192 | Rightwards arrow | Next, flow, yields | Caution | EAW=Ambiguous; double-width in CJK locales. The primary directional indicator. |
+| `←` | U+2190 | Leftwards arrow | Back, previous, from | Caution | EAW=Ambiguous; double-width in CJK locales. |
+| `↑` | U+2191 | Upwards arrow | Increase, upload, parent | Caution | EAW=Ambiguous; double-width in CJK locales. |
+| `↓` | U+2193 | Downwards arrow | Decrease, download, child | Caution | EAW=Ambiguous; double-width in CJK locales. |
 
 **Usage example:**
 ```
@@ -177,12 +177,12 @@ Rating: ★★★☆☆                         (use only in non-aligned context
 
 | Char | Codepoint | Name | Role | Safety | Issues |
 |------|-----------|------|------|--------|--------|
-| `♦` | U+2666 | Black diamond suit | Category marker, variant | Caution | EAW=Ambiguous. |
-| `♠` | U+2660 | Black spade suit | Category marker, variant | Caution | EAW=Ambiguous. |
-| `♥` | U+2665 | Black heart suit | Favourite, liked | Caution | EAW=Ambiguous. |
-| `♣` | U+2663 | Black club suit | Category marker, variant | Caution | EAW=Ambiguous. |
+| `♦` | U+2666 | Black diamond suit | Category marker, variant | Safe | EAW=Neutral. |
+| `♠` | U+2660 | Black spade suit | Category marker, variant | Caution | EAW=Ambiguous; double-width in CJK locales. |
+| `♥` | U+2665 | Black heart suit | Favourite, liked | Caution | EAW=Ambiguous; double-width in CJK locales. |
+| `♣` | U+2663 | Black club suit | Category marker, variant | Caution | EAW=Ambiguous; double-width in CJK locales. |
 
-**Guidance:** Card suits are all EAW=Ambiguous. Use sparingly and only in non-aligned decorative contexts.
+**Guidance:** `♠♥♣` are EAW=Ambiguous; `♦` is EAW=Neutral. Use Ambiguous suits sparingly and only in non-aligned decorative contexts.
 
 ---
 
@@ -190,9 +190,8 @@ Rating: ★★★☆☆                         (use only in non-aligned context
 
 | EAW Property | Meaning | Characters in this registry |
 |---|---|---|
-| **Narrow** (Na) | Always 1 cell. Safe everywhere. | `→←↑↓` |
-| **Neutral** (N) | Always 1 cell. Safe everywhere. | `•◦▸▾▪▫△▽✦✧◆◇◈●○` |
-| **Ambiguous** (A) | 1 cell in Western locales, 2 cells in CJK. | `·★☆✓✗♦♠♥♣░▒▓█` |
+| **Neutral** (N) | Always 1 cell. Safe everywhere. | `◦▸▾▪▫✦✧✓✗♦░` |
+| **Ambiguous** (A) | 1 cell in Western locales, 2 cells in CJK. | `→←↑↓•△▽◆◇◈●○·★☆♠♥♣▒▓█` |
 
 For alignment-sensitive output, prefer Narrow/Neutral characters. Use Ambiguous characters only where width variance won't break layout (own line, decorative context, non-aligned).
 
