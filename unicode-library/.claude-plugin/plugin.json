@@ -1,0 +1,7 @@
+{
+  "name": "unicode-library",
+  "version": "1.0.0",
+  "description": "Curated, tested Unicode character library for CLI visual design. The reference standard for branded terminal output in Claude Code skills, commands, and agents.",
+  "author": { "name": "Ben Purslow" },
+  "keywords": ["unicode", "characters", "terminal", "branding", "cli", "design-system", "visual"]
+}
