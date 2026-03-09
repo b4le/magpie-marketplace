@@ -1,0 +1,27 @@
+id: INVOKE-02
+name: archaeology workstyle mode invocation
+plugin: archaeology
+skill: archaeology
+description: Verify workstyle mode triggers correctly including flag variants
+type: invocation
+
+prompt: "/archaeology workstyle"
+expected_behavior: |
+  - Skill is invoked and init banner is displayed with workstyle sigil (●)
+  - Workstyle workflow executes
+  - Sessions are analysed for tool usage, session shapes, and delegation patterns
+  - workstyle.json is produced or --no-export flag suppresses export
+
+alternative_prompts:
+  - "/archaeology workstyle \"My Project\""
+  - "/archaeology workstyle --global"
+  - "/archaeology workstyle --no-export"
+
+expected_output_contains:
+  - "workstyle"
+  - "session"
+
+scoring:
+  type: binary
+  pass_criteria: skill_invoked == true
+  fail_message: "Workstyle mode did not trigger or produced unexpected output"

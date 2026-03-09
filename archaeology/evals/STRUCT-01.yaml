@@ -1,0 +1,43 @@
+id: STRUCT-01
+name: archaeology plugin configuration
+plugin: archaeology
+type: structure
+description: Validate plugin.json structure, skill metadata, reference files, domain registry, and scripts
+
+checks:
+  - file_exists: ".claude-plugin/plugin.json"
+  - file_valid_json: ".claude-plugin/plugin.json"
+  - plugin_name: "archaeology"
+  - plugin_version_present: true
+  - skill_count: 1
+  - skill_files_present:
+    - "skills/archaeology/SKILL.md"
+  - skill_has_yaml_frontmatter: "skills/archaeology/SKILL.md"
+  - file_exists: "skills/archaeology/SCHEMA.md"
+  - file_non_empty: "skills/archaeology/SCHEMA.md"
+  - reference_files_present:
+    - "skills/archaeology/references/branding.md"
+    - "skills/archaeology/references/conserve-workflow.md"
+    - "skills/archaeology/references/consumption-spec.md"
+    - "skills/archaeology/references/conversation-parser.md"
+    - "skills/archaeology/references/excavation-workflow.md"
+    - "skills/archaeology/references/output-templates.md"
+    - "skills/archaeology/references/survey-workflow.md"
+    - "skills/archaeology/references/workstyle-workflow.md"
+  - file_exists: "skills/archaeology/references/jsonl-filter.jq"
+  - file_exists: "skills/archaeology/references/jsonl-tool-names.jq"
+  - file_exists: "skills/archaeology/references/domains/registry.yaml"
+  - file_exists: "skills/archaeology/references/domains/DOMAIN-TEMPLATE.md"
+  - scripts_present_and_executable:
+    - "scripts/archaeology-excavation.sh"
+    - "scripts/check-registry-sync.sh"
+    - "scripts/validate-conserve.sh"
+    - "scripts/validate-domains.sh"
+  - version_aligned: "skills/archaeology/SKILL.md == .claude-plugin/plugin.json"
+  - file_exists: "README.md"
+
+validation_script: "./validate-structure.sh"
+
+scoring:
+  type: binary
+  pass_criteria: all_checks_pass == true

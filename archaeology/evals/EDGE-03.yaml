@@ -1,0 +1,37 @@
+id: EDGE-03
+name: archaeology sandbox and no-export mode
+plugin: archaeology
+skill: archaeology
+type: edge_case
+description: Verify --no-export flag suppresses all writes to the central work-log
+
+setup: "Normal project with session history"
+
+test_cases:
+  - prompt: "/archaeology workstyle --no-export"
+    expected_behavior: workstyle.json written locally, no export to central work-log
+  - prompt: "/archaeology conserve --no-export"
+    expected_behavior: Artifacts written locally, no export to central work-log
+  - prompt: "/archaeology orchestration --no-export"
+    expected_behavior: findings.json written locally, no export to central work-log
+
+expected_behavior: |
+  - --no-export flag is honoured for all modes that support it
+  - Local output files are still produced correctly
+  - No writes or appends are made to ~/.claude/ central work-log paths
+  - Confirmation message indicates export was skipped
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "--no-export prevents central work-log write"
+      weight: 0.5
+      levels: ["Export still happens", "Partial suppression", "Export fully suppressed"]
+    - criterion: "Local output files still produced"
+      weight: 0.35
+      levels: ["No local output", "Partial output", "Full local output present"]
+    - criterion: "User informed that export was skipped"
+      weight: 0.15
+      levels: ["No indication", "Unclear", "Clear confirmation"]
+  pass_threshold: 80
+  fail_message: "--no-export flag was not honoured or local output was suppressed"

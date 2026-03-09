@@ -5,7 +5,7 @@
 
 **Status:** `draft` | `active` | `deprecated`
 **Maintainer:** [GitHub handle or name]
-**Last Updated:** [YYYY-MM-DD]
+**last_updated:** [YYYY-MM-DD]
 
 ---
 

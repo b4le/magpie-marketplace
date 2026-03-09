@@ -288,3 +288,6 @@ printf '{"timestamp":"%s","projects_discovered":%d,"projects_skipped":%d,"projec
 
 printf '\nExcavation complete: %d surveyed, %d skipped, %d failed (of %d discovered)\n' \
   "$SURVEYED" "$SKIPPED" "$FAILED" "$TOTAL" >&2
+
+[[ $FAILED -gt 0 ]] && exit 1
+exit 0

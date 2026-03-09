@@ -1,0 +1,29 @@
+id: INVOKE-05
+name: archaeology domain extraction invocation
+plugin: archaeology
+skill: archaeology
+description: Verify named domain extraction triggers for all four available domains
+type: invocation
+
+prompt: "/archaeology orchestration"
+expected_behavior: |
+  - Skill is invoked with the specified domain name
+  - Domain extraction workflow executes for the named domain
+  - findings.json, patterns.md, and metadata.json are produced
+  - --no-export flag is respected when provided
+
+alternative_prompts:
+  - "/archaeology prompting-patterns"
+  - "/archaeology python-practices"
+  - "/archaeology git-workflows"
+  - "/archaeology git-workflows \"My Project\""
+  - "/archaeology orchestration --no-export"
+
+expected_output_contains:
+  - "findings"
+  - "pattern"
+
+scoring:
+  type: binary
+  pass_criteria: skill_invoked == true
+  fail_message: "Domain extraction did not trigger or produced unexpected output"

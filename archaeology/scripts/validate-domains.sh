@@ -1,5 +1,6 @@
 #!/bin/bash
 # Validate domain files against SCHEMA.md
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -37,7 +38,7 @@ for domain_file in "$DOMAIN_DIR"/*.md; do
     done
 
     # Check domain matches filename
-    domain_value=$(echo "$frontmatter" | grep "^domain:" | sed 's/domain: *//')
+    domain_value=$(echo "$frontmatter" | grep "^domain:" | sed 's/domain: *//' || true)
     expected_domain="${filename%.md}"
     if [[ "$domain_value" != "$expected_domain" ]]; then
         echo "  ERROR: domain '$domain_value' doesn't match filename '$expected_domain'"
@@ -45,7 +46,7 @@ for domain_file in "$DOMAIN_DIR"/*.md; do
     fi
 
     # Check status is valid enum
-    status_value=$(echo "$frontmatter" | grep "^status:" | sed 's/status: *//')
+    status_value=$(echo "$frontmatter" | grep "^status:" | sed 's/status: *//' || true)
     if [[ ! "$status_value" =~ ^(active|planned|deprecated|archived)$ ]]; then
         echo "  ERROR: Invalid status '$status_value' (must be active|planned|deprecated|archived)"
         ERRORS=$((ERRORS + 1))

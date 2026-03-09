@@ -1,0 +1,49 @@
+id: OUTPUT-03
+name: archaeology conserve artifact schema
+plugin: archaeology
+skill: archaeology
+type: output_quality
+description: Validate conserve output produces correctly structured artifact files and exhibition
+
+prompt: "/archaeology conserve"
+
+expected_structure:
+  files:
+    - name: "exhibition.md"
+      required: true
+      contains:
+        - artifact references
+    - name: "artifacts/art-001.md"
+      required: true
+      frontmatter_fields:
+        required:
+          - id
+          - project
+          - uri
+          - type
+          - title
+          - confidence
+          - significance
+          - tags
+          - conserved_at
+          - session_date
+          - status
+          - revised
+        uri_format: "arch://{project}/{id}"
+        type_enum: [shipment, decision, incident, discovery, tale, practice]
+        status_enum: [draft, refined, published]
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "Artifact frontmatter has all required fields"
+      weight: 0.45
+      levels: ["Missing multiple fields", "Missing 1-2 fields", "All fields present"]
+    - criterion: "URI follows arch://{project}/{id} format"
+      weight: 0.25
+      levels: ["Malformed URI", "Missing URI", "Correct URI format"]
+    - criterion: "exhibition.md references artifacts"
+      weight: 0.3
+      levels: ["exhibition.md absent", "Empty exhibition", "Populated exhibition"]
+  pass_threshold: 70
+  fail_message: "Conserve output does not conform to Artifact Object Schema v1"

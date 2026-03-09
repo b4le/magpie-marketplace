@@ -1,0 +1,28 @@
+id: INVOKE-01
+name: archaeology survey mode invocation
+plugin: archaeology
+skill: archaeology
+description: Verify survey mode triggers correctly from various invocation forms
+type: invocation
+
+prompt: "/archaeology survey"
+expected_behavior: |
+  - Skill is invoked and init banner is displayed
+  - Survey workflow (S1-S7) executes
+  - Session files are scanned and domain signals scored
+  - Output includes per-domain signal strength scores and recommendations
+
+alternative_prompts:
+  - "/archaeology"
+  - "/archaeology survey \"My Project\""
+  - "run archaeology on this project"
+  - "mine my history"
+
+expected_output_contains:
+  - "signal"
+  - "domain"
+
+scoring:
+  type: binary
+  pass_criteria: skill_invoked == true
+  fail_message: "Survey mode did not trigger or produced unexpected output"

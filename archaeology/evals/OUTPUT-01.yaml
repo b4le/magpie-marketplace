@@ -1,0 +1,34 @@
+id: OUTPUT-01
+name: archaeology survey output format
+plugin: archaeology
+skill: archaeology
+type: output_quality
+description: Validate survey output follows expected structure with domain signal scores
+
+prompt: "/archaeology survey"
+
+expected_structure:
+  files:
+    - name: "survey.md"
+      required: true
+      contains:
+        - "## Domain Signals"
+        - "## Recommendations"
+  inline_output:
+    - domain signal strength scores for each available domain
+    - suggested next extraction steps
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "Domain signal scores present"
+      weight: 0.4
+      levels: ["No scores", "Partial scores", "All domains scored"]
+    - criterion: "Recommendations present"
+      weight: 0.35
+      levels: ["No recommendations", "Vague recommendations", "Actionable recommendations"]
+    - criterion: "survey.md file written"
+      weight: 0.25
+      levels: ["File absent", "File incomplete", "File complete"]
+  pass_threshold: 70
+  fail_message: "Survey output does not match expected format"

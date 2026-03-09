@@ -1,0 +1,46 @@
+id: OUTPUT-02
+name: archaeology workstyle output schema
+plugin: archaeology
+skill: archaeology
+type: output_quality
+description: Validate workstyle.json conforms to Workstyle Object Schema v1
+
+prompt: "/archaeology workstyle"
+
+expected_structure:
+  files:
+    - name: "workstyle.json"
+      required: true
+      json_schema:
+        required_fields:
+          - version
+          - generated_at
+          - project
+          - project_slug
+          - scope
+          - session_count
+          - session_range
+          - confidence
+          - summary
+          - session_patterns
+          - tool_usage
+          - delegation
+          - communication
+          - session_shape
+          - preferences
+          - evolution
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "All required top-level fields present"
+      weight: 0.5
+      levels: ["Missing multiple fields", "Missing 1-2 fields", "All fields present"]
+    - criterion: "Dimension fields populated with non-empty values"
+      weight: 0.3
+      levels: ["Empty dimensions", "Partially populated", "Fully populated"]
+    - criterion: "confidence field is valid enum value"
+      weight: 0.2
+      levels: ["Invalid value", "Missing", "Valid: high|medium|low"]
+  pass_threshold: 70
+  fail_message: "workstyle.json does not conform to Workstyle Object Schema v1"

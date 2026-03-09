@@ -1,0 +1,39 @@
+id: OUTPUT-04
+name: archaeology domain extraction output
+plugin: archaeology
+skill: archaeology
+type: output_quality
+description: Validate domain extraction produces findings.json conforming to Finding Object Schema v2
+
+prompt: "/archaeology orchestration"
+
+expected_structure:
+  files:
+    - name: "findings.json"
+      required: true
+      json_schema:
+        required_fields: [id, type, title, description, evidence, tags, date]
+        scoring_fields: [confidence, relevance]
+        top_level_fields: [highlights]
+        type_enum: [pattern, decision, artifact, capability]
+        confidence_enum: [high, medium, low]
+        relevance_enum: [high, medium, low]
+    - name: "patterns.md"
+      required: true
+    - name: "metadata.json"
+      required: true
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "findings.json required fields present on each finding"
+      weight: 0.4
+      levels: ["Missing core fields", "Partially complete", "All required fields present"]
+    - criterion: "confidence and relevance scoring fields present (v2)"
+      weight: 0.3
+      levels: ["Both absent", "One present", "Both present"]
+    - criterion: "patterns.md and metadata.json produced"
+      weight: 0.3
+      levels: ["Both absent", "One produced", "Both produced"]
+  pass_threshold: 70
+  fail_message: "Domain extraction output does not conform to Finding Object Schema v2"

@@ -107,6 +107,7 @@ for artifact_file in "${artifact_files[@]}"; do
 
   # Check 1: Required fields
   missing_fields=""
+  # shellcheck disable=SC2086  # intentional word-split on space-separated constant
   for field in $REQUIRED_FIELDS; do
     if ! printf '%s\n' "$frontmatter" | grep -q "^${field}:"; then
       missing_fields="${missing_fields} ${field}"

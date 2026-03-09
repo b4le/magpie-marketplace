@@ -1,0 +1,50 @@
+id: EDGE-02
+name: archaeology missing project handling
+plugin: archaeology
+skill: archaeology
+type: edge_case
+description: Verify graceful handling when a named project cannot be found
+
+setup: "User provides a project name that does not exist in ~/.claude/projects/"
+prompt: "/archaeology survey \"NonExistentProject123\""
+
+expected_behavior: |
+  - Should not error or crash
+  - Should report that the named project was not found
+  - Should list available projects or suggest how to check project names
+  - Should not fall back silently to the current directory without informing the user
+
+expected_output_contains:
+  - "not found"
+
+test_cases:
+  - prompt: "/archaeology survey \"NonExistentProject123\""
+    expected_behavior: Named project not found message with helpful guidance
+  - prompt: "/archaeology git-workflows \"UnknownProject\""
+    expected_behavior: Named project not found message with helpful guidance
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "No errors or crashes"
+      levels:
+        - "Errors or unhandled exceptions"
+        - "Warnings but no errors"
+        - "Clean execution with no issues"
+    - criterion: "Reports missing project clearly"
+      levels:
+        - "No message about missing project"
+        - "Vague or incomplete message"
+        - "Clear message that the named project was not found"
+    - criterion: "Helpful user guidance"
+      levels:
+        - "No guidance provided"
+        - "Basic guidance but missing context"
+        - "Clear actionable guidance for the user"
+    - criterion: "Does not silently fall back to current directory"
+      levels:
+        - "Silently falls back without informing user"
+        - "Falls back but mentions it"
+        - "Does not fall back silently; informs user explicitly"
+  pass_threshold: 80
+  fail_message: "Plugin did not handle missing project name gracefully"

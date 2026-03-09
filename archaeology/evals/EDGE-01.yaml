@@ -1,0 +1,44 @@
+id: EDGE-01
+name: archaeology no findings graceful degradation
+plugin: archaeology
+skill: archaeology
+type: edge_case
+description: Verify graceful handling when no session history exists in the project
+
+setup: "Empty project with no .claude/ directory or session files"
+prompt: "/archaeology survey"
+
+expected_behavior: |
+  - Should not error or crash
+  - Should report that no session data was found
+  - Should suggest how to generate session data (start using Claude Code on the project)
+  - Should not produce empty or malformed output files
+
+expected_output_contains:
+  - "no session"
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "No errors or crashes"
+      levels:
+        - "Errors or unhandled exceptions"
+        - "Warnings but no errors"
+        - "Clean execution with no issues"
+    - criterion: "Reports missing session data clearly"
+      levels:
+        - "No message about missing data"
+        - "Vague or incomplete message"
+        - "Clear message that no session data was found"
+    - criterion: "Helpful user guidance"
+      levels:
+        - "No guidance provided"
+        - "Basic guidance but missing context"
+        - "Clear actionable guidance for the user"
+    - criterion: "Output is well-formed"
+      levels:
+        - "Empty or malformed output"
+        - "Partial output with gaps"
+        - "Clean output with no malformed files"
+  pass_threshold: 80
+  fail_message: "Plugin did not handle missing session data gracefully"

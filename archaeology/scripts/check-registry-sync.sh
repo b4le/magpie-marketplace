@@ -1,5 +1,6 @@
 #!/bin/bash
 # Check registry.yaml is in sync with domain files
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -13,6 +14,7 @@ echo "Checking registry sync..."
 # Using grep/sed since yq may not be available
 active_domains=$(awk '/^  - id:/{block=""} /file:/{file=$2} /status: active/{if(file) print file}' "$REGISTRY" | tr -d '"')
 
+# shellcheck disable=SC2086  # intentional word-split: active_domains is newline/space-separated filenames with no spaces
 for domain_file in $active_domains; do
     filepath="$DOMAIN_DIR/$domain_file"
     if [[ ! -f "$filepath" ]]; then
@@ -42,7 +44,7 @@ done
 # Report planned domains (informational)
 echo ""
 echo "Planned domains (no files expected):"
-grep -B2 "status: planned" "$REGISTRY" | grep "id:" | sed 's/.*id: */  - /'
+grep -B2 "status: planned" "$REGISTRY" | grep "id:" | sed 's/.*id: */  - /' || true
 
 if [[ $ERRORS -gt 0 ]]; then
     echo ""
