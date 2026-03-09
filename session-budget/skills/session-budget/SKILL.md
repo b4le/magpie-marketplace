@@ -13,7 +13,8 @@ allowed-tools:
   - Read
   - Grep
   - Glob
-version: 1.1.0
+  - Write
+version: 1.2.0
 last_updated: 2026-03-09
 ---
 
@@ -95,3 +96,48 @@ After analysis, present:
 
 {Recommendations if any: reorder, split, decompose stale tasks}
 ```
+
+## Step 5: Write Budget State
+
+After presenting the budget table, write the session's budget state to `/tmp/claude-session-budget/` so enforcement hooks can track progress.
+
+**Directory:** `/tmp/claude-session-budget/{session-id}/budget.json`
+
+Use `$CLAUDE_SESSION_ID` if available in the environment; otherwise generate a slug from the current date + first task name (e.g., `2026-03-09-auth-module`).
+
+**Schema:**
+
+```json
+{
+  "session_id": "string",
+  "created_at": "ISO 8601",
+  "budget_ceiling": 8,
+  "budget_target": 7,
+  "mode": "implementation|research",
+  "tasks": [
+    {
+      "id": 1,
+      "name": "string",
+      "points": 1,
+      "status": "planned|in_progress|completed",
+      "started_at": "ISO 8601 | null",
+      "completed_at": "ISO 8601 | null"
+    }
+  ],
+  "points_completed": 0,
+  "points_in_progress": 0,
+  "points_planned": 0,
+  "points_total": 0
+}
+```
+
+**Rules:**
+- Create the directory if it doesn't exist: `mkdir -p /tmp/claude-session-budget/{session-id}/`
+- Set `mode` to `"research"` if all tasks are read-only (no Write/Edit tools needed); otherwise `"implementation"`
+- The first task in the budget table starts as `"in_progress"`; all others as `"planned"`
+- `points_total` = sum of all task points
+- `points_planned` = sum of `"planned"` task points
+- `points_in_progress` = sum of `"in_progress"` task points
+- `points_completed` = 0 (initial state)
+- Use the Write tool to create the file
+- If the file already exists (re-run of budget check), overwrite it with updated state
