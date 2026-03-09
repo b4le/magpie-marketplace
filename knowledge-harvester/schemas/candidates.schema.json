@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/claude-plugins/knowledge-harvester/schemas/candidates.schema.json",
+  "title": "Enumerated Candidates",
+  "description": "Schema for Stage 1 output: enumerated candidate sources",
+  "version": {
+    "type": "string",
+    "pattern": "^\\d+\\.\\d+\\.\\d+$",
+    "description": "Schema version (semver format)",
+    "default": "1.0.0"
+  },
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "source_type", "path", "metadata"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique identifier for the candidate source",
+        "pattern": "^(local|gdrive|web)-\\d{3}$",
+        "examples": ["local-001", "gdrive-042", "web-007"]
+      },
+      "source_type": {
+        "type": "string",
+        "description": "Type of source",
+        "enum": ["local", "google_drive", "web"]
+      },
+      "path": {
+        "type": "string",
+        "description": "Path or URL to the source",
+        "minLength": 1
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Source metadata collected during enumeration",
+        "required": ["size_bytes"],
+        "properties": {
+          "size_bytes": {
+            "type": "integer",
+            "description": "Size of the source in bytes",
+            "minimum": 0
+          },
+          "modified": {
+            "type": "string",
+            "description": "Last modification timestamp",
+            "format": "date-time"
+          },
+          "preview": {
+            "type": "string",
+            "description": "Preview snippet of content",
+            "maxLength": 500
+          },
+          "mime_type": {
+            "type": "string",
+            "description": "MIME type of the content"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title or filename of the source"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "additionalProperties": false
+  },
+  "minItems": 0
+}

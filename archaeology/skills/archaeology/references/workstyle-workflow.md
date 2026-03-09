@@ -64,7 +64,7 @@ if (!GLOBAL_MODE) {
 ```
 
 **`--global` project discovery:**
-Scan `~/.claude/projects/` for encoded project paths. Each directory maps to a project via its encoding (e.g., `-Users-jdoe-Projects-myproject` → `/Users/jdoe/Projects/myproject`). Aggregate sessions across all discovered projects.
+Scan `~/.claude/projects/` for encoded project paths. Each directory maps to a project via its encoding (e.g., `-Users-username-Projects-myproject` → `/Users/username/Projects/myproject`). Aggregate sessions across all discovered projects.
 
 ### Workstyle Step W2: Metadata Pass (Fast — All Sessions)
 

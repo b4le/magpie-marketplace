@@ -1,0 +1,18 @@
+{
+  "name": "testing-toolkit",
+  "version": "1.0.0",
+  "description": "Comprehensive testing tools for unit, integration, and coverage",
+  "author": {
+    "name": "QA Team",
+    "email": "qa@company.com"
+  },
+  "homepage": "https://github.com/company/testing-toolkit",
+  "repository": "https://github.com/company/testing-toolkit",
+  "license": "MIT",
+  "keywords": [
+    "testing",
+    "unit-tests",
+    "integration-tests",
+    "code-coverage"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "claude-code-development-kit",
+  "version": "2.1.0",
+  "description": "Complete toolkit for building Claude Code extensions - skills, commands, plugins, and supporting infrastructure. Includes guides for skill authoring, prompt engineering, command creation, plugin development, and memory management.",
+  "author": {
+    "name": "Community"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "skills",
+    "commands",
+    "plugins",
+    "development",
+    "authoring",
+    "prompts",
+    "memory"
+  ]
+}

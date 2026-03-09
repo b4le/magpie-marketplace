@@ -1,0 +1,7 @@
+name: Java Development
+description: Java projects with jdtls LSP (Maven or Gradle)
+extends: core
+
+plugins:
+  enable:
+    - jdtls-lsp@claude-plugins-official

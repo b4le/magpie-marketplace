@@ -1,0 +1,21 @@
+name: Core
+description: Universal plugins that work across all project types
+disableInherited: true
+
+plugins:
+  enable:
+    - superpowers@claude-plugins-official
+    - claude-md-management@claude-plugins-official
+    - slack@claude-plugins-official
+
+  disable:
+    # Disable all LSPs by default; language profiles enable the right one
+    - typescript-lsp@claude-plugins-official
+    - pyright-lsp@claude-plugins-official
+    - gopls-lsp@claude-plugins-official
+    - rust-analyzer-lsp@claude-plugins-official
+    - jdtls-lsp@claude-plugins-official
+    # Disable standalone workflows that overlap with superpowers
+    - tdd-workflows@claude-code-workflows
+    - debugging-toolkit@claude-code-workflows
+    - comprehensive-review@claude-code-workflows

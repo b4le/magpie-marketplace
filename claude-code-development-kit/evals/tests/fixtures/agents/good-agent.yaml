@@ -1,0 +1,8 @@
+name: good-agent
+description: A complete valid YAML agent that passes all validation checks correctly and meets requirements
+tools:
+  - Read
+  - Glob
+  - Grep
+model: haiku
+model_rationale: Uses haiku for fast low-cost tasks

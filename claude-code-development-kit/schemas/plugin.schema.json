@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.ai/schemas/plugin.schema.json",
+  "title": "Claude Code Plugin",
+  "description": "Schema for validating .claude-plugin/plugin.json manifest files",
+  "type": "object",
+  "required": ["name"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique plugin identifier (kebab-case)",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+      "minLength": 1,
+      "maxLength": 100,
+      "examples": ["claude-code-development-kit", "testing-toolkit"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the plugin. Strongly recommended but not required.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.]+)?$",
+      "examples": ["1.0.0", "2.0.0-alpha.1"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the plugin's purpose and capabilities. Strongly recommended but not required.",
+      "minLength": 10,
+      "maxLength": 500,
+      "examples": ["Complete toolkit for building Claude Code extensions"]
+    },
+    "author": {
+      "$ref": "#/definitions/authorObject",
+      "description": "Plugin author information"
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier",
+      "minLength": 1,
+      "maxLength": 50,
+      "examples": ["MIT", "Apache-2.0", "BSD-3-Clause"]
+    },
+    "homepage": {
+      "type": "string",
+      "description": "URL to the plugin's homepage or documentation",
+      "format": "uri",
+      "examples": ["https://docs.example.com/plugin"]
+    },
+    "repository": {
+      "type": "string",
+      "description": "Source code URL",
+      "format": "uri",
+      "examples": ["https://github.com/example/plugin"]
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Keywords for plugin discovery and categorization",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50
+      },
+      "maxItems": 30,
+      "uniqueItems": true,
+      "examples": [["claude-code", "skills", "development"]]
+    },
+    "hooks": {
+      "description": "Hook event handlers. May be an inline hooks configuration object mapping event names to handler arrays, or a relative path string to a hooks.json file.",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Relative path to a hooks.json file",
+          "minLength": 1,
+          "maxLength": 256,
+          "examples": ["./hooks/hooks.json"]
+        },
+        {
+          "$ref": "#/definitions/hooksDefinition"
+        }
+      ]
+    },
+    "mcpServers": {
+      "description": "MCP server configuration. May be a path string to a .mcp.json file, an array of paths, or an inline MCP server configuration object.",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Path to the .mcp.json file",
+          "minLength": 1,
+          "maxLength": 256,
+          "examples": ["./.mcp.json", "./mcp-config.json"]
+        },
+        {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of paths to MCP config files"
+        },
+        {
+          "type": "object",
+          "description": "Inline MCP server configuration",
+          "additionalProperties": true
+        }
+      ]
+    },
+    "lspServers": {
+      "description": "LSP server configuration. May be a path string to a .lsp.json file, an array of paths, or an inline LSP server configuration object.",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Path to the .lsp.json file",
+          "minLength": 1,
+          "maxLength": 256,
+          "examples": ["./.lsp.json"]
+        },
+        {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of paths to LSP config files"
+        },
+        {
+          "type": "object",
+          "description": "Inline LSP server configuration",
+          "additionalProperties": true
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "authorObject": {
+      "type": "object",
+      "description": "Author information",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Author's name",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Author's email address",
+          "format": "email"
+        },
+        "url": {
+          "type": "string",
+          "description": "Author's website",
+          "format": "uri"
+        }
+      }
+    },
+    "hooksDefinition": {
+      "$ref": "hooks.schema.json#/definitions/hooksMap",
+      "description": "Inline hook event handlers. Uses the canonical hooks map definition from hooks.schema.json."
+    }
+  },
+  "examples": [
+    {
+      "name": "claude-code-development-kit",
+      "version": "1.0.0",
+      "description": "Complete toolkit for building Claude Code extensions",
+      "author": {
+        "name": "Community",
+        "email": "dev@example.com"
+      },
+      "license": "MIT",
+      "keywords": ["claude-code", "skills", "commands"],
+      "hooks": {
+        "PostToolUse": [
+          {
+            "matcher": "Edit|Write",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-skill-structure.sh"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "knowledge-harvester",
+      "version": "0.1.0",
+      "description": "Multi-agent knowledge harvesting from multiple sources",
+      "author": {
+        "name": "Community"
+      },
+      "license": "MIT"
+    },
+    {
+      "name": "typescript-tooling",
+      "version": "1.0.0",
+      "description": "TypeScript language server and MCP integration",
+      "author": {
+        "name": "Dev Team",
+        "email": "dev@company.com"
+      },
+      "mcpServers": "./.mcp.json",
+      "lspServers": "./.lsp.json"
+    }
+  ]
+}

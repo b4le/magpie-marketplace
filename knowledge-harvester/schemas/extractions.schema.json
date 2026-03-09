@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/claude-plugins/knowledge-harvester/schemas/extractions.schema.json",
+  "title": "Extracted Finding",
+  "description": "Schema for Stage 4 output: JSONL line format for extracted findings",
+  "type": "object",
+  "required": ["version", "source_id", "finding_type", "content", "confidence", "category", "citations"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version (semver format)",
+      "default": "1.0.0"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "Reference to the source this finding came from",
+      "pattern": "^(local|gdrive|web)-\\d{3}$"
+    },
+    "finding_type": {
+      "type": "string",
+      "description": "Type of finding extracted",
+      "enum": ["fact", "concept", "pattern", "relationship", "insight", "example", "definition", "procedure", "principle", "warning"]
+    },
+    "content": {
+      "type": "string",
+      "description": "The extracted finding content",
+      "minLength": 1
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Confidence score for this extraction (0.0-1.0)",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "category": {
+      "type": "string",
+      "description": "High-level category for organizing findings",
+      "minLength": 1
+    },
+    "citations": {
+      "type": "array",
+      "description": "Citations supporting this finding",
+      "items": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Quoted text from source"
+          },
+          "location": {
+            "type": "string",
+            "description": "Location reference (e.g., page, section, line)"
+          },
+          "context": {
+            "type": "string",
+            "description": "Additional context around the citation"
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata about the finding",
+      "properties": {
+        "extracted_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this finding was extracted"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Descriptive tags for the finding",
+          "items": {
+            "type": "string"
+          }
+        },
+        "related_findings": {
+          "type": "array",
+          "description": "IDs of related findings",
+          "items": {
+            "type": "string"
+          }
+        },
+        "importance": {
+          "type": "string",
+          "description": "Importance level of the finding",
+          "enum": ["critical", "high", "medium", "low"]
+        },
+        "actionable": {
+          "type": "boolean",
+          "description": "Whether this finding suggests an action"
+        }
+      },
+      "additionalProperties": true
+    },
+    "finding_id": {
+      "type": "string",
+      "description": "Unique identifier for this finding",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+    }
+  },
+  "additionalProperties": false
+}

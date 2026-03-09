@@ -1,0 +1,7 @@
+name: Go Development
+description: Go projects with gopls LSP
+extends: core
+
+plugins:
+  enable:
+    - gopls-lsp@claude-plugins-official

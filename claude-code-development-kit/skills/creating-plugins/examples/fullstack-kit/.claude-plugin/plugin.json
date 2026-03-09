@@ -1,0 +1,33 @@
+{
+  "name": "fullstack-kit",
+  "version": "2.0.0",
+  "description": "Comprehensive full-stack development toolkit with frontend, backend, and database generation capabilities",
+  "author": {
+    "name": "Full-Stack Team",
+    "email": "fullstack@company.com"
+  },
+  "homepage": "https://github.com/company/fullstack-kit",
+  "repository": "https://github.com/company/fullstack-kit",
+  "license": "MIT",
+  "keywords": [
+    "fullstack",
+    "react",
+    "nodejs",
+    "typescript",
+    "database"
+  ],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ./hooks/validate.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

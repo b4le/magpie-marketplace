@@ -1,0 +1,99 @@
+# Behavioral eval: skill discovery
+#
+# Tests that user inputs result in selection of the correct skill.
+# Each test case describes a user request and the expected skill identifier
+# that Claude should select based on skill descriptions and frontmatter.
+#
+# The expected_skill values correspond to the `name` field in each skill's
+# YAML frontmatter (i.e., the directory name under skills/).
+
+tests:
+  - input: "I want to create a plugin"
+    expected_skill: "creating-plugins"
+    rationale: >
+      Core use case for creating-plugins: building plugin.json manifests,
+      adding components, and distributing plugins.
+
+  - input: "How do I write a custom skill?"
+    expected_skill: "authoring-skills"
+    rationale: >
+      authoring-skills covers SKILL.md creation, YAML frontmatter, and
+      skill development patterns.
+
+  - input: "Something is broken, need to debug"
+    expected_skill: "resolving-claude-code-issues"
+    rationale: >
+      resolving-claude-code-issues covers diagnosing problems, fixing errors,
+      and troubleshooting Claude Code behaviour.
+
+  - input: "How do I add a slash command to my project?"
+    expected_skill: "creating-commands"
+    rationale: >
+      creating-commands covers authoring slash command markdown files with
+      proper structure and frontmatter.
+
+  - input: "I need to connect an external API to Claude Code"
+    expected_skill: "integrating-mcps"
+    rationale: >
+      integrating-mcps covers connecting external services via MCP servers,
+      including configuration and OAuth.
+
+  - input: "How do I run a script automatically when Claude edits a file?"
+    expected_skill: "understanding-hooks"
+    rationale: >
+      understanding-hooks covers event-driven automation, hook types, and
+      configuring shell commands to run at lifecycle events.
+
+  - input: "I want Claude's responses to follow a consistent document template"
+    expected_skill: "authoring-output-styles"
+    rationale: >
+      authoring-output-styles covers defining output formats, document
+      templates, and style guidelines for AI-generated content.
+
+  - input: "How do I set up CLAUDE.md for my project?"
+    expected_skill: "managing-memory"
+    rationale: >
+      managing-memory covers creating CLAUDE.md files, memory hierarchy,
+      @path imports, and project-level memory organisation.
+
+  - input: "What slash commands are available and how do I use them?"
+    expected_skill: "using-commands"
+    rationale: >
+      using-commands covers discovering, invoking, and troubleshooting
+      slash commands in Claude Code.
+
+  - input: "Which tool should I use—Read or Bash—for this task?"
+    expected_skill: "using-tools"
+    rationale: >
+      using-tools covers selecting the right tool (Read, Edit, Write, Glob,
+      Grep, Task, Bash) and understanding when to use each.
+
+  - input: "I'm not sure where to start with this Claude Code problem"
+    expected_skill: "best-practices-reference"
+    rationale: >
+      best-practices-reference is a triage guide for choosing the right
+      tool, skill, or feature when the best approach is unclear.
+
+  - input: "How do I write a good prompt for a subagent task?"
+    expected_skill: "authoring-agent-prompts"
+    rationale: >
+      authoring-agent-prompts covers crafting effective prompts for agents,
+      structuring complex tasks, and debugging agent behaviours.
+
+  - input: "My plugin won't load and I don't know why"
+    expected_skill: "resolving-claude-code-issues"
+    rationale: >
+      resolving-claude-code-issues covers plugin loading failures and
+      provides diagnostic steps for common error messages.
+
+  - input: "I want to publish my plugin to a marketplace"
+    expected_skill: "creating-plugins"
+    rationale: >
+      creating-plugins covers publishing plugins to Git/npm, versioning,
+      and setting up team marketplaces.
+
+  - input: "How do I structure prompts to get better results from Claude agents?"
+    expected_skill: "authoring-agent-prompts"
+    rationale: >
+      authoring-agent-prompts covers core principles, tool usage patterns,
+      and communication strategies for working with Claude Code agents.

@@ -1,0 +1,15 @@
+name: good-agent-optional-fields
+description: Agent that exercises all optional fields to ensure schema validates them correctly
+tools:
+  - Read
+  - Grep
+  - Glob
+model: sonnet
+model_rationale: Sonnet balances quality and speed for this test agent
+color: blue
+version: 1.0.0
+user-invocable: true
+maxTurns: 15
+permissionMode: acceptEdits
+system_prompt: |
+  You are a test agent with optional fields configured.

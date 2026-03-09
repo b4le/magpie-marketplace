@@ -1,0 +1,169 @@
+---
+# Workflow State - FINAL STATE (Workflow Complete)
+# This shows the final state after both phases complete
+
+workflow_id: password-reset-example
+workflow_name: Implement Password Reset Feature
+created_at: 2025-11-24T14:00:00Z
+updated_at: 2025-11-24T16:30:00Z
+status: completed
+
+# Current phase information (none - workflow complete)
+current_phase:
+  name: null
+  started_at: null
+  estimated_completion: null
+  progress_percent: 100
+
+# Phase history (both phases completed and archived)
+phases:
+  planning:
+    status: completed
+    started_at: 2025-11-24T14:15:00Z
+    completed_at: 2025-11-24T14:45:00Z
+    archived_at: 2025-11-24T15:00:00Z
+    agents_used: [agent-001]
+    token_budget: 50000
+    tokens_used: 12500
+
+  implementation:
+    status: completed
+    started_at: 2025-11-24T15:00:00Z
+    completed_at: 2025-11-24T16:30:00Z
+    archived_at: 2025-11-24T16:30:00Z
+    agents_used: [agent-002]
+    token_budget: 60000
+    tokens_used: 14300
+
+# Active agents (none - all complete)
+active_agents: []
+
+# Completed agents
+completed_agents:
+  - id: agent-001
+    phase: planning
+    topic: requirements-analysis
+    started_at: 2025-11-24T14:15:00Z
+    completed_at: 2025-11-24T14:45:00Z
+    tokens_used: 12500
+    output_paths:
+      - archive/planning-20251124T1500/agent-001-requirements.md
+
+  - id: agent-002
+    phase: implementation
+    topic: password-reset-implementation
+    started_at: 2025-11-24T15:00:00Z
+    completed_at: 2025-11-24T16:30:00Z
+    tokens_used: 14300
+    output_paths:
+      - archive/implementation-20251124T1630/agent-002-password-reset.md
+
+# Questions and decisions
+questions_pending: []
+
+questions_resolved:
+  - question: "Is 1-hour token expiry acceptable, or should it be shorter (15 min) or longer (24 hours)?"
+    answer: "1 hour (accept agent recommendation)"
+    answered_by: orchestrator
+    answered_at: 2025-11-24T14:40:00Z
+    asked_by: agent-001
+
+# Key decisions made during workflow
+decisions:
+  - decision: "Use email-based password reset with magic links"
+    rationale: "Industry standard, uses existing infrastructure, better security and UX than alternatives"
+    phase: planning
+    decided_at: 2025-11-24T14:30:00Z
+
+  - decision: "Store hashed tokens in database with expiry timestamps"
+    rationale: "Protects tokens if database compromised, enables validation and tracking"
+    phase: planning
+    decided_at: 2025-11-24T14:35:00Z
+
+  - decision: "Set 1-hour token expiry"
+    rationale: "OWASP recommendation, balances security and UX, industry standard"
+    phase: planning
+    decided_at: 2025-11-24T14:40:00Z
+
+  - decision: "Add email retry logic with exponential backoff"
+    rationale: "Improves reliability without blocking API responses"
+    phase: implementation
+    decided_at: 2025-11-24T16:00:00Z
+
+# Metrics
+metrics:
+  total_agents_launched: 2
+  total_phases_completed: 2
+  total_tokens_used: 26800
+  total_duration_minutes: 135
+
+# Notes and observations
+notes:
+  - "Planning phase completed in 30 minutes (under estimate)"
+  - "Implementation phase completed in 90 minutes (on estimate)"
+  - "Token usage: 26,800 / 110,000 (24.4% of budget)"
+  - "All tests passing (12/12)"
+  - "Ready for code review and deployment"
+
+# Next steps
+next_steps:
+  - "Code review of implementation"
+  - "Deploy to staging environment"
+  - "Run test suite in staging"
+  - "Deploy to production"
+  - "Monitor metrics for 24 hours"
+
+---
+
+# Workflow Complete Summary
+
+**Status**: ✅ Completed Successfully
+
+**Duration**: 2 hours 15 minutes (135 minutes)
+- Planning: 30 minutes
+- Implementation: 90 minutes
+- Archival/transition: 15 minutes
+
+**Token Usage**: 26,800 / 110,000 (24.4%)
+- Planning: 12,500 tokens
+- Implementation: 14,300 tokens
+
+**Agents**: 2 agents (both completed successfully)
+- agent-001 (planning): Requirements analysis
+- agent-002 (implementation): Full implementation
+
+**Deliverables**:
+- Database migration for `password_reset_tokens` table
+- 3 API endpoints (POST forgot-password, GET/POST reset-password)
+- 2 email templates (reset link + confirmation)
+- Rate limiting middleware (3 requests/hour)
+- Test suite (12 passing tests)
+- Complete documentation
+
+**Key Decisions**: 4 architectural decisions
+1. Email-based reset with magic links
+2. Hashed token storage in database
+3. 1-hour token expiry
+4. Email retry logic
+
+**Next Phase**: Code review and deployment
+
+---
+
+# Comparison: Initial vs. Final State
+
+## Initial State (2025-11-24T14:00:00Z)
+- status: planning
+- phases: planning (in-progress), implementation (pending)
+- agents: 0 launched, 0 completed
+- tokens: 0 used
+- decisions: 0 made
+
+## Final State (2025-11-24T16:30:00Z)
+- status: completed
+- phases: planning (archived), implementation (archived)
+- agents: 2 launched, 2 completed
+- tokens: 26,800 used (24.4% of budget)
+- decisions: 4 made
+
+**Efficiency**: Completed in 2h 15m with <25% token budget usage

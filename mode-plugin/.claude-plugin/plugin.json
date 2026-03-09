@@ -1,0 +1,17 @@
+{
+  "name": "mode-plugin",
+  "version": "1.0.0",
+  "description": "Persistent interaction modes for Claude Code responses - creative brainstorming, challenger stress-testing, and teaching explanations.",
+  "author": {
+    "name": "Ben Purslow"
+  },
+  "license": "MIT",
+  "keywords": [
+    "output-styles",
+    "modes",
+    "creative",
+    "challenger",
+    "teaching",
+    "brainstorming"
+  ]
+}

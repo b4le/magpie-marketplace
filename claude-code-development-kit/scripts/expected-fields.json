@@ -1,0 +1,103 @@
+{
+  "_comment": "Expected top-level properties for each schema. Run scripts/check-schema-drift.sh to compare.",
+  "_updated": "2026-03-09",
+  "schemas": {
+    "agent-frontmatter.schema.json": {
+      "properties": [
+        "allowed-tools",
+        "color",
+        "description",
+        "hooks",
+        "maxTurns",
+        "model",
+        "model_rationale",
+        "name",
+        "permissionMode",
+        "system_prompt",
+        "tools",
+        "user-invocable",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "command-frontmatter.schema.json": {
+      "properties": [
+        "allowed-tools",
+        "argument-hint",
+        "arguments",
+        "context",
+        "description",
+        "hooks",
+        "name",
+        "user-invocable",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "hooks.schema.json": {
+      "properties": [
+        "description",
+        "hooks"
+      ],
+      "additionalProperties": false
+    },
+    "marketplace.schema.json": {
+      "properties": [
+        "description",
+        "name",
+        "owner",
+        "plugins"
+      ],
+      "additionalProperties": false
+    },
+    "output-style-frontmatter.schema.json": {
+      "properties": [
+        "author",
+        "description",
+        "keep-coding-instructions",
+        "name",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "plugin.schema.json": {
+      "properties": [
+        "author",
+        "description",
+        "homepage",
+        "hooks",
+        "keywords",
+        "license",
+        "lspServers",
+        "mcpServers",
+        "name",
+        "repository",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "skill-frontmatter.schema.json": {
+      "properties": [
+        "agent",
+        "allowed-tools",
+        "argument-hint",
+        "author",
+        "auto-invoke",
+        "categories",
+        "context",
+        "created",
+        "dependencies",
+        "description",
+        "disable-model-invocation",
+        "hooks",
+        "last_updated",
+        "model",
+        "name",
+        "tags",
+        "user-invocable",
+        "version"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

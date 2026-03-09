@@ -1,0 +1,31 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "company-tools",
+  "owner": {
+    "name": "DevTools Team",
+    "email": "devtools@company.com"
+  },
+  "plugins": [
+    {
+      "name": "react-toolkit",
+      "source": "./plugins/react-toolkit",
+      "version": "2.1.0",
+      "description": "React development toolkit",
+      "tags": ["react", "frontend"]
+    },
+    {
+      "name": "api-toolkit",
+      "source": "./plugins/api-toolkit",
+      "version": "1.5.0",
+      "description": "API development tools",
+      "tags": ["api", "backend"]
+    },
+    {
+      "name": "testing-suite",
+      "source": "./plugins/testing-suite",
+      "version": "3.0.0",
+      "description": "Comprehensive testing tools",
+      "tags": ["testing", "qa"]
+    }
+  ]
+}

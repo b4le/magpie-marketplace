@@ -1,0 +1,48 @@
+# Domain Precedence Matrix
+# Higher level = higher authority in conflict resolution
+
+version: "1.0"
+
+# Precedence levels (5 = highest, 0 = lowest)
+levels:
+  5: [security]
+  4: [accessibility]
+  3: [architecture, infrastructure]
+  2: [performance, database]
+  1: [backend, frontend, python, typescript]
+  0: [testing]
+
+# Tiebreakers for same-level conflicts
+same_level_tiebreakers:
+  architecture_vs_infrastructure: architecture
+  performance_vs_database: database
+  backend_vs_frontend: backend
+  python_vs_typescript: python
+
+# Escalation policy
+escalation:
+  timeout_minutes: 30
+  fallback: most_conservative
+  notify_user: true
+
+# Rollback strategy based on failure point
+# WARNING: These commands are destructive and should only be executed with explicit user confirmation
+rollback:
+  pre_commit:
+    action: unstage
+    command: "git reset HEAD"
+    require_confirmation: true
+  during_staging:
+    action: restore_snapshot
+    command: "git checkout -- ."
+    require_confirmation: true
+  post_commit:
+    action: git_revert
+    command: "git revert --no-commit HEAD"
+    require_confirmation: true
+
+# Deduplication settings
+deduplication:
+  enabled: true
+  similarity_threshold: 0.85
+  merge_strategy: highest_severity

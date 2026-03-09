@@ -1,0 +1,252 @@
+# Marketplace Validation GitHub Actions Workflow
+# Validates all plugins and components on push/PR to main
+# Uses validate-marketplace.sh with JSON output for CI/CD integration
+
+name: Marketplace Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.md'
+      - '**/plugin.json'
+      - '**/marketplace.json'
+      - '.claude-plugin/**'
+      - '**/skills/**'
+      - '**/commands/**'
+      - '**/hooks/**'
+      - '**/scripts/**'
+      - '**/output-styles/**'
+      - '**/agents/**'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  VALIDATION_SCRIPT: ./claude-code-development-kit/evals/validate-marketplace.sh
+
+jobs:
+  validate:
+    name: Validate Marketplace
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for diff-aware validation
+
+      - name: Cache jq
+        uses: actions/cache@v4
+        id: cache-jq
+        with:
+          path: /usr/local/bin/jq
+          key: jq-1.7.1
+
+      - name: Install jq
+        if: steps.cache-jq.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Make validation scripts executable
+        run: |
+          chmod +x ./claude-code-development-kit/evals/*.sh
+          chmod +x ./claude-code-development-kit/evals/ci/*.sh 2>/dev/null || true
+
+      - name: Run full marketplace validation
+        id: validate
+        run: |
+          # Run validation with JSON output
+          set +e
+          OUTPUT=$(${{ env.VALIDATION_SCRIPT }} --json --no-color)
+          EXIT_CODE=$?
+          set -e
+
+          # Save output to file for parsing
+          echo "$OUTPUT" > validation-results.json
+
+          # Extract summary for workflow output
+          STATUS=$(echo "$OUTPUT" | jq -r '.status')
+          PLUGINS_PASSED=$(echo "$OUTPUT" | jq -r '.summary.plugins.passed')
+          PLUGINS_TOTAL=$(echo "$OUTPUT" | jq -r '.summary.plugins.total')
+          SKILLS_PASSED=$(echo "$OUTPUT" | jq -r '.summary.skills.passed')
+          SKILLS_TOTAL=$(echo "$OUTPUT" | jq -r '.summary.skills.total')
+          COMMANDS_PASSED=$(echo "$OUTPUT" | jq -r '.summary.commands.passed')
+          COMMANDS_TOTAL=$(echo "$OUTPUT" | jq -r '.summary.commands.total')
+
+          # Set outputs for other steps
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "plugins_passed=$PLUGINS_PASSED" >> $GITHUB_OUTPUT
+          echo "plugins_total=$PLUGINS_TOTAL" >> $GITHUB_OUTPUT
+          echo "skills_passed=$SKILLS_PASSED" >> $GITHUB_OUTPUT
+          echo "skills_total=$SKILLS_TOTAL" >> $GITHUB_OUTPUT
+          echo "commands_passed=$COMMANDS_PASSED" >> $GITHUB_OUTPUT
+          echo "commands_total=$COMMANDS_TOTAL" >> $GITHUB_OUTPUT
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+
+          # Also run human-readable output for logs
+          echo "---"
+          echo "Detailed validation output:"
+          ${{ env.VALIDATION_SCRIPT }} --verbose || true
+
+          exit $EXIT_CODE
+
+      - name: Upload validation results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-results
+          path: validation-results.json
+          retention-days: 30
+
+      - name: Create validation summary
+        if: always()
+        run: |
+          echo "## Marketplace Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.validate.outputs.status }}" == "pass" ]]; then
+            echo "### Status: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Status: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Passed | Total |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Plugins | ${{ steps.validate.outputs.plugins_passed }} | ${{ steps.validate.outputs.plugins_total }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Skills | ${{ steps.validate.outputs.skills_passed }} | ${{ steps.validate.outputs.skills_total }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commands | ${{ steps.validate.outputs.commands_passed }} | ${{ steps.validate.outputs.commands_total }} |" >> $GITHUB_STEP_SUMMARY
+
+          # Add errors if any
+          if [[ -f validation-results.json ]]; then
+            ERRORS=$(jq -r '.errors[]' validation-results.json 2>/dev/null || echo "")
+            if [[ -n "$ERRORS" ]]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Errors" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "$ERRORS" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+  # Optional: Post PR comment with validation results
+  comment:
+    name: Post PR Comment
+    needs: validate
+    if: github.event_name == 'pull_request' && always()
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download validation results
+        uses: actions/download-artifact@v4
+        with:
+          name: validation-results
+
+      - name: Post comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let results;
+            try {
+              results = JSON.parse(fs.readFileSync('validation-results.json', 'utf8'));
+            } catch (e) {
+              console.log('Could not read validation results');
+              return;
+            }
+
+            const status = results.status === 'pass' ? 'PASSED' : 'FAILED';
+            const emoji = results.status === 'pass' ? ':white_check_mark:' : ':x:';
+
+            let body = `## ${emoji} Marketplace Validation ${status}\n\n`;
+            body += `| Component | Passed | Total |\n`;
+            body += `|-----------|--------|-------|\n`;
+            body += `| Plugins | ${results.summary.plugins.passed} | ${results.summary.plugins.total} |\n`;
+            body += `| Skills | ${results.summary.skills.passed} | ${results.summary.skills.total} |\n`;
+            body += `| Commands | ${results.summary.commands.passed} | ${results.summary.commands.total} |\n`;
+            body += `| Hooks | ${results.summary.hooks.passed} | ${results.summary.hooks.total} |\n`;
+            body += `| Output Styles | ${results.summary.outputStyles.passed} | ${results.summary.outputStyles.total} |\n`;
+            body += `| Agents | ${results.summary.agents.passed} | ${results.summary.agents.total} |\n`;
+
+            if (results.errors && results.errors.length > 0) {
+              body += `\n### Errors\n\n`;
+              body += '```\n';
+              results.errors.forEach(err => {
+                body += `- ${err}\n`;
+              });
+              body += '```\n';
+            }
+
+            if (results.warnings && results.warnings.length > 0) {
+              body += `\n### Warnings\n\n`;
+              results.warnings.forEach(warn => {
+                body += `- ${warn}\n`;
+              });
+            }
+
+            body += `\n---\n*Validation run by [validate-marketplace.sh](./claude-code-development-kit/evals/validate-marketplace.sh) v${results.version}*`;
+
+            // Find existing comment to update
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Marketplace Validation')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+  # Diff-aware validation for faster PR checks
+  validate-pr-diff:
+    name: Validate Changed Plugins Only
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Make scripts executable
+        run: |
+          chmod +x ./claude-code-development-kit/evals/*.sh
+          chmod +x ./claude-code-development-kit/evals/ci/*.sh 2>/dev/null || true
+
+      - name: Run diff-aware validation
+        run: |
+          if [[ -f ./claude-code-development-kit/evals/ci/validate-pr.sh ]]; then
+            ./claude-code-development-kit/evals/ci/validate-pr.sh --base origin/${{ github.base_ref }}
+          else
+            echo "validate-pr.sh not found, running full validation"
+            ${{ env.VALIDATION_SCRIPT }} --verbose
+          fi

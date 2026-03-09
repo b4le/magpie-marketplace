@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Knowledge Harvester Checkpoint",
+  "description": "Schema for knowledge harvester checkpoint files enabling resume functionality",
+  "type": "object",
+  "required": ["version", "harvest_id", "created_at", "current_stage"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version (semver format)",
+      "default": "1.0.0"
+    },
+    "harvest_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this harvest session"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of checkpoint creation"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last checkpoint update"
+    },
+    "current_stage": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6,
+      "description": "Current stage number (1=enumerate, 2=triage, 3=harvest, 4=extract, 5=synthesize, 6=complete)"
+    },
+    "stage_outputs": {
+      "type": "object",
+      "description": "Output file paths from completed stages",
+      "properties": {
+        "enumerate": {
+          "type": "string",
+          "description": "Path to enumeration output file"
+        },
+        "triage": {
+          "type": "string",
+          "description": "Path to triage output file"
+        },
+        "harvest": {
+          "type": "string",
+          "description": "Path to harvest output file"
+        },
+        "extract": {
+          "type": "string",
+          "description": "Path to extraction output file"
+        },
+        "synthesize": {
+          "type": "string",
+          "description": "Path to synthesis output file"
+        }
+      },
+      "additionalProperties": false
+    },
+    "progress": {
+      "type": "object",
+      "description": "Progress tracking within current stage",
+      "properties": {
+        "completed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of items completed in current stage"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of items in current stage"
+        },
+        "percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Completion percentage of current stage"
+        }
+      },
+      "required": ["completed", "total"],
+      "additionalProperties": false
+    },
+    "errors": {
+      "type": "array",
+      "description": "Error messages encountered during harvest",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "recoverable": {
+            "type": "boolean",
+            "description": "Whether the error is recoverable on resume"
+          }
+        },
+        "required": ["timestamp", "stage", "message"],
+        "additionalProperties": false
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the harvest session",
+      "properties": {
+        "source_directory": {
+          "type": "string",
+          "description": "Root directory being harvested"
+        },
+        "config_file": {
+          "type": "string",
+          "description": "Path to configuration file used"
+        },
+        "filters": {
+          "type": "object",
+          "description": "Active filters for this harvest"
+        },
+        "options": {
+          "type": "object",
+          "description": "Command-line options used"
+        }
+      },
+      "additionalProperties": true
+    },
+    "stage_history": {
+      "type": "array",
+      "description": "History of stage transitions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "failed", "skipped"]
+          }
+        },
+        "required": ["stage", "started_at", "status"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

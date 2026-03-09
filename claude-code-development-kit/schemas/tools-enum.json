@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.ai/schemas/tools-enum.json",
+  "title": "Claude Code Tool Names",
+  "description": "Canonical single source of truth for allowed tool names in Claude Code skill and command frontmatter. Referenced by skill-frontmatter.schema.json, command-frontmatter.schema.json, and validate-agent.sh for their allowed-tools items definition. To add a new tool, update this file only.",
+  "definitions": {
+    "toolName": {
+      "description": "A valid Claude Code tool name — either a known built-in tool or an MCP tool following the mcp__* naming convention.",
+      "oneOf": [
+        {
+          "type": "string",
+          "title": "Built-in tool",
+          "enum": [
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep",
+            "Bash",
+            "WebFetch",
+            "WebSearch",
+            "Agent",
+            "Skill",
+            "AskUserQuestion",
+            "SendMessage",
+            "EnterPlanMode",
+            "ExitPlanMode",
+            "EnterWorktree",
+            "ToolSearch",
+            "Task",
+            "Tasks",
+            "TaskCreate",
+            "TaskUpdate",
+            "TaskGet",
+            "TaskList",
+            "TaskStop",
+            "NotebookEdit",
+            "TeamCreate",
+            "TeamDelete",
+            "ListMcpResourcesTool",
+            "ReadMcpResourceTool"
+          ]
+        },
+        {
+          "type": "string",
+          "title": "MCP tool",
+          "description": "Dynamically registered MCP tool, prefixed with mcp__ followed by the server name and tool name.",
+          "pattern": "^mcp__.*"
+        },
+        {
+          "type": "string",
+          "title": "Scoped Task tool",
+          "description": "Task tool scoped to a specific agent type. Used in agent tools arrays to restrict which sub-agents can be spawned. Format: Task(agent-name).",
+          "pattern": "^Task\\([a-z0-9][a-z0-9-]*\\)$"
+        }
+      ]
+    }
+  }
+}

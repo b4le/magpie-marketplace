@@ -1,0 +1,9 @@
+{
+  "name": "test-good-plugin",
+  "version": "1.0.0",
+  "description": "A valid test plugin for validation testing",
+  "author": {
+    "name": "Test Author"
+  },
+  "license": "MIT"
+}

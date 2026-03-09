@@ -1,0 +1,6 @@
+{
+  "enabledPlugins": {
+    "my-plugin@my-marketplace": true,
+    "another-plugin@my-marketplace": true
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "// Minimal Plugin Manifest": "This is the bare minimum required for a plugin.json file",
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "description": "A minimal Claude Code plugin",
+  "author": "Your Name <email@example.com>"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "advanced-plugin",
+  "version": "1.0.0",
+  "dependencies": {
+    "base-plugin": "^1.0.0",
+    "helper-plugin": "^2.1.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "quality-assurance-toolkit",
+  "version": "2.0.0",
+  "description": "Validation and quality assurance tools for plugins and skills",
+  "author": {
+    "name": "CoCaM Team"
+  },
+  "license": "MIT",
+  "keywords": [
+    "validation",
+    "quality",
+    "plugins",
+    "skills",
+    "eval"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "orchestration-toolkit",
+  "version": "2.0.0",
+  "description": "Agent orchestration patterns for Claude Code - subagents, parallel agents, phased workflows, and collaborative agent teams.",
+  "author": {
+    "name": "Community"
+  },
+  "license": "MIT",
+  "keywords": [
+    "orchestration",
+    "agents",
+    "teams",
+    "workflows",
+    "multi-agent",
+    "agent-teams"
+  ]
+}

@@ -1,0 +1,8 @@
+name: TypeScript Development
+description: TypeScript projects with LSP and documentation lookup
+extends: core
+
+plugins:
+  enable:
+    - typescript-lsp@claude-plugins-official
+    - context7@claude-plugins-official

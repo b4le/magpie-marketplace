@@ -1,0 +1,79 @@
+{
+    "name": "magpie-marketplace",
+    "description": "A collection of shiny, useful Claude Code plugins",
+    "owner": {
+        "name": "Ben Purslow"
+    },
+    "plugins": [
+        {
+            "name": "archaeology",
+            "source": "./archaeology",
+            "description": "Dig through Claude Code session history — survey projects, extract domain patterns, analyse workstyles, and conserve narrative artifacts",
+            "version": "1.3.0",
+            "tags": ["archaeology", "history", "patterns"]
+        },
+        {
+            "name": "unicode-library",
+            "source": "./unicode-library",
+            "description": "Curated Unicode character library for CLI visual design",
+            "version": "1.0.0",
+            "tags": ["unicode", "characters", "design"]
+        },
+        {
+            "name": "claude-code-development-kit",
+            "source": "./claude-code-development-kit",
+            "description": "Complete toolkit for building Claude Code extensions - skills, commands, plugins, and supporting infrastructure. Includes guides for skill authoring, prompt engineering, command creation, plugin development, and memory management.",
+            "version": "2.1.0",
+            "tags": ["claude-code", "skills", "commands", "plugins", "development", "authoring"]
+        },
+        {
+            "name": "expert-review",
+            "source": "./expert-review",
+            "description": "Spawn expert sub-agents to review, iterate, and improve work at checkpoints. Supports parallel expert reviews with conflict resolution via domain precedence.",
+            "version": "1.2.0",
+            "tags": ["review", "agents", "orchestration", "code-quality", "multi-agent", "code-review", "worktree"]
+        },
+        {
+            "name": "knowledge-harvester",
+            "source": "./knowledge-harvester",
+            "description": "Multi-agent knowledge harvesting, validation, and synthesis from multiple sources",
+            "version": "0.1.0",
+            "tags": ["knowledge", "harvesting", "orchestration", "synthesis", "multi-agent"]
+        },
+        {
+            "name": "mode-plugin",
+            "source": "./mode-plugin",
+            "description": "Persistent interaction modes for Claude Code responses - creative brainstorming, challenger stress-testing, and teaching explanations.",
+            "version": "1.0.0",
+            "tags": ["output-styles", "modes", "creative", "challenger", "teaching", "brainstorming"]
+        },
+        {
+            "name": "gen-plugin",
+            "source": "./gen-plugin",
+            "description": "One-shot artifact generators for different output formats - executive briefs, technical deep dives, and talking points.",
+            "version": "1.0.0",
+            "tags": ["output-styles", "generators", "exec-brief", "tech-deep-dive", "talking-points", "artifacts"]
+        },
+        {
+            "name": "quality-assurance-toolkit",
+            "source": "./quality-assurance-toolkit",
+            "description": "Validation and quality assurance tools for plugins and skills",
+            "version": "2.0.0",
+            "tags": ["validation", "quality", "plugins", "skills", "eval"]
+        },
+        {
+            "name": "orchestration-toolkit",
+            "source": "./orchestration-toolkit",
+            "description": "Agent orchestration patterns for Claude Code - subagents, parallel agents, phased workflows, and collaborative agent teams.",
+            "version": "2.0.0",
+            "tags": ["orchestration", "agents", "teams", "workflows", "multi-agent", "agent-teams"]
+        },
+        {
+            "name": "plugin-profile",
+            "source": "./plugin-profile",
+            "description": "Auto-detect project type and configure Claude Code plugins with profile management",
+            "version": "2.0.0",
+            "tags": ["plugins", "configuration", "profiles", "auto-detect", "project-setup"]
+        }
+    ]
+}

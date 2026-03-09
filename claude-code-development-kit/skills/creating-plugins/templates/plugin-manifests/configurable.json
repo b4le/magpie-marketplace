@@ -1,0 +1,8 @@
+{
+  "name": "configurable-plugin",
+  "config": {
+    "apiEndpoint": "${API_ENDPOINT}",
+    "timeout": 5000,
+    "retries": 3
+  }
+}

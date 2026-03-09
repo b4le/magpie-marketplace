@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.ai/schemas/marketplace.schema.json",
+  "title": "Claude Code Marketplace",
+  "description": "Schema for validating .claude-plugin/marketplace.json files that define plugin marketplaces",
+  "type": "object",
+  "required": ["name", "description", "plugins"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique identifier for the marketplace",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+      "minLength": 1,
+      "maxLength": 100,
+      "examples": ["content-platform-marketplace", "team-tools"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the marketplace purpose",
+      "minLength": 10,
+      "maxLength": 500,
+      "examples": ["Content Platform Marketplace for technical documentation and development tools"]
+    },
+    "owner": {
+      "$ref": "#/definitions/owner"
+    },
+    "plugins": {
+      "type": "array",
+      "description": "List of plugins available in this marketplace",
+      "minItems": 0,
+      "items": {
+        "$ref": "#/definitions/pluginReference"
+      }
+    }
+  },
+  "definitions": {
+    "owner": {
+      "type": "object",
+      "description": "Ownership metadata for the marketplace",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the owner (person, team, or organization)",
+          "minLength": 1,
+          "maxLength": 100,
+          "examples": ["content-platform", "Platform Engineering"]
+        },
+        "email": {
+          "type": "string",
+          "description": "Contact email for the marketplace owner",
+          "format": "email",
+          "examples": ["team@example.com"]
+        },
+        "url": {
+          "type": "string",
+          "description": "URL for the owner's homepage or documentation",
+          "format": "uri",
+          "examples": ["https://docs.example.com/marketplace"]
+        }
+      }
+    },
+    "pluginReference": {
+      "type": "object",
+      "description": "Reference to a plugin in the marketplace",
+      "required": ["name", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Plugin identifier (should match plugin.json name)",
+          "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+          "minLength": 1,
+          "maxLength": 100,
+          "examples": ["claude-code-development-kit", "productivity-toolkit"]
+        },
+        "source": {
+          "type": "string",
+          "description": "Relative path to the plugin directory from marketplace root",
+          "pattern": "^\\.\\/[a-zA-Z0-9._-][a-zA-Z0-9._/-]*$",
+          "minLength": 2,
+          "maxLength": 256,
+          "examples": ["./claude-code-development-kit", "./tools/my-plugin"]
+        },
+        "version": {
+          "type": "string",
+          "description": "Semantic version of the plugin",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.]+)?$",
+          "examples": ["1.0.0", "2.1.0-beta.1"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of the plugin",
+          "minLength": 5,
+          "maxLength": 300,
+          "examples": ["Complete toolkit for building Claude Code extensions"]
+        },
+        "author": {
+          "description": "Plugin author — either a name string or an object with a name property",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Author name as a plain string",
+              "minLength": 1,
+              "maxLength": 100,
+              "examples": ["Community", "Platform Team"]
+            },
+            {
+              "type": "object",
+              "description": "Author as an object with at least a name property",
+              "required": ["name"],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Author's display name",
+                  "minLength": 1,
+                  "maxLength": 100,
+                  "examples": ["Ben Purslow", "Platform Team"]
+                },
+                "email": {
+                  "type": "string",
+                  "description": "Author's email address",
+                  "format": "email"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Author's website or profile URL",
+                  "format": "uri"
+                }
+              }
+            }
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "description": "Tags for categorizing and searching plugins",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "maxItems": 20,
+          "uniqueItems": true,
+          "examples": [["development", "skills", "commands"]]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "content-platform-marketplace",
+      "description": "Content Platform Marketplace for technical documentation and development tools",
+      "owner": {
+        "name": "content-platform"
+      },
+      "plugins": [
+        {
+          "name": "claude-code-development-kit",
+          "source": "./claude-code-development-kit",
+          "description": "Complete toolkit for building Claude Code extensions",
+          "version": "1.0.0",
+          "tags": ["development", "skills", "commands"]
+        }
+      ]
+    }
+  ]
+}

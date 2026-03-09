@@ -1,0 +1,7 @@
+name: Rust Development
+description: Rust projects with rust-analyzer LSP
+extends: core
+
+plugins:
+  enable:
+    - rust-analyzer-lsp@claude-plugins-official

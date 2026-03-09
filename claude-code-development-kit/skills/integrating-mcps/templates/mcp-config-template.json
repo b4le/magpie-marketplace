@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "MCP server configuration template with examples for HTTP and stdio transports",
+
+  "mcpServers": {
+
+    // Example 1: HTTP Server (REST API, cloud service)
+    "example-http-server": {
+      "type": "http",
+      "url": "https://api.example.com/mcp",
+
+      // Optional: Authentication headers
+      "headers": {
+        "Authorization": "Bearer ${EXAMPLE_API_KEY}",
+        "X-Custom-Header": "value"
+      },
+
+      // Optional: Environment variables for this server
+      "env": {
+        "EXAMPLE_API_KEY": "your-api-key-here",
+        "EXAMPLE_WORKSPACE": "workspace-id"
+      }
+    },
+
+    // Example 2: Stdio Server (local command-line tool)
+    "example-stdio-server": {
+      "type": "stdio",
+
+      // Command to start the server
+      "command": "npx",
+
+      // Arguments passed to the command
+      "args": [
+        "-y",
+        "@example/mcp-server"
+      ],
+
+      // Environment variables available to the server process
+      "env": {
+        "EXAMPLE_CONFIG_PATH": "/path/to/config",
+        "EXAMPLE_LOG_LEVEL": "info"
+      }
+    },
+
+    // Example 3: Python-based Stdio Server (using uvx/uv)
+    "example-python-server": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "example-mcp-server"
+      ],
+      "env": {
+        "PYTHON_ENV_VAR": "value"
+      }
+    },
+
+    // Example 4: Local Node.js Server (development)
+    "example-local-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/absolute/path/to/server/index.js"
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "mcp:*"
+      }
+    },
+
+    // Example 5: Server with OAuth (see oauth-server-template.json for complete example)
+    "example-oauth-server": {
+      "type": "http",
+      "url": "https://api.example.com/mcp",
+      "oauth": {
+        "authorizationUrl": "https://auth.example.com/oauth/authorize",
+        "tokenUrl": "https://auth.example.com/oauth/token",
+        "clientId": "${EXAMPLE_CLIENT_ID}",
+        "scopes": ["read:data", "write:data"],
+        "pkce": true
+      },
+      "env": {
+        "EXAMPLE_CLIENT_ID": "your-client-id"
+      }
+    }
+  },
+
+  // Global settings (optional)
+  "globalShortcut": "CommandOrControl+Shift+Space",
+
+  // Comments and Notes:
+  //
+  // TRANSPORT TYPES:
+  // - "http": For REST APIs, cloud services, remote servers (type field at top level)
+  // - "stdio": For local command-line tools, npm packages, Python scripts (type field at top level)
+  //
+  // ENVIRONMENT VARIABLES:
+  // - Use ${VAR_NAME} syntax to reference environment variables
+  // - Variables can be system env vars or defined in "env" object
+  // - Never commit secrets directly - use env vars for sensitive data
+  //
+  // COMMAND PATHS:
+  // - Use absolute paths for reliability: "/usr/local/bin/node"
+  // - Or use commands available in PATH: "npx", "node", "python3", "uvx"
+  // - For npm packages: "npx -y @scope/package-name"
+  // - For Python packages: "uvx package-name"
+  //
+  // TESTING:
+  // - Test servers individually before adding to production config
+  // - Check Claude Code logs for connection errors
+  // - Verify environment variables are set correctly
+  //
+  // DEBUGGING:
+  // - Set DEBUG="mcp:*" in env for verbose logging
+  // - Check server stdout/stderr for error messages
+  // - Verify network connectivity for HTTP servers
+  // - Confirm credentials are valid and not expired
+}

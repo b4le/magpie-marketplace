@@ -1,6 +1,6 @@
 ---
 name: archaeology
-description: This skill should be used when the user says "archaeology", "extract patterns", "mine my history", "what patterns have I used", "export findings", "save findings", "save pattern", "capture learnings", "document what worked", "survey", "scan my history", "scan project", "what domains", "list domains", "excavation", "portfolio", "how do I use Claude", "my working style", "tool usage patterns", "session analysis", "workstyle", "communication patterns", "delegation patterns", "conserve", "conservation", "preserve artifacts", "create artifacts", "narrative extraction", "what did I build", "tell the story", or "project story". Analyzes past Claude Code sessions for reusable patterns, extracts learnings from usage history, and preserves findings for future reference across multiple knowledge domains.
+description: Use when the user says "archaeology", "survey", "workstyle", "excavation", "mine my history", "extract patterns", "scan my history", "what domains", "conserve", "preserve artifacts", "narrative extraction", "tell the story", or "project story". Analyzes past Claude Code sessions to surface reusable patterns, extract learnings from usage history, and conserve narrative artifacts across multiple knowledge domains.
 argument-hint: "[survey|workstyle|conserve|excavation|{domain}|list] [project-name] [--no-export] [--global]"
 allowed-tools:
   - Read

@@ -1,0 +1,32 @@
+id: OUTPUT-02
+name: multi-agent-workflows provides phase-structured output
+plugin: orchestration-toolkit
+skill: multi-agent-workflows
+type: output_quality
+description: Verify that multi-agent workflow guidance includes phase structure
+
+prompts:
+  - context: "complex feature development"
+    prompt: "Help me design a multi-agent workflow for building a new feature"
+    expected_contains:
+      - phase structure or numbered steps
+      - agent role definitions
+      - coordination patterns
+      - task dependencies
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "Phase structure clarity"
+      weight: 0.3
+      levels: ["No phases", "Unclear phases", "Clear phases"]
+    - criterion: "Agent role definitions"
+      weight: 0.25
+      levels: ["No roles", "Vague roles", "Well-defined roles"]
+    - criterion: "Coordination patterns"
+      weight: 0.25
+      levels: ["No patterns", "Basic patterns", "Detailed patterns"]
+    - criterion: "Completeness"
+      weight: 0.2
+      levels: ["Incomplete", "Partially complete", "Complete"]
+  pass_threshold: 70

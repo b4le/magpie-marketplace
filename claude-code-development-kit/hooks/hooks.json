@@ -1,0 +1,30 @@
+{
+  "description": "Validates Claude Code skill structure after files are written or edited, and checks for dev-kit drift at session start",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/evals/validate-skill.sh --hook-mode",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-drift-check.sh",
+            "timeout": 5,
+            "statusMessage": "Checking dev-kit integrity..."
+          }
+        ]
+      }
+    ]
+  }
+}

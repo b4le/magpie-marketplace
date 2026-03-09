@@ -1,0 +1,26 @@
+{
+  "name": "unrecognized-fields-plugin",
+  "version": "1.0.0",
+  "description": "Plugin manifest with explicit component arrays that Claude Code rejects",
+  "skills": [
+    {
+      "name": "example-skill",
+      "path": "skills/example-skill",
+      "description": "An explicit skill declaration — rejected by Claude Code validator"
+    }
+  ],
+  "commands": [
+    {
+      "name": "example-command",
+      "path": "commands/example-command.md",
+      "description": "An explicit command declaration — rejected by Claude Code validator"
+    }
+  ],
+  "agents": [
+    {
+      "name": "example-agent",
+      "path": "agents/example-agent.md",
+      "description": "An explicit agent declaration — rejected by Claude Code validator"
+    }
+  ]
+}

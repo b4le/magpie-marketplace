@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.ai/schemas/hooks.schema.json",
+  "title": "Claude Code Plugin Hooks",
+  "description": "Schema for validating hooks.json files used by Claude Code plugins",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what these hooks do",
+      "minLength": 5,
+      "maxLength": 500,
+      "examples": ["Validates Claude Code skill structure after files are written or edited"]
+    },
+    "hooks": {
+      "$ref": "#/definitions/hooksMap"
+    }
+  },
+  "definitions": {
+    "hooksMap": {
+      "type": "object",
+      "description": "Map of hook event names to arrays of matcher/handler entries. Known events: SessionStart, UserPromptSubmit, PreToolUse, PermissionRequest, PostToolUse, PostToolUseFailure, Notification, SubagentStart, SubagentStop, Stop, TeammateIdle, TaskCompleted, ConfigChange, WorktreeCreate, WorktreeRemove, PreCompact, SessionEnd, Setup, InstructionsLoaded.",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(SessionStart|UserPromptSubmit|PreToolUse|PermissionRequest|PostToolUse|PostToolUseFailure|Notification|SubagentStart|SubagentStop|Stop|TeammateIdle|TaskCompleted|ConfigChange|WorktreeCreate|WorktreeRemove|PreCompact|SessionEnd|Setup|InstructionsLoaded)(\\/[a-zA-Z0-9_*-]+)?$": {
+          "$ref": "#/definitions/hookEntryArray"
+        }
+      }
+    },
+    "hookEntryArray": {
+      "type": "array",
+      "description": "Array of hook entries for a given event. Each entry pairs a matcher with one or more hook handlers.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/hookEntry"
+      }
+    },
+    "hookEntry": {
+      "type": "object",
+      "description": "A matcher with one or more hook handlers to execute when it fires",
+      "required": ["hooks"],
+      "additionalProperties": false,
+      "properties": {
+        "matcher": {
+          "type": "string",
+          "description": "Tool name, pipe-separated list of tool names, or glob pattern to match against the event. Use an empty string or omit to match all occurrences.",
+          "examples": ["Bash", "Edit|Write", "*", ""]
+        },
+        "hooks": {
+          "type": "array",
+          "description": "Hook handlers to execute when the matcher fires",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/hookHandler"
+          }
+        }
+      }
+    },
+    "hookHandler": {
+      "description": "A hook handler — a shell command, HTTP endpoint, LLM prompt, or agent that runs when the matcher matches.",
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "Command hook: runs a shell command. Receives JSON input on stdin.",
+          "required": ["type", "command"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "const": "command" },
+            "command": {
+              "type": "string",
+              "description": "Shell command or script path to execute. Use ${CLAUDE_PLUGIN_ROOT} to reference paths relative to the plugin root.",
+              "minLength": 1,
+              "examples": [
+                "${CLAUDE_PLUGIN_ROOT}/hooks/validate-skill-structure.sh",
+                "${CLAUDE_PLUGIN_ROOT}/hooks/checkpoint-detector.sh",
+                "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/session_file_tracker.py\""
+              ]
+            },
+            "async": {
+              "type": "boolean",
+              "description": "If true, runs in the background without blocking."
+            },
+            "timeout": {
+              "type": "number",
+              "description": "Timeout in seconds. Default: 600.",
+              "minimum": 1,
+              "maximum": 600
+            },
+            "statusMessage": {
+              "type": "string",
+              "description": "Custom spinner message displayed while the hook runs."
+            },
+            "once": {
+              "type": "boolean",
+              "description": "If true, runs only once per session then is removed. Skills only."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "HTTP hook: sends event JSON as a POST request to a URL.",
+          "required": ["type", "url"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "const": "http" },
+            "url": {
+              "type": "string",
+              "description": "URL to send the POST request to.",
+              "format": "uri"
+            },
+            "headers": {
+              "type": "object",
+              "description": "Additional HTTP headers. Values support env var interpolation via $VAR or ${VAR} (only variables listed in allowedEnvVars are resolved).",
+              "additionalProperties": { "type": "string" }
+            },
+            "allowedEnvVars": {
+              "type": "array",
+              "description": "Environment variable names allowed in header interpolation. Unlisted variables resolve to empty strings.",
+              "items": { "type": "string" }
+            },
+            "timeout": {
+              "type": "number",
+              "description": "Timeout in seconds. Default: 600.",
+              "minimum": 1,
+              "maximum": 600
+            },
+            "statusMessage": {
+              "type": "string",
+              "description": "Custom spinner message displayed while the hook runs."
+            },
+            "once": {
+              "type": "boolean",
+              "description": "If true, runs only once per session then is removed. Skills only."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Prompt hook: sends a prompt to a Claude model for single-turn yes/no evaluation.",
+          "required": ["type", "prompt"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "const": "prompt" },
+            "prompt": {
+              "type": "string",
+              "description": "Prompt text for single-turn LLM evaluation.",
+              "minLength": 1
+            },
+            "model": {
+              "type": "string",
+              "description": "Model to use for prompt evaluation."
+            },
+            "timeout": {
+              "type": "number",
+              "description": "Timeout in seconds. Default: 30.",
+              "minimum": 1,
+              "maximum": 600
+            },
+            "statusMessage": {
+              "type": "string",
+              "description": "Custom spinner message displayed while the hook runs."
+            },
+            "once": {
+              "type": "boolean",
+              "description": "If true, runs only once per session then is removed. Skills only."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Agent hook: spawns a subagent that can use tools to verify conditions before returning a decision.",
+          "required": ["type", "prompt"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "const": "agent" },
+            "prompt": {
+              "type": "string",
+              "description": "Agent instructions for multi-step evaluation.",
+              "minLength": 1
+            },
+            "model": {
+              "type": "string",
+              "description": "Model to use for agent evaluation."
+            },
+            "tools": {
+              "type": "array",
+              "description": "Tools the agent can use (e.g. Read, Grep, Glob).",
+              "items": { "type": "string" }
+            },
+            "timeout": {
+              "type": "number",
+              "description": "Timeout in seconds. Default: 60.",
+              "minimum": 1,
+              "maximum": 600
+            },
+            "statusMessage": {
+              "type": "string",
+              "description": "Custom spinner message displayed while the hook runs."
+            },
+            "once": {
+              "type": "boolean",
+              "description": "If true, runs only once per session then is removed. Skills only."
+            }
+          }
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "hooks": {
+        "PostToolUse": [
+          {
+            "matcher": "Edit|Write",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-skill-structure.sh"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "description": "Session lifecycle hooks with timeout configuration",
+      "hooks": {
+        "SessionStart": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "Stop": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "${CLAUDE_PLUGIN_ROOT}/hooks/checkpoint-detector.sh",
+                "timeout": 5
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "my-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "your-org/your-marketplace-repo"
+      }
+    }
+  }
+}

@@ -46,7 +46,7 @@ if (user_provided_project_name) {
   PROJECT_ROOT = cwd;
   PROJECT_NAME = basename(PROJECT_ROOT);
   // Encode absolute path to match Claude Code project directory naming convention
-  // Convention: replace every / with - (e.g., /Users/ben/myproject → -Users-ben-myproject)
+  // Convention: replace every / with - (e.g., /Users/username/myproject → -Users-username-myproject)
   encoded_path = PROJECT_ROOT.replace(/\//g, '-');
   HISTORY_DIR = `~/.claude/projects/${encoded_path}/`;
 }

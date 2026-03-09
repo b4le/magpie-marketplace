@@ -1,0 +1,7 @@
+{
+    "description": "Plugins native to magpie that do not sync to content-platform-marketplace",
+    "plugins": [
+        "archaeology",
+        "unicode-library"
+    ]
+}

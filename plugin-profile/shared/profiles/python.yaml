@@ -1,0 +1,8 @@
+name: Python Development
+description: Python projects with type checking and development workflows
+extends: core
+
+plugins:
+  enable:
+    - pyright-lsp@claude-plugins-official
+    - python-development@claude-code-workflows

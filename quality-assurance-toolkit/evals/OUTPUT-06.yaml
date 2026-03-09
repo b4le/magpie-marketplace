@@ -1,0 +1,28 @@
+id: OUTPUT-06
+name: Provides actionable validation output
+plugin: quality-assurance-toolkit
+skill: eval-plugin
+type: output_quality
+description: Verify that eval-plugin provides actionable validation output
+
+prompts:
+  - context: "plugin validation"
+    prompt: "Validate the cocam-onboarding plugin and show me the results"
+    expected_contains:
+      - pass/fail status for checks
+      - specific errors or warnings if any
+      - actionable recommendations
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "Result clarity"
+      weight: 0.35
+      levels: ["Unclear results", "Partially clear", "Very clear"]
+    - criterion: "Actionability"
+      weight: 0.35
+      levels: ["No actions", "Some actions", "Clear actions"]
+    - criterion: "Completeness"
+      weight: 0.3
+      levels: ["Incomplete", "Partially complete", "Complete"]
+  pass_threshold: 70

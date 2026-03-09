@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.ai/schemas/command-frontmatter.schema.json",
+  "title": "Claude Code Command Frontmatter",
+  "description": "Schema for validating YAML frontmatter in command .md files",
+  "type": "object",
+  "required": [],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Command identifier (kebab-case). Optional - if omitted, the filename (minus .md) serves as the command name.",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+      "minLength": 1,
+      "maxLength": 64,
+      "examples": ["available-skills", "migrate-to-skill", "skill-checklist"]
+    },
+    "description": {
+      "type": "string",
+      "description": "What this command does and when to use it - shown in command discovery and completion menus",
+      "minLength": 10,
+      "maxLength": 500,
+      "examples": [
+        "Display all available skills from the Claude Code Development Kit plugin",
+        "Migrate a prompt or file into a properly structured Claude Code skill"
+      ]
+    },
+    "argument-hint": {
+      "type": "string",
+      "description": "Hint text shown in argument completion, describing what arguments the command accepts",
+      "minLength": 1,
+      "maxLength": 200,
+      "examples": [
+        "[file-path] [skill-name]",
+        "<plugin-name>",
+        "[path]"
+      ]
+    },
+    "allowed-tools": {
+      "type": "array",
+      "description": "List of tools this command is permitted to use during execution",
+      "items": {
+        "$ref": "tools-enum.json#/definitions/toolName"
+      },
+      "uniqueItems": true,
+      "examples": [["Read", "Write", "Edit", "Glob", "Grep", "Bash"]]
+    },
+    "arguments": {
+      "type": "array",
+      "description": "Declared arguments this command accepts, used for documentation and completion hints",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Argument name (used as placeholder in help text)",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "description": {
+            "type": "string",
+            "description": "What this argument represents",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the argument is required for the command to run",
+            "default": false
+          },
+          "type": {
+            "type": "string",
+            "description": "Expected value type for the argument",
+            "examples": ["string", "file-path", "skill-name", "number"]
+          }
+        }
+      },
+      "examples": [
+        [
+          {"name": "file-path", "description": "Path to the file to process", "required": true, "type": "file-path"},
+          {"name": "skill-name", "description": "Target skill name", "required": false, "type": "string"}
+        ]
+      ]
+    },
+    "user-invocable": {
+      "type": "boolean",
+      "description": "Whether this command can be directly invoked by the user via a slash command. When false, the command is only available for model-initiated use.",
+      "default": true
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the command",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.]+)?$",
+      "examples": ["1.0.0", "2.1.0-beta"]
+    },
+    "context": {
+      "type": "string",
+      "enum": ["fork"],
+      "description": "Set to 'fork' to run this command in a forked sub-agent context."
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Hook configurations for this command. Uses the same event names and handler schema as hooks.json.",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(SessionStart|UserPromptSubmit|PreToolUse|PermissionRequest|PostToolUse|PostToolUseFailure|Notification|SubagentStart|SubagentStop|Stop|TeammateIdle|TaskCompleted|ConfigChange|WorktreeCreate|WorktreeRemove|PreCompact|SessionEnd|Setup|InstructionsLoaded)(\\/[a-zA-Z0-9_*-]+)?$": {
+          "$ref": "hooks.schema.json#/definitions/hookEntryArray"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "available-skills",
+      "description": "Display all available skills from the Claude Code Development Kit plugin",
+      "version": "1.0.0"
+    },
+    {
+      "name": "migrate-to-skill",
+      "description": "Migrate a prompt or file into a properly structured Claude Code skill",
+      "argument-hint": "[file-path] [skill-name]",
+      "allowed-tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
+      "version": "1.0.0"
+    }
+  ]
+}

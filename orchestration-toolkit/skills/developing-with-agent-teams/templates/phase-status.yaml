@@ -1,0 +1,39 @@
+# Phase Status Template
+# Copy to .development/{project}/phases/{phase}/STATUS.yaml
+#
+# Tracks status for a single phase within a workflow.
+# Each phase has its own STATUS.yaml file.
+
+# Phase name (matches folder name)
+phase: ""
+
+# Phase status: pending | in_progress | completed | blocked
+status: pending
+
+# Timestamps
+started: ""
+completed: ""
+
+# Agents working on this phase
+agents: []
+  # Example:
+  # - name: researcher-1
+  #   role: researcher
+  #   status: pending | working | done
+  #   output: outputs/research-findings.md
+  # - name: architect
+  #   role: architect
+  #   status: pending
+  #   output: outputs/architecture-design.md
+
+# Any blockers preventing progress
+blockers: []
+  # Example:
+  # - "Waiting for API access"
+  # - "Need clarification on requirements"
+
+# What happens after this phase completes
+next_steps: []
+  # Example:
+  # - "Review outputs with user"
+  # - "Proceed to execution phase"

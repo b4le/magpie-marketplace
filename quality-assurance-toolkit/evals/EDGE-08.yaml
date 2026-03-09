@@ -1,0 +1,30 @@
+id: EDGE-08
+name: Handles requests to enhance existing tests
+plugin: quality-assurance-toolkit
+type: edge_case
+description: Verify that requests to enhance evals are handled appropriately
+
+test_cases:
+  - prompt: "Add more tests to the plugin evals"
+    expected_behavior: Understand intent and guide on eval creation
+    scoring: "0-100 scale based on guidance quality"
+  - prompt: "Improve the validation coverage"
+    expected_behavior: Provide specific recommendations for improvement
+    scoring: "0-100 scale based on actionability"
+  - prompt: "The evals are failing, help me fix them"
+    expected_behavior: Diagnose issues and provide fix guidance
+    scoring: "0-100 scale based on problem-solving"
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "Understanding intent"
+      weight: 0.35
+      levels: ["Misunderstood", "Partially understood", "Fully understood"]
+    - criterion: "Guidance quality"
+      weight: 0.35
+      levels: ["Poor guidance", "Adequate guidance", "Excellent guidance"]
+    - criterion: "Actionability"
+      weight: 0.3
+      levels: ["Not actionable", "Somewhat actionable", "Highly actionable"]
+  pass_threshold: 80

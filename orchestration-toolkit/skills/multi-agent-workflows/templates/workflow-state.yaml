@@ -1,0 +1,169 @@
+---
+# Workflow State Template
+# Copy this to: .development/workflows/{workflow-id}/workflow-state.yaml
+# Update as workflow progresses
+
+workflow_id: REPLACE_WITH_WORKFLOW_ID  # e.g., feature-auth-20251124
+workflow_name: REPLACE_WITH_NAME         # e.g., Implement Authentication System
+created_at: REPLACE_WITH_TIMESTAMP       # e.g., 2025-11-24T10:00:00Z
+updated_at: REPLACE_WITH_TIMESTAMP       # Updated on each phase transition
+status: planning                         # planning | research | design | execution | review | completed | paused
+
+# Current phase information
+current_phase:
+  name: planning
+  started_at: REPLACE_WITH_TIMESTAMP
+  estimated_completion: null             # Optional: YYYY-MM-DDTHH:MM:SSZ
+  progress_percent: 0                    # 0-100
+
+# Phase history (tracks completed phases)
+phases:
+  planning:
+    status: in-progress                  # pending | in-progress | completed | skipped
+    started_at: null
+    completed_at: null
+    archived_at: null
+    agents_used: []                      # List of agent IDs that worked in this phase
+    token_budget: 50000
+    tokens_used: 0
+
+  research:
+    status: pending
+    started_at: null
+    completed_at: null
+    archived_at: null
+    agents_used: []
+    token_budget: 50000
+    tokens_used: 0
+
+  design:
+    status: pending
+    started_at: null
+    completed_at: null
+    archived_at: null
+    agents_used: []
+    token_budget: 40000
+    tokens_used: 0
+
+  execution:
+    status: pending
+    started_at: null
+    completed_at: null
+    archived_at: null
+    agents_used: []
+    token_budget: 60000
+    tokens_used: 0
+
+  review:
+    status: pending
+    started_at: null
+    completed_at: null
+    archived_at: null
+    agents_used: []
+    token_budget: 30000
+    tokens_used: 0
+
+# Active agents (currently running)
+active_agents: []
+# Example:
+# - id: agent-001
+#   phase: planning
+#   topic: requirements
+#   started_at: 2025-11-24T10:15:00Z
+#   status: in-progress
+
+# Completed agents
+completed_agents: []
+# Example:
+# - id: agent-001
+#   phase: planning
+#   topic: requirements
+#   started_at: 2025-11-24T10:15:00Z
+#   completed_at: 2025-11-24T10:45:00Z
+#   tokens_used: 12500
+#   output_paths:
+#     - active/planning/agent-001-requirements.md
+
+# Questions and decisions
+questions_pending: []
+# Example:
+# - question: "Should we use REST or GraphQL?"
+#   asked_by: agent-002
+#   asked_at: 2025-11-24T11:00:00Z
+#   priority: high
+#   blocking: true
+
+questions_resolved: []
+# Example:
+# - question: "Should we use REST or GraphQL?"
+#   answer: "REST for simplicity"
+#   answered_by: orchestrator
+#   answered_at: 2025-11-24T11:15:00Z
+
+# Key decisions made during workflow
+decisions: []
+# Example:
+# - decision: "Use PostgreSQL for database"
+#   rationale: "Relational data model, ACID guarantees needed"
+#   phase: planning
+#   decided_at: 2025-11-24T10:30:00Z
+
+# Metrics
+metrics:
+  total_agents_launched: 0
+  total_phases_completed: 0
+  total_tokens_used: 0
+  total_duration_minutes: 0
+
+# Notes and observations
+notes: []
+# Example:
+# - "Initial planning took longer than expected due to scope clarification"
+# - "Research phase identified 3 critical security patterns to implement"
+
+# Next steps (updated as workflow progresses)
+next_steps:
+  - "Complete planning phase with requirements analysis"
+  - "Move to research phase once planning archived"
+
+---
+
+# Workflow State Management
+
+This file tracks the persistent state of the orchestrated workflow. It enables:
+- **Resumption**: Resume workflow after interruption
+- **Progress Tracking**: Monitor phase completion and token usage
+- **Decision Logging**: Record key decisions for future reference
+- **Agent Coordination**: Track active and completed agents
+
+## Update Triggers
+
+Update this file when:
+1. Phase transitions (planning → research)
+2. Agent launches or completes
+3. Questions asked or answered
+4. Key decisions made
+5. Phases archived
+
+## Reading This File
+
+**Orchestrators**: Read to understand current state before launching agents
+**Sub-agents**: Usually don't need to read (orchestrator passes relevant info)
+**Cleanup agents**: Read to update archival timestamps
+
+## Example Usage
+
+```yaml
+# After agent completes, update:
+completed_agents:
+  - id: agent-001
+    phase: planning
+    topic: requirements
+    tokens_used: 12500
+    output_paths:
+      - active/planning/agent-001-requirements.md
+
+metrics:
+  total_agents_launched: 1
+  total_tokens_used: 12500
+```

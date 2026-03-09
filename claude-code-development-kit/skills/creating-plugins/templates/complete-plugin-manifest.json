@@ -1,0 +1,48 @@
+{
+  "name": "react-toolkit",
+  "version": "2.1.0",
+  "description": "Comprehensive React development toolkit with components, testing, and docs generation",
+  "author": {
+    "name": "Development Team",
+    "email": "dev@company.com",
+    "url": "https://company.com"
+  },
+  "homepage": "https://github.com/company/react-toolkit",
+  "repository": "https://github.com/company/react-toolkit",
+  "license": "MIT",
+  "keywords": ["react", "components", "testing", "typescript"],
+  "skills": [
+    "skills/component-generator",
+    "skills/test-runner"
+  ],
+  "commands": [
+    "commands/new-component.md",
+    "commands/run-tests.md"
+  ],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

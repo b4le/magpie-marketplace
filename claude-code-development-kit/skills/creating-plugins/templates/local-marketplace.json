@@ -1,0 +1,10 @@
+{
+  "name": "local",
+  "description": "Local plugin development",
+  "plugins": {
+    "my-plugin": {
+      "path": "/Users/you/plugins/my-plugin",
+      "version": "0.1.0"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "gen-plugin",
+  "version": "1.0.0",
+  "description": "One-shot artifact generators for different output formats - executive briefs, technical deep dives, and talking points.",
+  "author": {
+    "name": "Ben Purslow"
+  },
+  "license": "MIT",
+  "keywords": [
+    "output-styles",
+    "generators",
+    "exec-brief",
+    "tech-deep-dive",
+    "talking-points",
+    "artifacts"
+  ]
+}

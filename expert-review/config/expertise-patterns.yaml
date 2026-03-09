@@ -1,0 +1,100 @@
+# Expertise Patterns Configuration
+# Maps natural language terms to agent discovery patterns
+
+version: "1.0"
+
+# Natural language to agent pattern mappings
+patterns:
+  security:
+    aliases: [security, sec, appsec, vuln, vulnerability]
+    agent_pattern: "*security*|*appsec*|*threat*"
+    type: modifier
+    priority: 5
+
+  architecture:
+    aliases: [architecture, arch, design, system-design]
+    agent_pattern: "*architect*|*design*"
+    type: modifier
+    priority: 3
+
+  performance:
+    aliases: [performance, perf, optimization, speed]
+    agent_pattern: "*performance*|*optim*"
+    type: modifier
+    priority: 2
+
+  backend:
+    aliases: [backend, server, api, fullstack, back-end]
+    agent_pattern: "*api*|*backend*|code-reviewer"
+    type: modifier
+    priority: 1
+
+  frontend:
+    aliases: [frontend, ui, ux, front-end, client]
+    agent_pattern: "*frontend*|*ui*|*react*|*vue*"
+    type: modifier
+    priority: 1
+
+  testing:
+    aliases: [testing, test, qa, quality]
+    agent_pattern: "*test*|*qa*|*tdd*"
+    type: modifier
+    priority: 0
+
+  accessibility:
+    aliases: [accessibility, a11y, wcag, aria]
+    agent_pattern: "*accessibility*|*a11y*"
+    type: analyzer
+    priority: 4
+
+  database:
+    aliases: [database, db, sql, data]
+    agent_pattern: "*database*|*sql*|*data*"
+    type: modifier
+    priority: 2
+
+  infrastructure:
+    aliases: [infrastructure, infra, cloud, devops, k8s, kubernetes]
+    agent_pattern: "*cloud*|*kubernetes*|*terraform*|*devops*"
+    type: modifier
+    priority: 3
+
+  python:
+    aliases: [python, py]
+    agent_pattern: "*python*"
+    type: modifier
+    priority: 1
+
+  typescript:
+    aliases: [typescript, ts, javascript, js]
+    agent_pattern: "*typescript*|*javascript*"
+    type: modifier
+    priority: 1
+
+# File extension triggers for auto-detection
+file_triggers:
+  ".py": python
+  ".ts": typescript
+  ".tsx": [typescript, frontend]
+  ".js": typescript
+  ".jsx": [typescript, frontend]
+  ".go": backend
+  ".rs": backend
+  ".java": backend
+  ".sql": database
+  ".tf": infrastructure
+  ".yaml": infrastructure
+  ".yml": infrastructure
+  "Dockerfile": infrastructure
+  ".k8s.yaml": infrastructure
+
+# Topic keyword triggers for auto-detection
+topic_triggers:
+  "auth|jwt|oauth|session|login": security
+  "password|credential|secret|token": security
+  "sql|query|database|migration": database
+  "k8s|kubernetes|helm|pod|deployment": infrastructure
+  "terraform|aws|gcp|azure|cloud": infrastructure
+  "a11y|aria|wcag|accessibility": accessibility
+  "test|spec|mock|stub|fixture": testing
+  "perf|latency|throughput|cache": performance

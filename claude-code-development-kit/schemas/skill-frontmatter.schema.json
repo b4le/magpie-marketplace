@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.ai/schemas/skill-frontmatter.schema.json",
+  "title": "Claude Code Skill Frontmatter",
+  "description": "Schema for validating YAML frontmatter in SKILL.md files",
+  "type": "object",
+  "required": [],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Skill identifier (kebab-case). Optional — if omitted, the directory name is used as the skill name.",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+      "minLength": 1,
+      "maxLength": 64,
+      "examples": ["authoring-skills", "creating-commands", "managing-memory"]
+    },
+    "description": {
+      "type": "string",
+      "description": "When and why to use this skill - used for Claude's skill discovery. Strongly recommended; no hard character limit in official docs but keep it focused.",
+      "maxLength": 500,
+      "examples": [
+        "Guide for creating Claude Code skills with YAML frontmatter, progressive disclosure, and best practices. Use when creating new skills, writing SKILL.md files, or learning skill development patterns."
+      ]
+    },
+    "argument-hint": {
+      "type": "string",
+      "description": "Hint text shown in argument completion, describing what arguments the skill accepts when invoked",
+      "minLength": 1,
+      "maxLength": 200,
+      "examples": [
+        "[file-path] [skill-name]",
+        "<plugin-name>",
+        "[path]"
+      ]
+    },
+    "allowed-tools": {
+      "type": "array",
+      "description": "List of tools this skill is permitted to use. Accepts known tool names or MCP tool patterns (mcp__<server>__<tool>).",
+      "items": {
+        "$ref": "tools-enum.json#/definitions/toolName"
+      },
+      "uniqueItems": true,
+      "examples": [["Read", "Write", "Edit", "Glob", "Grep"], ["Read", "mcp__filesystem__read_file"]]
+    },
+    "disable-model-invocation": {
+      "type": "boolean",
+      "description": "When true, prevents Claude from automatically invoking this skill based on context. Use for template-only skills or skills that should only be explicitly invoked. This is the inverse of the non-standard 'auto-invoke' field.",
+      "default": false
+    },
+    "user-invocable": {
+      "type": "boolean",
+      "description": "Whether the user can explicitly invoke this skill via a slash command. When false, the skill is only available for model-initiated use.",
+      "default": true
+    },
+    "model": {
+      "type": "string",
+      "description": "The model to use when this skill is invoked. Allows directing lightweight tasks to faster models and complex tasks to more capable models.",
+      "examples": ["haiku", "sonnet", "opus"]
+    },
+    "context": {
+      "type": "string",
+      "enum": ["fork"],
+      "description": "Set to 'fork' to run in a forked subagent context."
+    },
+    "agent": {
+      "type": "string",
+      "description": "The agent name to delegate skill execution to. Specifies a named agent configuration for skill execution.",
+      "examples": ["general-purpose", "cloud-architect", "security-auditor"]
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Hook configurations for the skill. Defines matchers and handlers to run at specific lifecycle events during skill execution. Uses the same event names and handler schema as hooks.json.",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(SessionStart|UserPromptSubmit|PreToolUse|PermissionRequest|PostToolUse|PostToolUseFailure|Notification|SubagentStart|SubagentStop|Stop|TeammateIdle|TaskCompleted|ConfigChange|WorktreeCreate|WorktreeRemove|PreCompact|SessionEnd|Setup|InstructionsLoaded)(\\/[a-zA-Z0-9_*-]+)?$": {
+          "$ref": "hooks.schema.json#/definitions/hookEntryArray"
+        }
+      }
+    },
+    "version": {
+      "type": "string",
+      "description": "[Extension] Semantic version of the skill",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.]+)?$",
+      "examples": ["1.0.0", "2.1.0-beta"]
+    },
+    "created": {
+      "type": "string",
+      "description": "[Extension] Date the skill was created (ISO 8601 date format)",
+      "format": "date",
+      "examples": ["2025-11-20"]
+    },
+    "last_updated": {
+      "type": "string",
+      "description": "[Extension] Date the skill was last modified (ISO 8601 date format)",
+      "format": "date",
+      "examples": ["2025-11-26"]
+    },
+    "auto-invoke": {
+      "type": "boolean",
+      "description": "[Extension] [Deprecated: use 'disable-model-invocation' instead, which is the official inverse boolean] Whether Claude should automatically invoke this skill when appropriate",
+      "default": false
+    },
+    "categories": {
+      "type": "array",
+      "description": "[Extension] Categories for organizing and discovering the skill",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+        "minLength": 1,
+        "maxLength": 50
+      },
+      "maxItems": 10,
+      "uniqueItems": true,
+      "examples": [["development", "authoring", "documentation"]]
+    },
+    "author": {
+      "type": "string",
+      "description": "[Extension] Skill author name",
+      "minLength": 1,
+      "maxLength": 100,
+      "examples": ["Platform Team", "Community"]
+    },
+    "tags": {
+      "type": "array",
+      "description": "[Extension] Tags for skill discovery and search",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50
+      },
+      "maxItems": 20,
+      "uniqueItems": true,
+      "examples": [["skills", "yaml", "frontmatter"]]
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "[Extension] Other skills this skill depends on or references",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$"
+      },
+      "uniqueItems": true,
+      "examples": [["using-tools", "managing-memory"]]
+    }
+  },
+  "examples": [
+    {
+      "name": "authoring-skills",
+      "description": "Guide for creating Claude Code skills with YAML frontmatter, progressive disclosure, and best practices. Use when creating new skills, writing SKILL.md files, or learning skill development patterns.",
+      "allowed-tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
+      "version": "1.0.0",
+      "created": "2025-11-20",
+      "last_updated": "2025-11-26"
+    },
+    {
+      "name": "analyzing-code",
+      "description": "Skill for analyzing code patterns and architecture. Use when reviewing code quality, identifying issues, or understanding code structure.",
+      "allowed-tools": ["Read", "Grep", "Glob"],
+      "version": "1.0.0",
+      "auto-invoke": false,
+      "categories": ["analysis", "code-review"]
+    },
+    {
+      "name": "issue-template",
+      "description": "GitHub issue template for bug reports. Use when creating a new bug report or feature request.",
+      "disable-model-invocation": true,
+      "user-invocable": true
+    },
+    {
+      "name": "architecture-review",
+      "description": "Deep architectural analysis skill. Use when reviewing system design, evaluating trade-offs, or producing architecture decision records.",
+      "allowed-tools": ["Read", "Grep", "Glob", "WebFetch"],
+      "model": "opus",
+      "agent": "cloud-architect"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: unicode-library
-description: This skill should be used when the user says "unicode", "character library", "CLI characters", "terminal symbols", "safe unicode", "validate characters", "what character should I use", "format output", "unicode for CLI", or when agents are creating visual CLI output, formatting terminal displays, choosing Unicode characters for branded skill output, designing completion banners or sign-off lines, checking whether a character is safe to use, looking up what character represents a concept (status, progress, hierarchy, flow), or when any skill or agent needs to validate that its output only uses approved characters. Also triggers on "anti-patterns", "banned characters", "smart quotes", "operator lookalikes", "EAW", "East Asian Width", "emoji in terminal", "progress bar characters", "spinner frames", "box drawing", "status indicators", or "what palette should I use".
+description: Use when the user says "unicode", "character library", "CLI characters", "safe unicode", "validate characters", "anti-patterns", "banned characters", "what palette should I use", or when any skill or agent needs to select or validate Unicode characters for terminal output. Covers status indicators, progress bars, box drawing, spinner frames, and EAW/smart-quote anti-patterns. Reference standard for branded CLI output.
 argument-hint: "[lookup|validate|palette|anti-patterns] [category|palette-name] [--level minimal|standard|full]"
 allowed-tools:
   - Read
