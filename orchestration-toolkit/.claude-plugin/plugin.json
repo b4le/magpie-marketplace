@@ -1,17 +1,11 @@
 {
   "name": "orchestration-toolkit",
-  "version": "2.0.0",
-  "description": "Agent orchestration patterns for Claude Code - subagents, parallel agents, phased workflows, and collaborative agent teams.",
-  "author": {
-    "name": "Community"
-  },
+  "version": "3.0.0",
+  "description": "Composable pipeline for task decomposition and parallel agent execution. Includes decompose skill, orchestrate command, fan-out/team dispatch, and agent coordination patterns.",
+  "author": { "name": "Ben Purslow" },
   "license": "MIT",
   "keywords": [
-    "orchestration",
-    "agents",
-    "teams",
-    "workflows",
-    "multi-agent",
-    "agent-teams"
+    "orchestration", "decompose", "pipeline", "agents", "teams",
+    "workflows", "multi-agent", "fan-out", "dispatch"
   ]
 }

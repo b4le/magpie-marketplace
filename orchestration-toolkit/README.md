@@ -1,6 +1,6 @@
 # Orchestration Toolkit
 
-**Version:** 2.0.0
+**Version:** 3.0.0
 
 Agent orchestration patterns for Claude Code - subagents, parallel agents, phased workflows, and collaborative agent teams.
 
@@ -11,7 +11,7 @@ Agent orchestration patterns for Claude Code - subagents, parallel agents, phase
 - Agent Teams support for collaborative, discussion-based work
 - Pause/resume capability and approval gates via iterative refinement
 - `/delegate` command to interactively choose a delegation pattern
-- `/orchestrate` command to initialize structured multi-agent workflows
+- `/orchestrate` command — composable pipeline: detect input → brainstorm (opt-in) → decompose → dispatch agents
 
 ## Installation
 
@@ -32,9 +32,9 @@ Clone the repository and copy the `orchestration-toolkit/` directory into your C
    /delegate build a feature with planning, implementation, and review phases
    ```
 
-2. Use `/orchestrate` to initialize a structured workflow:
+2. Use `/orchestrate` with a goal — it decomposes and dispatches agents automatically:
    ```
-   /orchestrate my-feature
+   /orchestrate "build a user authentication feature"
    ```
 
 3. Load `orchestration-guide` when you are unsure which pattern to use:
@@ -46,8 +46,9 @@ Clone the repository and copy the `orchestration-toolkit/` directory into your C
 
 | Skill | Description | Invoke |
 |-------|-------------|--------|
+| `decompose` | Turn a goal into structured work items with agent assignments and phases | `/orchestration-toolkit:decompose` |
 | `orchestration-guide` | Central decision guide for choosing orchestration patterns | `/orchestration-toolkit:orchestration-guide` |
-| `multi-agent-workflows` | Framework for managing complex multi-phase workflows | `/orchestration-toolkit:multi-agent-workflows` |
+| `multi-agent-workflows` | **Deprecated (v2.0)** — `.development/workflows/` pattern; use `/orchestrate` for new work | `/orchestration-toolkit:multi-agent-workflows` |
 | `developing-with-agent-teams` | Spawn and coordinate agent teams for complex projects | `/orchestration-toolkit:developing-with-agent-teams` |
 | `iterative-agent-refinement` | Pattern for pause/resume capability and approval gates | `/orchestration-toolkit:iterative-agent-refinement` |
 
@@ -56,7 +57,7 @@ Clone the repository and copy the `orchestration-toolkit/` directory into your C
 | Command | Description | Invoke |
 |---------|-------------|--------|
 | `delegate` | Choose the right agent delegation pattern | `/delegate` |
-| `orchestrate` | Initialize orchestrated multi-agent workflow | `/orchestrate` |
+| `orchestrate` | Composable pipeline: goal → decompose → dispatch agents | `/orchestrate` |
 
 ## Quick Reference
 
@@ -65,9 +66,9 @@ Clone the repository and copy the `orchestration-toolkit/` directory into your C
 | Simple edit or fix | Direct execution | Use tools directly |
 | Research 3 topics in parallel | Parallel sub-agents | Multiple Task calls |
 | Review PR from multiple angles | Agent Team | Natural language request |
-| Build feature with phases | Multi-agent-workflows | `/orchestrate feature-name` |
+| Build feature with phases | Composable pipeline (v3.0) | `/orchestrate "build feature"` |
 | Design needing user feedback | Iterative refinement | Add approval gates |
-| Single agent, phased work | Flat execution | `/orchestrate --flat task` |
+| Single agent, phased work | Sequential mode | `/orchestrate --flat task` |
 
 ## Decision Flow
 
@@ -88,7 +89,7 @@ START: Task received
 |   |-- NO (you bridge results) -> Q4
 |
 |-- Q4: Complex multi-phase with persistent context?
-|   |-- YES -> /orchestrate (multi-agent-workflows)
+|   |-- YES -> /orchestrate (composable pipeline: decompose → dispatch)
 |   |-- NO -> Parallel Task calls
 |
 |-- Q5: Need approval gates mid-execution?
@@ -98,11 +99,11 @@ START: Task received
 
 ## Templates
 
-The multi-agent-workflows skill includes templates for:
+The multi-agent-workflows skill includes legacy v2.0 templates for the `.development/workflows/` pattern (deprecated — use `/orchestrate` + `decompose` for new work):
 
 | Template | Purpose |
 |----------|---------|
-| `workflow-state.yaml` | Persistent workflow state tracking |
+| `workflow-state.yaml` | Persistent workflow state tracking (deprecated v2.0) |
 | `phase-readme.md` | Phase instructions for sub-agents |
 | `agent-output.md` | Standard single-file agent output |
 | `STATUS.yaml` | Phase status tracking |
@@ -131,18 +132,18 @@ The plugin includes complete workflow examples:
 ## Related Resources
 
 - See `skills/orchestration-guide/SKILL.md` for the full decision framework
-- See `skills/multi-agent-workflows/reference/decision-tree.md` for detailed decision tree
-- See `skills/multi-agent-workflows/reference/orchestrator-guide.md` for orchestrator workflows
-- See `skills/multi-agent-workflows/reference/subagent-guide.md` for sub-agent perspective
+- See `skills/decompose/SKILL.md` for the 7-phase plan generation skill
+- See `commands/orchestrate.md` for the v3.0 composable pipeline command spec
 - See `skills/developing-with-agent-teams/SKILL.md` for agent teams with TeamCreate
+- See `skills/multi-agent-workflows/` for the v2.0 `.development/workflows/` pattern (deprecated)
 
 ## Troubleshooting
 
 **Agent Teams commands not working**
 Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set in your environment. Agent Teams is an experimental feature and requires this variable to be enabled.
 
-**`/orchestrate` creates no directory structure**
-The command requires a workflow ID as the first argument. Run `/orchestrate my-workflow-name` rather than `/orchestrate` alone.
+**`/orchestrate` prompts interactively instead of running**
+Running `/orchestrate` with no arguments is intentional — it prompts for a goal. Pass the goal directly: `/orchestrate "build feature X"` or point to a spec file: `/orchestrate ~/specs/feature.md`.
 
 **Subagents cannot write files**
 Subagents do not automatically inherit project permissions. Verify that sandbox settings allow file writes before spawning agents that need to produce output.
@@ -162,5 +163,6 @@ MIT
 
 See `plugin.json` for the full version history. Summary:
 
+- **3.0.0** - Composable pipeline: `/orchestrate` rewritten as thin router (detect → brainstorm → decompose → dispatch). Plans live at `~/.claude/decompose/plans/`. `.development/workflows/` pattern deprecated. Added `decompose` skill.
 - **2.0.0** - Added `developing-with-agent-teams` skill and aligned commands to marketplace conventions
 - **1.0.0** - Initial release with `orchestration-guide`, `multi-agent-workflows`, and `iterative-agent-refinement` skills

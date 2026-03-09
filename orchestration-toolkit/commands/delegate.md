@@ -111,6 +111,16 @@ Ready to start?
 | Build feature | /orchestrate | Distinct phases, persistent context |
 | Design needing feedback | + Approval gates | User input mid-execution |
 
+### When to use `/orchestrate` vs `/delegate`
+
+| Situation | Command | Notes |
+|-----------|---------|-------|
+| Task requires decomposition + parallel execution | `/orchestrate` | Use when the work needs to be broken into a structured plan and dispatched to multiple agents across phases |
+| Single delegation to one agent | `/delegate` | `/delegate` handles this directly — no need for a full pipeline |
+| Task matches a team preset | `/team-spawn` or `/orchestrate` | `/delegate` can suggest either; `/team-spawn` for preset team configs, `/orchestrate` for pipeline work with a decompose plan |
+
+**Rule of thumb:** If the task is a single clear instruction to one agent, stay in `/delegate`. If it needs decomposing into work items and executing in parallel or phases, hand off to `/orchestrate`.
+
 ---
 
 ## Related Commands

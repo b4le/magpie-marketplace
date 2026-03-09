@@ -1,203 +1,246 @@
 ---
 name: orchestrate
-description: Initialize orchestrated multi-agent workflow with phase structure
-argument-hint: "[workflow-id] [phases...]"
-version: 2.0.0
+description: Composable pipeline — detect input, optionally brainstorm, decompose into a plan, select dispatch mode, and execute
+argument-hint: "[goal | file path] [--brainstorm] [--think] [--store] [--dry-run] [--flat]"
+version: 3.0.0
 ---
-
-Initialize orchestrated workflow with smart defaults.
-
-## Arguments
-
-- **$1** (optional): Workflow ID. If omitted, auto-generates from context.
-- **$ARGUMENTS** (optional): Custom phases. If omitted, uses smart defaults.
-
-## Flags
-
-- `--think`: Use non-engineering workflow (research → analysis → synthesis → recommendations)
-- `--flat`: Single-agent execution (no sub-agent spawning). Agent executes all phases sequentially.
 
 ## Quick Start
 
 ```
-/orchestrate                           # Auto-everything
-/orchestrate my-feature                # Custom ID, default phases
-/orchestrate my-feature plan execute   # Custom ID and phases
-/orchestrate --think strategy-review   # Non-engineering workflow
-/orchestrate --flat my-task            # Single-agent, no sub-agents
-/orchestrate --think --flat analysis   # Non-engineering + flat execution
+/orchestrate "Add user authentication with OAuth2"        # Goal text → decompose → execute
+/orchestrate ~/specs/auth-design.md                       # Spec file → decompose → execute
+/orchestrate ~/.claude/decompose/plans/decompose-20260309/plan.json  # Existing plan → execute
+/orchestrate --brainstorm "improve API performance"        # Brainstorm → decompose → execute
+/orchestrate --dry-run "refactor payment module"           # Decompose + plan, skip execution
+/orchestrate --store ~/specs/migration.md                  # Decompose + save plan for later
+/orchestrate --flat "fix login bug"                        # Sequential mode, no parallelism
+/orchestrate                                               # Interactive prompt
 ```
 
 ---
 
 ## Instructions
 
-### Step 1: Parse Arguments
+### Step 1: Parse Flags
 
-**Detect flags:**
-- If `--think` is present: Set `WORKFLOW_TYPE=thinking`, remove from arguments
-- Otherwise: Set `WORKFLOW_TYPE=engineering`
-- If `--flat` is present: Set `EXECUTION_MODE=flat`, remove from arguments
-- Otherwise: Set `EXECUTION_MODE=delegated`
+Strip recognized flags from `$ARGUMENTS` before input detection. Flags can appear anywhere in the argument string.
 
-**Determine workflow-id:**
-- If `$1` provided and not a flag: Use as workflow-id
-- If omitted: Generate from current date: `workflow-{YYYYMMDD}-{HHMMSS}`
+1. If `--brainstorm` is present: set `BRAINSTORM=true`, remove from arguments.
+2. If `--think` is present: treat as legacy alias for `--brainstorm`. Set `BRAINSTORM=true`, remove.
+3. If `--store` is present: set `STORE_ONLY=true`, remove.
+4. If `--dry-run` is present: set `DRY_RUN=true`, remove.
+5. If `--flat` is present: set `FORCE_MODE=sequential`, remove.
+6. After stripping, the remaining string is `$INPUT`.
 
-**Determine phases:**
-- If additional arguments after workflow-id: Use those as phases
-- If `--think` flag: Use `research analysis synthesis recommendations`
-- Otherwise: Use default `planning execution review`
+### Step 2: Detect Input Type
 
-### Step 2: Validate
+Apply the following checks in order. **First match wins. No fallthrough.**
 
-**Check workflow doesn't exist:**
-```bash
-ls .development/workflows/$WORKFLOW_ID/ 2>/dev/null && echo "ERROR: Workflow exists" && exit 1
+**2a. No argument.**
+If `$INPUT` is empty and `BRAINSTORM` is false:
+- Prompt the user: "What would you like to build or work on?"
+- Wait for response. The response becomes `$INPUT`.
+- Re-enter Step 2 with the new `$INPUT`.
+
+**2b. Brainstorm with no seed text.**
+If `$INPUT` is empty and `BRAINSTORM` is true:
+- Set `INPUT_TYPE=brainstorm_empty`.
+- Proceed to Step 3.
+
+**2c. Argument looks like a file path.**
+Test: `$INPUT` contains a `/` character OR matches `*.*` (dot preceded by non-whitespace). If true:
+
+- **2c-i. File does not exist.** Run `test -f "$INPUT"`. If false → treat as goal text. Set `INPUT_TYPE=goal`.
+- **2c-ii. File exists — plan JSON.** Read first 5 lines. If any line contains `"schema_version"` OR `head -c 4096 | jq '.work_items' 2>/dev/null` succeeds → set `INPUT_TYPE=plan`, `PLAN_PATH=$INPUT`. **Skip to Step 5.**
+- **2c-iii. File exists — handoff.** First line is exactly `# Session Handoff` → set `INPUT_TYPE=handoff`. Extract scope from `## What's not done` + constraints from `## Key decisions made`.
+- **2c-iv. File exists — spec/design doc.** Anything else → set `INPUT_TYPE=spec`, `SPEC_PATH=$INPUT`.
+
+**2d. Any other text.**
+If none matched → set `INPUT_TYPE=goal`, `GOAL_TEXT=$INPUT`.
+
+### Step 3: Brainstorm (When Opted In)
+
+Skip unless `BRAINSTORM=true`.
+
+1. If `INPUT_TYPE=brainstorm_empty`: invoke brainstorm with no seed. Explore scope, constraints, edge cases.
+2. Otherwise: invoke brainstorm with detected input as seed context.
+3. Capture output as `$BRAINSTORM_OUTPUT` — a refined goal statement + optional constraint list.
+4. Set `DECOMPOSE_INPUT=$BRAINSTORM_OUTPUT`.
+
+If `BRAINSTORM=false`: set `DECOMPOSE_INPUT` to raw input (`$GOAL_TEXT`, spec file content, or extracted handoff scope).
+
+### Step 4: Decompose
+
+Skip if `INPUT_TYPE=plan` (plan JSON already exists).
+
+1. Invoke `/decompose` with `$DECOMPOSE_INPUT` as the goal.
+   - If `INPUT_TYPE=spec`: pass the spec file path for decompose to read.
+   - If `INPUT_TYPE=handoff`: pass both extracted scope and full handoff path for context.
+2. Decompose produces plan at `~/.claude/decompose/plans/{plan-id}/plan.json`.
+3. **Tier 1 verification:** Confirm `plan.json` exists, valid JSON, `work_items` array has ≥1 item. Hard stop on failure.
+4. **Tier 2 verification:** Review that work item scopes collectively cover the stated goal. Flag gaps but don't block.
+5. Set `PLAN_PATH` to the generated plan file.
+
+### Step 5: Select Dispatch Mode
+
+Read the plan at `$PLAN_PATH`. Extract work items and execution phases.
+
+**5a. Compute mode recommendation.** First match wins:
+
+| Condition | Mode |
+|-----------|------|
+| `FORCE_MODE` is set (from `--flat`) | Use `FORCE_MODE` |
+| `STORE_ONLY=true` | **Store** |
+| Total work items = 1 | **Sequential** |
+| All phases contain exactly 1 work item | **Sequential** |
+| Any phase contains 2-5 parallel items | **Fan-out** |
+| Any phase contains >5 parallel items | **Team** |
+
+If multiple phases qualify for different modes, select the highest: Sequential < Fan-out < Team.
+
+**5b. Pre-dispatch validation.** Before presenting the summary:
+- Verify no two work items in the same phase own overlapping files.
+- Verify all `work_item_status` keys (if present) reference valid work item IDs.
+- If `project_root` is set, verify all file paths resolve within it.
+
+**5c. Build summary table.**
+
+```
+Plan: {plan_id}
+Goal: {goal, first 100 chars}
+Mode: {selected mode}
+
+| WI   | Title              | Agent           | Model  | Phase | Est.  |
+|------|--------------------|-----------------|--------|-------|-------|
+| WI-1 | Auth middleware     | typescript-pro  | sonnet | 1     | 15m   |
+| WI-2 | Database migration  | implementation  | sonnet | 1     | 20m   |
+| WI-3 | Integration tests   | test-runner     | haiku  | 2     | 10m   |
+
+Proceed with {mode}? (override any row, switch modes, or edit plan at {path})
 ```
 
-**Validate workflow-id format:**
-- No spaces, no special chars except `-` and `_`
-- If invalid, suggest: `{feature-name}-{YYYYMMDD}`
+For plans with >15 work items, group by phase rather than listing flat.
 
-### Step 3: Create Structure
+**5d. Handle `--dry-run`.** Display summary and stop. "Dry run complete. Plan saved at {PLAN_PATH}."
 
-```bash
-# Create directories
-mkdir -p .development/workflows/$WORKFLOW_ID/{active,archive,shared}
+**5e. Handle `--store`.** Display summary and stop. "Plan stored at {PLAN_PATH}. Run `/orchestrate {PLAN_PATH}` to execute later."
 
-# Create phase directories
-for phase in $PHASES; do
-  mkdir -p .development/workflows/$WORKFLOW_ID/active/$phase
-done
+**5f. Wait for user confirmation.** User may:
+- **Confirm** → proceed to Step 6
+- **Override a row** → update agent/model/scope in plan.json, re-display
+- **Switch modes** → set `FORCE_MODE`, re-display
+- **Edit plan** → user edits file directly, re-run from Step 5
+
+### Step 6: Execute by Mode
+
+Initialize `execution_status` in plan.json before dispatching:
+```json
+{
+  "execution_status": {
+    "started_at": "{ISO 8601}",
+    "mode": "{selected mode}",
+    "current_phase": 1,
+    "work_item_status": {}
+  }
+}
 ```
 
-### Step 4: Create Minimal State File
+Per-item status shapes (`work_item_status[id]` at dispatch and completion, including `attempt_count`) are defined in `{plugin}/references/dispatch-execution.md` § Status Update Protocol.
 
-**Create `workflow-state.yaml`:**
+Use atomic writes (write to `.tmp`, rename) when updating plan.json during execution.
 
-```yaml
-workflow_id: $WORKFLOW_ID
-type: $WORKFLOW_TYPE
-execution_mode: $EXECUTION_MODE  # 'flat' or 'delegated'
-created: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-status: in-progress
+Execution logic is **not inlined**. Each mode references its pattern document:
 
-current_phase: $FIRST_PHASE
-phases:
-$PHASE_ENTRIES
+**Sequential:**
+- Execute work items in phase order, one at a time.
+- Each agent receives the work item prompt (populated from plan JSON via the template in `references/work-item-template.md`).
+- Wait for completion before starting the next.
+- Apply phase boundary verification (Step 7) between phases.
 
-agents: []
-decisions: []
-```
+**Fan-out:**
+- Follow `{plugin}/references/fan-out-pattern.md`.
+- Phase 0: if any work item needs external data, apply `{plugin}/references/mcp-prefetch-pattern.md`.
+- Spawn one agent per work item within a phase. Cap at 5 concurrent.
+- Map plan JSON `agent_config` fields to Agent tool parameters per `{plugin}/references/agent-config-examples.md`.
+- Use `isolation: "worktree"` when the plan specifies it or when agents in the same phase modify files in overlapping directory trees.
+- After all agents in a phase return, apply Step 7 before starting next phase.
 
-Where `$PHASE_ENTRIES` is generated as:
-```yaml
-  - name: $PHASE_NAME
-    status: pending  # First phase = "in-progress"
-```
+**Team:**
+- Use `/team-spawn` with the plan as input.
+- Work items become TaskCreate entries with dependency ordering.
+- Reference `{plugin}/references/dispatch-execution.md` for team coordination protocol.
 
-### Step 5: Create Phase Files (Minimal)
+### Step 7: Per-Phase Error Handling
 
-For each phase, create a simple `README.md`:
+Applied at each phase boundary after all agents in the phase complete.
 
-```markdown
-# $PHASE_NAME Phase
+**7a. Collect results.** For each work item: success/failure, error message, output artifacts.
 
-## Context
-Part of workflow: $WORKFLOW_ID
+**7b. Tier 1 verification (hard gate on missing artifacts).**
+- Check that expected output files exist and are non-empty.
+- Run validator scripts if specified in `done_criteria`.
+- Failed checks → mark work item as `failed`.
 
-## Goal
-[To be defined by first agent in this phase]
+**7c. Tier 2 verification (soft gate, one retry).**
+- Review output against the work item's stated scope.
+- If quality insufficient → one self-correction attempt. Failed second attempt → mark as `failed`.
 
-## Outputs
-Save outputs to this directory.
+**7d. Handle failures.** If any work items failed:
+- Log: `WI-{id} failed: {error}`
+- **Never auto-retry.** Present to user:
+  ```
+  WI-3 failed: {error}. Retry, skip, or stop?
+  ```
+- **Retry:** Re-dispatch failed item only, re-run Step 7 for it.
+- **Skip:** Mark as `skipped` in plan.json. Downstream dependents are flagged as blocked.
+- **Stop:** Halt execution. Write current state to plan.json.
 
-## Status
-Update ../workflow-state.yaml when complete.
-```
+**7e. Proceed.** If all passed (or user chose skip), advance to next phase.
 
-### Step 6: Create Shared Files
+### Step 8: Post-Execution Status Update
 
-**`shared/decisions.md`:**
-```markdown
-# Decisions
+After all phases complete or execution is halted:
 
-| Date | Decision | Rationale | Phase |
-|------|----------|-----------|-------|
-```
-
-### Step 7: Output (Concise)
-
-**For delegated mode (default):**
-```
-Workflow initialized: $WORKFLOW_ID
-
-Phases: $PHASE_LIST
-Current: $FIRST_PHASE (in-progress)
-Mode: delegated (sub-agents)
-
-Location: .development/workflows/$WORKFLOW_ID/
-
-Ready to start. Launch your first agent for the $FIRST_PHASE phase.
-```
-
-**For flat mode (--flat flag):**
-```
-Workflow initialized: $WORKFLOW_ID
-
-Phases: $PHASE_LIST
-Current: $FIRST_PHASE (in-progress)
-Mode: flat (single-agent, no spawning)
-
-Location: .development/workflows/$WORKFLOW_ID/
-
-FLAT EXECUTION: Execute all phases directly without using the Task tool.
-Use TodoWrite to track progress. Save outputs to phase directories.
-See: skills/multi-agent-workflows/reference/patterns/flat-execution.md
-```
-
-**That's it.** No lengthy "Next Steps". The user is ready to proceed.
+1. Update plan.json:
+   - `execution_status.completed_at`: ISO 8601 timestamp
+   - Per work item: `status` → `completed`, `failed`, or `skipped`
+2. If all completed: `"All {N} work items completed successfully."`
+3. If partial/stopped: summary of what completed + what didn't + plan path for resumption.
+4. Plans persist at their path — never auto-deleted or archived.
 
 ---
 
-## Error Handling
+## Flag Summary
 
-| Error | Message |
-|-------|---------|
-| Workflow exists | `Workflow '$ID' exists. Use different ID or resume existing.` |
-| Invalid ID | `Invalid ID. Use format: feature-name-YYYYMMDD` |
+| Flag | Effect | Stops At |
+|------|--------|----------|
+| `--brainstorm` | Invoke brainstorm before decompose | — |
+| `--store` | Save plan without executing | Step 5e |
+| `--dry-run` | Detect + decompose + select mode, skip execution | Step 5d |
+| `--flat` | Force sequential mode | — |
+| `--think` | Legacy alias for `--brainstorm` | — |
 
----
+## Error Table
 
-## Examples
-
-### Engineering Workflow
-```
-/orchestrate auth-feature
-→ Phases: planning, execution, review
-→ Location: .development/workflows/auth-feature/
-```
-
-### Strategic Thinking Workflow
-```
-/orchestrate --think q4-strategy
-→ Phases: research, analysis, synthesis, recommendations
-→ Location: .development/workflows/q4-strategy/
-```
-
-### Custom Phases
-```
-/orchestrate migration audit plan migrate validate
-→ Phases: audit, plan, migrate, validate
-→ Location: .development/workflows/migration/
-```
+| Error | When | Response |
+|-------|------|----------|
+| `/decompose` fails | Step 4, Tier 1 | Hard stop. Report error. User retries or provides plan file directly. |
+| Plan has no `work_items` | Step 5 | Hard stop. `"Plan at {path} has no work_items. Fix or re-run /decompose."` |
+| Plan has 0 valid work items | Step 5b | Hard stop. Surface to user before dispatch. |
+| Agent spawn fails | Step 6 | Mark work item as failed. Present at phase boundary (Step 7d). |
+| All agents in phase fail | Step 7d | Present failures. Recommend `stop` to investigate. |
+| Plan file not writable | Step 8 | Warn but don't fail. Output status to terminal. |
+| Schema version mismatch | Step 5 (plan load) | Hard stop if `schema_version` > supported. Warn if unknown optional fields present. |
 
 ---
 
-## Related Skills
+## Related
 
-- **multi-agent-workflows**: Full framework for 5+ agents, multi-phase projects
-- **iterative-agent-refinement**: Pause/resume pattern for approval gates
-
-See `skills/multi-agent-workflows/reference/decision-tree.md` for when to use each.
+- `/decompose` — 7-phase plan generation (invoked automatically in Step 4)
+- `/brainstorm` — Divergent exploration (invoked with `--brainstorm` flag)
+- `/team-spawn` — Team coordination (used in Team dispatch mode)
+- `references/fan-out-pattern.md` — Parallel execution pattern
+- `references/dispatch-execution.md` — Execution mode details
+- `references/verification-pattern.md` — Two-tier verification
+- `references/mcp-prefetch-pattern.md` — Pre-fetch external data

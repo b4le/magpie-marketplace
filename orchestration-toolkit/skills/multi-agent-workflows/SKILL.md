@@ -1,19 +1,24 @@
 ---
 name: multi-agent-workflows
 description: >
-  Framework for managing complex multi-agent workflows with persistent context storage.
-  Use when orchestrating multi-phase processes with context persistence across agents.
-  Supports engineering and non-engineering workflows with .development/ folder structure,
-  phase-based organization, context handoff protocols, and automatic archival of completed work.
+  DEPRECATED (v2.0) — Framework for managing complex multi-agent workflows with persistent context storage.
+  This skill uses the .development/workflows/{workflow-id}/ folder structure and workflow-state.yaml state model,
+  which are replaced by the composable pipeline in v3.0. For new work, use /orchestrate (which runs decompose
+  and dispatches agents automatically). This skill is retained for reference only.
 version: 2.0.0
 created: 2025-11-20
-last_updated: 2025-12-06
+last_updated: 2026-03-09
+deprecated: true
+deprecated_in: "3.0.0"
+replacement: "Use /orchestrate (composable pipeline) + decompose skill instead"
 tags:
   - orchestration
   - multi-agent
   - workflows
   - context-persistence
 ---
+
+> **DEPRECATED:** This skill describes the v2.0 `.development/workflows/` pattern, which was replaced in v3.0 by the composable pipeline (`/orchestrate` + `decompose`). For new work, run `/orchestrate` — it handles decomposition, agent assignment, and dispatch automatically. Plans are stored at `~/.claude/decompose/plans/`. This file is retained as a reference for workflows that were started under v2.0.
 
 ## Choosing the Right Pattern
 
@@ -84,7 +89,9 @@ All examples in this skill include this parameter.
 
 ## Quick Start: For Orchestrators
 
-### Step 1: Initialize Workflow
+> **Note:** This section documents the v2.0 `.development/workflows/` pattern. In v3.0, `/orchestrate` initializes and manages the entire pipeline — there is no manual directory setup. Jump to `/orchestrate` unless you are resuming an existing v2.0 workflow.
+
+### Step 1: Initialize Workflow (v2.0 pattern — deprecated)
 
 ```bash
 # Create workflow structure
@@ -180,18 +187,20 @@ Task({
 
 ## Templates
 
+> **Deprecated templates** for the v2.0 `.development/workflows/` pattern. For v3.0 workflows, `/orchestrate` manages state in `~/.claude/decompose/plans/` — these templates are not used.
+
 All templates available in `templates/` directory:
 
 | Template | Purpose | Use When |
 |----------|---------|----------|
-| `workflow-state.yaml` | Persistent workflow state tracking | Initializing new workflow |
-| `phase-readme.md` | Phase "pseudo-skill" instructions | Creating new phase folder |
+| `workflow-state.yaml` | Persistent workflow state tracking (v2.0) | Resuming an existing v2.0 workflow |
+| `phase-readme.md` | Phase "pseudo-skill" instructions | Resuming an existing v2.0 workflow |
 | `agent-output.md` | Standard single-file agent output | Sub-agent creates output |
-| `status.yaml` | Phase status tracking | Initializing phase or updating status |
+| `status.yaml` | Phase status tracking | Resuming an existing v2.0 workflow |
 | `phase-summary.md` | Archival summary format | Archiving completed phase |
 | `read-first.md` | Multi-file output index | Sub-agent creates folder with multiple files |
 
-**Access templates:**
+**Access templates (for existing v2.0 workflows only):**
 ```bash
 # Copy template for use
 cp templates/workflow-state.yaml \
@@ -225,10 +234,12 @@ cat templates/phase-readme.md
 
 ## Quick Reference
 
-**Initialize a workflow:**
+> **v3.0 replacement:** Use `/orchestrate` directly with a goal, spec file, or handoff — it runs decompose and dispatches agents automatically. The commands below are v2.0 patterns.
+
+**v2.0 workflow initialization (deprecated — use `/orchestrate <goal>` instead):**
 ```
 /orchestrate my-feature                    # Engineering (planning, execution, review)
-/orchestrate --think my-strategy           # Non-engineering (research, analysis, synthesis, recommendations)
+/orchestrate --brainstorm my-strategy      # Non-engineering with brainstorm step
 /orchestrate my-task phase1 phase2 phase3  # Custom phases
 ```
 
@@ -237,5 +248,3 @@ cat templates/phase-readme.md
 - v1.0.0 outputs remain fully compatible
 
 **Decision tree:** See `@reference/decision-tree.md` for when to use this skill vs. alternatives.
-
-**Ready to orchestrate? Start with an example or jump to `@reference/orchestrator-guide.md`**
