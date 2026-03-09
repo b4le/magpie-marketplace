@@ -1291,4 +1291,180 @@ Suggestions:
 
 ---
 
-*Last updated: 2026-03-06*
+### Dig Templates — Format Enforcement
+
+These rules apply to all 4 dig display templates below, in addition to the global format enforcement rules above:
+
+- MUST NOT use ASCII box-drawing characters
+- MUST NOT use emoji
+- MUST NOT use markdown tables, markdown bold, or markdown headers
+- MUST NOT use horizontal rules (`---`)
+- Each item line MUST be indented with exactly 2 spaces
+- Sigil resolved from `SIGIL_DIG` in `references/branding.md`
+- Sign-off resolved from `SIGNOFF_TEMPLATE` substituting `{mode}` = `dig`
+
+### Per-Turn Iteration Display {#dig-iteration}
+
+Shown after each dig cycle completes (D7). Substituted variables are defined below the template.
+
+```
+{SIGIL_DIG} Dig cycle {N} — {tunnel_label}
+  New nuggets: {new_nuggets} (total: {total_nuggets})
+  New veins: {new_veins} (total: {total_veins})
+  Sessions covered: {searched}/{tunnel_total} for this tunnel
+
+  Nuggets found this cycle:
+    nug-{NNN}: {what_truncated} (weight: {weight}, confidence: {confidence})
+    nug-{NNN}: {what_truncated} (weight: {weight}, confidence: {confidence})
+
+[if new tunnels discovered:]
+  New tunnels spotted:
+    {tunnel_label} — suggested by nug-{NNN}
+
+[if tunnel exhausted:]
+  Tunnel "{tunnel_label}" tapped out — {searched}/{tunnel_total} sessions searched
+
+[if all tunnels exhausted:]
+  All tunnels exhausted. Run /archaeology dig '{subject}' --done to export.
+
+[if budget checkpoint reached:]
+  Budget checkpoint — continue with /archaeology dig "{subject}" in a new session
+
+Pick next direction, or /archaeology dig "{subject}" --done to wrap up.
+
+{SIGNOFF}
+```
+
+**Variables:**
+- `{N}` — dig cycle count, incrementing from 1
+- `{tunnel_label}` — label of the tunnel explored this cycle
+- `{new_nuggets}` / `{total_nuggets}` — count of nuggets added this cycle vs. running total across all cycles
+- `{new_veins}` / `{total_veins}` — count of veins added this cycle vs. running total
+- `{searched}` / `{tunnel_total}` — sessions searched in this tunnel so far vs. total sessions in tunnel scope (tunnel-scoped count, not all project sessions)
+- Nugget lines: one line per nugget found this cycle, ordered by weight descending, capped at 5. `{what_truncated}` is the nugget's `what` field truncated to 80 characters. Omit nugget lines entirely if `{new_nuggets}` is 0 — replace with `No new nuggets this cycle.`
+- "New tunnels spotted" block: include only if at least one new tunnel was added to the cavern map this cycle
+- "Tunnel tapped out" line: include only if the current tunnel reached exhaustion this cycle
+- "All tunnels exhausted" line: include only if no tunnels remain with status `active` or `unexplored`
+- "Budget checkpoint" line: include only if the session budget threshold has been reached
+- The `Pick next direction` prompt line is always shown
+
+**If `--no-export` was set:** No change to this display — export state does not affect iteration output.
+
+### Cavern Map Display {#dig-map}
+
+Shown when a dig starts fresh (D4 initial) and when a dig is resumed (D4 resume). Also shown when the user runs `/archaeology dig list` for a single in-progress dig.
+
+```
+{SIGIL_DIG} Archaeology Dig: {subject}
+  Sessions found: {session_count} across {date_range}
+[if init mode:]
+  Expanded terms: {expanded_terms}
+  Prior outputs: survey {survey_present}, domains: {domain_list}, artifacts: {artifact_count}
+
+  Tunnels:
+    {N}. {tunnel_label} [{STATUS}] ({tunnel_session_count} sessions, {tunnel_date_range})
+       Keywords: {kw1}, {kw2}, {kw3}
+    [if tunnel has been explored:]
+       Nuggets: {nugget_count}
+
+[if resume mode:]
+  Treasure trove: {total_nuggets} nuggets, {total_veins} veins
+  Last dig: {last_dig_date}
+  Recent decisions:
+    Turn {turn_N}: "{user_said_truncated}" — {action} ({nuggets_found} nuggets)
+
+  Recommended: {recommended_tunnel_label} — {reason}
+
+Pick a tunnel number, or describe what to explore.
+```
+
+**Variables:**
+- `{subject}` — the subject string as provided by the user
+- `{session_count}` — total sessions found in D2 scope
+- `{date_range}` — `{earliest} to {latest}` from session metadata
+- `{expanded_terms}` — `cavern_map.expanded_terms`, joined with `", "`. Shown only in init mode.
+- `{survey_present}` — `yes` or `no`
+- `{domain_list}` — comma-separated list of domains with existing findings, or `none`
+- `{artifact_count}` — count of conserved artifacts, or `none`
+- Tunnel lines: one line per tunnel in the cavern map, ordered by tunnel index. `{STATUS}` is one of `UNEXPLORED`, `ACTIVE`, `EXHAUSTED`, `PAUSED`. Keywords are the top 3 by frequency from the tunnel's keyword set. The "Nuggets: N" sub-line is shown only for tunnels that have been explored (nugget_count > 0).
+- Resume mode block: shown only when resuming an existing dig (cavern-map.json already exists and is not `--fresh`). `{user_said_truncated}` is the decision_log entry's user_said field, truncated to 60 characters. Show the 3 most recent decision log entries.
+- `{recommended_tunnel_label}` — selected by D4 recommendation logic (highest-signal unexplored tunnel). `{reason}` is a brief rationale (e.g. "highest keyword density", "referenced by 3 existing nuggets").
+- "Pick a tunnel number" prompt is always shown
+
+**If `--fresh`:** Omit the resume mode block entirely. Show only the Tunnels section and the prompt.
+
+### Completion Display {#dig-completion}
+
+Shown when the user runs `/archaeology dig "{subject}" --done`. This is the terminal completion state for a dig.
+
+```
+{SIGIL_DIG} Archaeology Dig complete: {subject}
+  Duration: {started_at} to {completed_at}
+  Dig cycles: {dig_cycles}
+  Tunnels explored: {explored}/{total_tunnels} ({exhausted} exhausted)
+
+  Treasure trove:
+    Nuggets: {total_nuggets} ({high_confidence_count} high confidence)
+    Veins: {total_veins}
+    Top findings by weight:
+      nug-{NNN}: {what_truncated} (weight: {weight})
+      nug-{NNN}: {what_truncated} (weight: {N})
+      nug-{NNN}: {what_truncated} (weight: {N})
+
+[if exported:]
+  Exported to:
+    Local:   {ARCHAEOLOGY_DIR}/spelunk/{subject_slug}/
+    Central: {CENTRAL_PROJECT_DIR}/spelunk/{subject_slug}/
+
+[if not exported (--no-export was set):]
+  Run /archaeology dig "{subject}" --export to export findings.
+
+{SIGNOFF}
+```
+
+**Variables:**
+- `{subject}` — subject string as provided
+- `{started_at}` / `{completed_at}` — ISO date strings from cavern-map metadata, formatted as `YYYY-MM-DD`
+- `{dig_cycles}` — count of completed dig cycles from decision_log
+- `{explored}` — count of tunnels with status `exhausted` or `paused` (i.e. no longer `unexplored` or `active`)
+- `{total_tunnels}` — total tunnel node count in cavern map
+- `{exhausted}` — count of tunnels with status `exhausted` specifically
+- `{total_nuggets}` / `{high_confidence_count}` — total nuggets and those with confidence `high`
+- `{total_veins}` — total vein count
+- Top findings: the 3 nuggets with the highest weight value, ordered weight descending. `{what_truncated}` truncated to 80 characters.
+- Exported block: shown only if export succeeded this session (i.e. `--done` without `--no-export`)
+- "Run --export" line: shown only if `--no-export` was set
+
+**If 0 nuggets found:** Replace the "Treasure trove" block with:
+```
+  Treasure trove: empty — no nuggets found across {dig_cycles} cycles
+```
+and omit the "Top findings" sub-lines.
+
+### Dig List Display {#dig-list}
+
+Shown when the user runs `/archaeology dig list`. Lists all in-progress and completed digs for the current project.
+
+```
+{SIGIL_DIG} Archaeology Digs: {project_name}
+
+  In progress:
+    {subject_slug}  {total_nuggets} nuggets  last dig {last_dig_date}  {explored}/{total_tunnels} tunnels
+
+  Completed:
+    {subject_slug}  {total_nuggets} nuggets  {completed_at}
+
+  No digs yet. Start one with /archaeology dig "subject".
+
+{SIGNOFF}
+```
+
+**Variables:**
+- Show "In progress" block only if any digs have `status: "in-progress"`. Show "Completed" block only if any have `status: "complete"`. If neither exists, show only the "No digs yet" line.
+- Each entry is one line, indented 2 spaces.
+- `{last_dig_date}` — date of most recent decision_log entry, formatted `YYYY-MM-DD`.
+- Data sourced from `spelunk/*/metadata.json` under `ARCHAEOLOGY_DIR` (local) or `CENTRAL_PROJECT_DIR` (central, preferred if present).
+
+---
+
+*Last updated: 2026-03-09*

@@ -276,6 +276,8 @@ Return ONLY the XML tags below — no prose, no headers, no explanation outside 
 
 - **Survey S5** (`survey-workflow.md`): `<theme>`, `<summary>`
 - **Workstyle W5** (`workstyle-workflow.md`): `<instruction_style>`, `<feedback_style>`, `<session_arc>`, `<complexity_approach>`, `<notable_pattern>`
+- **Dig D5** (`dig-workflow.md`): `<nugget>` containing `<what>`, `<why>`, `<confidence>`, `<weight>`, `<tags>`, `<source_session>`, `<source_range>`
+- **Dig D6** (`dig-workflow.md`): `<vein>` containing `<nugget_a>`, `<nugget_b>`, `<link_type>`, `<direction>`, `<bridge>`, `<narrative>`, `<confidence>`
 
 ## Utility Functions
 

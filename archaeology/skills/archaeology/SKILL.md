@@ -1,7 +1,7 @@
 ---
 name: archaeology
-description: Use when the user says "archaeology", "survey", "workstyle", "excavation", "mine my history", "extract patterns", "scan my history", "what domains", "conserve", "preserve artifacts", "narrative extraction", "tell the story", or "project story". Analyzes past Claude Code sessions to surface reusable patterns, extract learnings from usage history, and conserve narrative artifacts across multiple knowledge domains.
-argument-hint: "[survey|workstyle|conserve|excavation|{domain}|list] [project-name] [--no-export] [--global]"
+description: Use when the user says "archaeology", "survey", "workstyle", "excavation", "mine my history", "extract patterns", "scan my history", "what domains", "conserve", "preserve artifacts", "narrative extraction", "tell the story", "project story", or "dig". Analyzes past Claude Code sessions to surface reusable patterns, extract learnings from usage history, and conserve narrative artifacts across multiple knowledge domains.
+argument-hint: "[survey|workstyle|conserve|dig|excavation|{domain}|list] [project-name] [--no-export] [--global]"
 allowed-tools:
   - Read
   - Write
@@ -10,8 +10,8 @@ allowed-tools:
   - Glob
   - Grep
   - Agent
-version: 1.3.0
-last_updated: 2026-03-07
+version: 1.4.0
+last_updated: 2026-03-09
 ---
 
 # Archaeology Skill
@@ -40,6 +40,11 @@ Extract and document patterns from Claude Code usage history across multiple kno
 /archaeology excavation --max-concurrent 5  # Override parallel limit (default: 3)
 /archaeology excavation --scan-paths "~/Work,~/Side"  # Override scan directories
 /archaeology excavation --max-age 14   # Skip surveys fresher than 14 days (default: 7)
+/archaeology dig "subject"          # Deep investigation of a specific subject
+/archaeology dig "subject" --fresh  # Discard existing state, start over
+/archaeology dig "subject" --done   # Export findings and mark dig complete
+/archaeology dig "subject" --export # Export current state without marking complete
+/archaeology dig list               # Show all in-progress and completed digs
 ```
 
 ## Available Commands
@@ -48,6 +53,7 @@ Extract and document patterns from Claude Code usage history across multiple kno
 - **list** - Display available commands and domains with status and description
 - **workstyle** - Analyse working style with Claude (tool usage, session shapes, delegation, communication patterns)
 - **conserve** - Extract narrative artifacts from project history, generate default exhibition
+- **dig** - Deep investigation of a specific subject across project history
 - **{domain}** - Run extraction for specified domain (orchestration, prompting-patterns, python-practices, git-workflows)
 - **excavation** - Cross-project portfolio scan: discover projects, survey each, generate portfolio report
 
@@ -76,7 +82,7 @@ project_label = user_provided_project_name || basename(cwd);
 
 // Display init banner (see references/branding.md)
 // Resolve sigil from branding (references/branding.md)
-SIGILS = { survey: '◈', extraction: '◆', workstyle: '●', conserve: '◇', excavation: '✦', list: '◈' };
+SIGILS = { survey: '◈', extraction: '◆', workstyle: '●', conserve: '◇', excavation: '✦', dig: '▼', list: '◈' };
 sigil = SIGILS[mode_label] || '◈';
 
 // Spaced-letter mode name (mirrors logo rhythm)
@@ -135,6 +141,13 @@ if (args.command === 'workstyle') {
 if (args.command === 'conserve') {
   // Branch to Conservation workflow (see references/conserve-workflow.md)
   execute_conserve(args);
+  return;
+}
+
+if (args.command === 'dig') {
+  if (!args.subject) error("dig requires a subject: /archaeology dig \"subject\"");
+  // Branch to Dig workflow (see references/dig-workflow.md)
+  execute_dig(args);
   return;
 }
 
@@ -420,6 +433,14 @@ When invoked with `conserve`, execute the conservation workflow.
 Read and follow the full specification in `${SKILL_DIR}/references/conserve-workflow.md`.
 
 Conservation extracts atomic narrative artifacts from project history, generates a default exhibition, and exports to the central work-log. Produces `exhibition.md`, individual artifact files in `artifacts/`, and updates the global artifacts registry. Supports `--no-export` flag.
+
+## Dig Workflow
+
+When invoked with `dig`, execute the dig workflow.
+
+Read and follow the full specification in `${SKILL_DIR}/references/dig-workflow.md`.
+
+Dig is an interactive, multi-turn investigation mode that drills deep into a specific subject across project history. It dispatches spelunker agents to extract nuggets (discrete findings) and connector agents to identify veins (relationships between findings). State persists across sessions via `cavern-map.json`. Supports `--fresh` (restart), `--done` (export and complete), `--export` (checkpoint export), and `--no-export` flags.
 
 ## Excavation Workflow
 

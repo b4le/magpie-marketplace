@@ -15,6 +15,7 @@ SIGIL_EXTRACTION: "◆"
 SIGIL_WORKSTYLE:  "●"
 SIGIL_CONSERVE:   "◇"
 SIGIL_EXCAVATION: "✦"
+SIGIL_DIG:        "▼"
 
 # Sign-off — final line of every completion display
 SIGNOFF_TEMPLATE: "░▒▓ archaeology ·· {mode}"
@@ -60,6 +61,7 @@ Completion templates reference variables by name. When rendering:
 | `◆` | Primary finding | Domain extraction results |
 | `◈` | Catalogued artifact | Survey domain entries, indexed items |
 | `◇` | Preserved / exhibited | Conservation artifacts, exhibition items |
+| `▼` | Active investigation | Dig mode states, cavern map display |
 
 ### Density Convention
 
@@ -119,7 +121,7 @@ L I S T  ◈
 All characters used are in the Basic Multilingual Plane and render correctly in iTerm2, Kitty, VS Code integrated terminal, and macOS Terminal.app:
 
 - Block elements: `░▒▓█` (U+2591–U+2593, U+2588)
-- Geometric shapes: `◆◇◈●` (U+25C6, U+25C7, U+25C8, U+25CF)
+- Geometric shapes: `◆◇◈●▼` (U+25C6, U+25C7, U+25C8, U+25CF, U+25BC)
 - Misc symbols: `✦` (U+2726)
 - Middle dot: `·` (U+00B7)
 

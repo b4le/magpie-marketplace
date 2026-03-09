@@ -18,6 +18,7 @@ Always start here:
 | 2. Orient | `{project}/SUMMARY.md` | Resuming work on a project | Cross-domain highlights answer your question |
 | 3. Understand | `{project}/{domain}/patterns.md` | Need domain-specific detail | The Highlights section gives you enough |
 | 3.5 Narrate | `{project}/artifacts/` + `exhibition.md` | Need to explain what was built to someone else | The exhibition gives you enough to write from |
+| 3.7 Investigate | `{project}/spelunk/{subject}/trove.md` | Need deep understanding of a specific subject across project history | The trove answers your question about the subject |
 | 4. Act | `{project}/{domain}/findings.json` | Building on findings programmatically | — |
 | 5. Adapt | `{project}/workstyle.md` | Adapting to user's working style | The summary characterisation answers your question |
 | 6. Automate | `{project}/workstyle.json` | Building on workstyle programmatically | — |
@@ -30,6 +31,10 @@ Always start here:
 3. Read({project}/{domain}/patterns.md)   → start with ## Highlights, skip All Findings unless needed
 3.5 Read({project}/exhibition.md)          → conserved narrative artifacts, grouped by type
     Read({project}/artifacts/{id}.md)       → only if you need the full story of a specific artifact
+3.7 Read({project}/spelunk/{subject}/trove.md)
+         → only if you need deep subject-specific investigation findings
+    Parse({project}/spelunk/{subject}/nuggets.json)
+         → only if you need structured nugget data (Level 4 equivalent for dig)
 4. Parse({project}/{domain}/findings.json) → only if you need structured data
 5. Read({project}/workstyle.md)             → only if you need to understand the user's working style
 6. Parse({project}/workstyle.json)           → only if adapting behaviour to user preferences
@@ -89,3 +94,6 @@ v1 findings (before progressive disclosure) lack `confidence`, `relevance`, and 
 | v2 | Adds confidence, relevance (ordinal), highlights array, restructured patterns.md |
 | workstyle v1 | Initial: dimension scores, session patterns, tool usage, delegation, communication, preferences, evolution |
 | artifact v1 | Initial: 6 narrative types, per-project index, global registry, exhibition manifest |
+| cavern-map v1 | Initial: tunnel tree, decision log, nuggets, veins |
+| nugget v1 | Initial: frontmatter + What/Why body, confidence/weight scoring |
+| vein v1 | Initial: nugget connections with bridge element, 5 link types |
