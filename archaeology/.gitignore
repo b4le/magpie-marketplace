@@ -1,0 +1,5 @@
+# Implementation plans (internal design docs, contain personal paths)
+docs/plans/
+
+# Showcase (contains real session output with internal references)
+docs/showcase.html

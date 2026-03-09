@@ -1,0 +1,22 @@
+# Claude Code personal config (handoffs, memory, session state)
+.claude/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Editors
+*.swp
+*.swo
+.idea/
+.vscode/
+*.iml

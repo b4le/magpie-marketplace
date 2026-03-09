@@ -4,13 +4,31 @@
 set -euo pipefail
 
 # ── Defaults ─────────────────────────────────────────────────────────
-DEFAULT_SCAN_PATHS="$HOME/Personal,$HOME/Spotify,$HOME/ai-playground,$HOME/Playground,$HOME/TeamExperimentation"
+DEFAULT_SCAN_PATHS="$HOME"
 MAX_CONCURRENT=3
 MAX_AGE_DAYS=7
 DRY_RUN=false
 IGNORE_FILE="$HOME/.claude/archaeology-ignore"
+CONFIG_FILE="$HOME/.claude/archaeology-config"
 CENTRAL_BASE="$HOME/.claude/data/visibility-toolkit/work-log/archaeology"
 LOG_DIR="$CENTRAL_BASE/.excavation-logs"
+
+# ── Load user config (overrides defaults before CLI args) ────────────
+if [[ -f "$CONFIG_FILE" ]]; then
+  while IFS='=' read -r key value; do
+    [[ -z "$key" || "$key" == \#* ]] && continue
+    # Trim whitespace
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    case "$key" in
+      scan_paths)     DEFAULT_SCAN_PATHS="$value" ;;
+      max_concurrent) MAX_CONCURRENT="$value" ;;
+      max_age_days)   MAX_AGE_DAYS="$value" ;;
+    esac
+  done < "$CONFIG_FILE"
+fi
 
 # ── Argument parsing ─────────────────────────────────────────────────
 SCAN_PATHS_ARG=""
