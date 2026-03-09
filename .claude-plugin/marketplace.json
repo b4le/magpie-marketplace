@@ -81,6 +81,13 @@
             "description": "Scope estimator that scores tasks by complexity, caps sessions at ~8 points, and recommends splitting work across sessions when overloaded",
             "version": "1.1.0",
             "tags": ["session", "budget", "scope", "complexity", "planning", "productivity"]
+        },
+        {
+            "name": "session-autopilot",
+            "source": "./session-autopilot",
+            "description": "Automatic session continuity — handoff on exit, checkpoint on compact, resume on start",
+            "version": "0.1.0",
+            "tags": ["session", "handoff", "resume", "checkpoint", "continuity", "autopilot"]
         }
     ]
 }

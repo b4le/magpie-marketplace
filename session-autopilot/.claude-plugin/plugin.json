@@ -1,0 +1,7 @@
+{
+  "name": "session-autopilot",
+  "version": "0.1.0",
+  "description": "Automatic session continuity — handoff on exit, checkpoint on compact, resume on start.",
+  "author": { "name": "Ben Purslow" },
+  "keywords": ["session", "handoff", "resume", "checkpoint", "continuity", "autopilot"]
+}
