@@ -88,9 +88,10 @@ Use this variant when the split also divides work across agents (not just time).
 
 ---
 
-**MCP pre-fetch:** Before spawning agents, fetch all required external data in the
-orchestrator and write results to `/tmp/prefetch/{session}/`. Pass file paths to
-agents — do not give agents direct MCP access.
+**MCP delegation:** Before spawning work agents, delegate MCP fetching to foreground
+sub-agents using the dual return pattern. Sub-agents write full results to
+`local-state/prefetch/{session}/` and return summary + file path. Pass file paths to
+downstream agents — the orchestrator must never call MCP tools directly.
 
 **Separate worktrees:** If agents use separate worktrees, write one handoff file per
 agent: `{project-slug}-{YYYY-MM-DD}-agent-{name}.md`.
