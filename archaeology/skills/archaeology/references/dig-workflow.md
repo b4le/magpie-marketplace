@@ -256,127 +256,50 @@ if (!NO_EXPORT) {
 
 ---
 
-## Dig Step D2: Subject Expansion and Session Scanning
+## Dig Step D2: Subject Expansion, Session Scanning, and Tunnel Construction
 
-Lightweight reconnaissance -- no agents. Uses Grep and jq operations only to protect the main context window.
+Dispatches a single reasoning agent -- the rig operator -- to perform intelligent subject expansion, session scoring, and tunnel construction in one coordinated pass. The orchestrator never touches session content; all structural decisions are delegated to the rig operator, which has its own isolated context window.
 
-### Term expansion
-
-Take the user's subject string and generate a broader search vocabulary using the fixed expansion table. If the seed term matches a table key, use the full expansion. Otherwise fall back to the seed term alone.
-
-```javascript
-seed_term = subject;
-
-EXPANSION_TABLE = {
-  'auth':        ['auth', 'authentication', 'authorization', 'OAuth', 'token', 'login', 'session', 'JWT', 'OIDC', 'credential'],
-  'deploy':      ['deploy', 'deployment', 'release', 'CI', 'CD', 'pipeline', 'rollout', 'ship', 'publish', 'artifact'],
-  'test':        ['test', 'testing', 'spec', 'jest', 'pytest', 'coverage', 'assert', 'mock', 'fixture', 'e2e'],
-  'api':         ['api', 'endpoint', 'REST', 'GraphQL', 'request', 'response', 'route', 'handler', 'controller', 'swagger'],
-  'db':          ['db', 'database', 'query', 'migration', 'schema', 'ORM', 'SQL', 'postgres', 'mysql', 'sqlite'],
-  'cache':       ['cache', 'caching', 'Redis', 'Memcached', 'invalidation', 'TTL', 'eviction', 'warm', 'hit', 'miss'],
-  'performance': ['performance', 'latency', 'throughput', 'profiling', 'benchmark', 'slow', 'optimise', 'N+1', 'bottleneck', 'timeout'],
-  'error':       ['error', 'exception', 'failure', 'crash', 'bug', 'stack trace', 'panic', 'retry', 'fallback', 'recovery']
-};
-
-if (EXPANSION_TABLE[seed_term.toLowerCase()]) {
-  expanded_terms = EXPANSION_TABLE[seed_term.toLowerCase()];
-} else {
-  expanded_terms = [seed_term];
-  note("No fixed expansion for this subject. Results may be narrow. Consider enriching manually.");
-}
-```
-
-### Survey enrichment
-
-If `survey.md` exists for the project, scan it for domain rows matching the subject slug. Extract primary keywords from the matching domain definition and add to `expanded_terms`:
-
-```javascript
-survey_path = `${ARCHAEOLOGY_DIR}/survey.md`;
-if (exists(survey_path)) {
-  survey_content = Read(survey_path);
-  // Find domain rows whose domain ID or name partially matches subject_slug
-  matching_domain_row = survey_content
-    .split('\n')
-    .find(line => line.includes('|') && line.toLowerCase().includes(subject_slug));
-
-  if (matching_domain_row) {
-    domain_id = matching_domain_row.split('|')[1].trim();
-    domain_def_path = `${SKILL_DIR}/references/domains/${domain_id}.md`;
-    if (exists(domain_def_path)) {
-      domain_def = Read(domain_def_path);
-      domain_keywords = parse_frontmatter(domain_def).keywords;
-      for (kw of domain_keywords.primary) {
-        if (!expanded_terms.includes(kw)) expanded_terms.push(kw);
-      }
-    }
-  }
-}
-```
-
-### Domain findings enrichment
-
-If `findings.json` exists for a domain whose keywords overlap with the subject, read its high-confidence highlights as seed context for D4 display:
-
-```javascript
-findings_path = `${ARCHAEOLOGY_DIR}/${subject_slug}/findings.json`;
-if (!exists(findings_path)) {
-  findings_path = `${CENTRAL_OUTPUT_DIR}/${subject_slug}/findings.json`;
-}
-
-HAS_PRIOR_FINDINGS = exists(findings_path);
-if (HAS_PRIOR_FINDINGS) {
-  prior_findings = JSON.parse(Read(findings_path));
-  SEED_HIGHLIGHTS = prior_findings.findings
-    .filter(f => f.confidence === 'high')
-    .slice(0, 5)
-    .map(f => f.title);
-} else {
-  SEED_HIGHLIGHTS = [];
-}
-```
-
-### Session scoring
-
-Score every conversation file against the expanded term list using jq-filtered JSONL. Filtering through the conversation parser is mandatory -- raw Grep on JSONL produces inflated counts from tool definitions, system prompts, and `tool_result` blocks.
+### Dispatch the rig operator in init mode
 
 ```javascript
 JQ_FILTER_PATH = `${SKILL_DIR}/references/jsonl-filter.jq`;
-conversation_files = Glob(`${HISTORY_DIR}/**/*.jsonl`);
 
-PRIMARY_CAP   = 5;  // per session, per term
-SECONDARY_CAP = 3;
-
-session_scores = [];
-
-for (file of conversation_files) {
-  per_term_hits = {};
-  total_score   = 0;
-
-  for (term of expanded_terms) {
-    // Pipe file through jq filter, count case-insensitive keyword matches
-    // jq -r -f "$JQ_FILTER_PATH" "$file" 2>/dev/null | grep -oi "\b${term}\b" | wc -l
-    raw_count  = count_filtered(file, term, JQ_FILTER_PATH);
-    capped     = Math.min(raw_count, PRIMARY_CAP);
-    total_score += capped;
-    if (raw_count > 0) per_term_hits[term] = capped;
-  }
-
-  if (total_score > 0) {
-    session_mtime = stat(file).mtime;
-    session_scores.push({
-      file:  file,
-      score: total_score,
-      hits:  per_term_hits,
-      date:  format_date(session_mtime)
-    });
-  }
-}
-
-// Rank by score descending
-session_scores.sort((a, b) => b.score - a.score);
+rig_operator_result = Agent({
+  subagent_type: "general-purpose",
+  model: "sonnet",  // Escalate to opus if subject has < 3 obvious keyword seeds
+  prompt: build_rig_operator_prompt(
+    subject,
+    HISTORY_DIR,
+    "init",
+    null,          // no prior cavern map on first dig
+    null,          // no tunnel_id in init mode
+    "None yet.",   // no prior nuggets
+    JQ_FILTER_PATH
+  )
+});
 ```
 
-**Zero-hit guard:** If `session_scores.length === 0`, remove the lock file and exit with:
+The rig operator runs its reasoning and mechanical phases in sequence: it expands the subject into a rich `subject_expansion` object (literal phrases, regex patterns, semantic variants, co-occurring terms, and false-positive exclusions), scores all sessions using the jq filter against that expansion, clusters sessions into semantically-labelled tunnels, and invokes `prep-rig.sh` to materialise a clean rig for the first tunnel. See the rig operator prompt in the Appendix for the full specification.
+
+### Parse the rig operator return value
+
+The rig operator's structured output contains everything needed to build the cavern map and kick off D5:
+
+```javascript
+// Parse fields from the rig operator's structured return summary
+subject_expansion = rig_operator_result.SUBJECT_EXPANSION;  // full expansion object
+tunnels           = rig_operator_result.TUNNELS;             // array of tunnel descriptors
+manifest_path     = rig_operator_result.MANIFEST_PATH;       // passed to D5 for first cycle
+coverage          = rig_operator_result.COVERAGE;            // sessions_covered/total_candidates
+
+// Surface any scope warning to the user before proceeding
+if (rig_operator_result.includes("SCOPE WARNING")) {
+  display(rig_operator_result.match(/SCOPE WARNING:.+/)[0]);
+}
+```
+
+**Zero-hit guard:** If the rig operator reports `SESSIONS_IN_RIG: 0` or the `tunnels` array is empty, remove the lock file and exit with:
 
 ```
 No sessions found matching '{subject}'. Try a different subject or run /archaeology survey first.
@@ -384,122 +307,31 @@ No sessions found matching '{subject}'. Try a different subject or run /archaeol
 
 ---
 
-## Dig Step D3: Tunnel Generation
+## Dig Step D3: Cavern Map Construction
 
-Groups ranked sessions into named investigation branches (tunnels) based on shared keyword signal. A tunnel is a coherent cluster of sessions where the same subset of expanded terms recurs together.
+Writes the initial `cavern-map.json` from the rig operator output received in D2. Tunnel construction has already happened inside the rig operator; this step translates the rig operator's tunnel array into the cavern map's tree structure and persists it to disk.
 
-### Cluster formation
+### Build tunnel nodes from rig operator output
 
-Build a term co-occurrence profile for each session. Take the top 3 terms by hit count as the session's cluster signature, then group sessions by signature:
-
-```javascript
-for (session of session_scores) {
-  top_terms = Object.entries(session.hits)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([term]) => term);
-  session.cluster_signature = top_terms.join('+');
-}
-
-clusters = {};
-for (session of session_scores) {
-  sig = session.cluster_signature;
-  if (!clusters[sig]) {
-    clusters[sig] = {
-      signature:   sig,
-      top_terms:   session.cluster_signature.split('+'),
-      sessions:    [],
-      total_score: 0
-    };
-  }
-  clusters[sig].sessions.push(session);
-  clusters[sig].total_score += session.score;
-}
-```
-
-Sessions are allowed to appear in multiple tunnels. A session discussing both OAuth token issuance and login UX flows legitimately belongs to both clusters. Deduplication applies only to the catch-all `tunnel-other`.
-
-### Tunnel naming
-
-Derive a human-readable label from the cluster's top terms:
-
-```javascript
-function make_tunnel_label(top_terms) {
-  slug_parts = top_terms.slice(0, 2).map(t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
-  return `tunnel-${slug_parts.join('-')}`;
-}
-
-tunnels = Object.values(clusters).map(c => ({
-  label:         make_tunnel_label(c.top_terms),
-  top_terms:     c.top_terms,
-  sessions:      c.sessions,
-  total_score:   c.total_score,
-  session_count: c.sessions.length,
-  date_range:    compute_date_range(c.sessions),
-  status:        'unexplored'
-}));
-```
-
-### Tunnel ranking with temporal spread bonus
-
-Tunnels spanning longer date ranges rank higher when scores are close:
-
-```javascript
-function compute_date_range(sessions) {
-  dates = sessions.map(s => new Date(s.date)).sort((a, b) => a - b);
-  if (dates.length === 1) return format_date(dates[0]);
-  span_months = Math.round((dates[dates.length - 1] - dates[0]) / (1000 * 60 * 60 * 24 * 30));
-  return `${format_date(dates[0])} -- ${format_date(dates[dates.length - 1])} (${span_months}mo span)`;
-}
-
-function tunnel_rank_score(tunnel) {
-  span_days = date_span_days(tunnel.sessions);
-  span_bonus = Math.min(1.5, 1.0 + (span_days / 365) * 0.5);  // max +50% for year-spanning
-  return tunnel.total_score * span_bonus;
-}
-
-tunnels.sort((a, b) => tunnel_rank_score(b) - tunnel_rank_score(a));
-```
-
-### Cap at 10 with catch-all merge
-
-If there are more than 10 tunnels, merge the weakest into a catch-all:
-
-```javascript
-if (tunnels.length > 10) {
-  tail = tunnels.splice(10);
-  other_sessions = tail.flatMap(t => t.sessions);
-  other_sessions = unique_by(other_sessions, s => s.file);  // deduplicate catch-all only
-  tunnels.push({
-    label:         'tunnel-other',
-    top_terms:     [],
-    sessions:      other_sessions,
-    total_score:   tail.reduce((sum, t) => sum + t.total_score, 0),
-    session_count: other_sessions.length,
-    date_range:    compute_date_range(other_sessions),
-    status:        'unexplored'
-  });
-}
-```
+Each entry in the rig operator's `tunnels` array becomes a node in `tunnel_nodes`. Labels come directly from the rig operator's semantic clustering -- not derived from keywords here.
 
 ### Write cavern-map.json
 
-Build the tree structure. The root node represents the subject. Each tunnel becomes a child node at depth 1. Write atomically.
+Build the tree structure from the rig operator's tunnel array. The root node represents the subject. Each tunnel from the rig operator becomes a child node at depth 1, using the semantic label the rig operator produced -- not a keyword-derived slug. Write atomically.
 
 ```javascript
 now = new Date().toISOString();
 
-// Build tunnel nodes
+// subject_expansion and tunnels come from the rig operator result parsed in D2
 tunnel_nodes = {};
-tunnel_ids = [];
+tunnel_ids   = [];
 
 for (t of tunnels) {
-  tunnel_id = t.label;
-  tunnel_ids.push(tunnel_id);
+  tunnel_ids.push(t.id);
 
-  tunnel_nodes[tunnel_id] = {
-    id:                tunnel_id,
-    label:             t.label.replace(/^tunnel-/, '').replace(/-/g, ' '),
+  tunnel_nodes[t.id] = {
+    id:                t.id,
+    label:             t.label,   // semantic label from rig operator, e.g. "Fan-out dispatch patterns"
     status:            'unexplored',
     depth:             1,
     parent_id:         'root',
@@ -512,7 +344,7 @@ for (t of tunnels) {
 }
 
 cavern_map = {
-  schema_version: "1.0",
+  schema_version: "1.1",
   subject:        subject,
   subject_slug:   subject_slug,
   project:        PROJECT_SLUG,
@@ -520,11 +352,17 @@ cavern_map = {
   last_modified:  now,
   total_nuggets:  0,
   total_veins:    0,
-  expanded_terms: expanded_terms,
-  session_count:  session_scores.length,
+  subject_expansion: subject_expansion,  // full expansion object from rig operator
+  expanded_terms: [
+    ...subject_expansion.literal,
+    ...subject_expansion.regex_patterns,
+    ...subject_expansion.semantic_variants,
+    ...subject_expansion.co_occurring
+  ],  // flattened convenience -- excludes 'exclude' field
+  session_count:  tunnels.reduce((sum, t) => sum + t.session_count, 0),
   prior_outputs: {
     survey:    exists(`${ARCHAEOLOGY_DIR}/survey.md`) || exists(`${CENTRAL_OUTPUT_DIR}/survey.md`),
-    domains:   HAS_PRIOR_FINDINGS ? [subject_slug] : [],
+    domains:   [],
     artifacts: exists(`${ARCHAEOLOGY_DIR}/artifacts/_index.json`)
   },
   root: {
@@ -542,6 +380,9 @@ cavern_map = {
   tunnel_nodes:  tunnel_nodes,
   decision_log:  []
 };
+
+// The `expanded_terms` field is a flattened convenience array for display code (D4).
+// The full `subject_expansion` object is used by the rig operator for scoring.
 
 // Atomic write
 Write(`${CAVERN_MAP}.tmp`, JSON.stringify(cavern_map, null, 2));
@@ -662,75 +503,42 @@ try {
 
 **Trigger:** The user selected a tunnel from the cavern map (D4), or provided free-text that was matched to the nearest tunnel by keyword overlap.
 
-### Session selection
+### Rig operator dispatch (extend mode)
 
-Pull sessions from the chosen tunnel node. Filter out sessions already searched for this tunnel. Rank candidates by keyword relevance. Cap at 6 per cycle.
+On the first dig cycle, `manifest_path` is already set from D2's rig operator init result. On subsequent cycles (resume digs), dispatch the rig operator in `extend` mode to select unsearched sessions and prepare a new rig:
 
 ```javascript
 tunnel = find_tunnel_by_id(cavern_map, chosen_tunnel_id);
 
-all_sessions = Glob(`${HISTORY_DIR}/**/*.jsonl`);
+// On first cycle, manifest_path already set by D2's rig operator init.
+// On subsequent cycles, dispatch rig operator in extend mode.
+if (!manifest_path) {
+  rig_operator_result = Agent({
+    subagent_type: "general-purpose",
+    model: "sonnet",
+    prompt: build_rig_operator_prompt(
+      cavern_map.subject,
+      HISTORY_DIR,
+      "extend",
+      cavern_map,
+      chosen_tunnel_id,
+      prior_nugget_context,
+      JQ_FILTER_PATH
+    )
+  });
+  manifest_path = rig_operator_result.MANIFEST_PATH;
+}
 
-// Filter out already-searched sessions
-already_searched = new Set(tunnel.sessions_searched);
-candidate_sessions = all_sessions.filter(f => !already_searched.has(f));
-
-if (candidate_sessions.length === 0) {
+// Zero-session guard: if the rig operator found nothing new, the tunnel is exhausted
+if (!manifest_path) {
   tunnel.status = 'exhausted';
   write_cavern_map(cavern_map);
   display(`Tunnel "${tunnel.label}" is exhausted -- all sessions searched. Pick another direction.`);
   return;
 }
-
-// Rank candidates by keyword relevance to the tunnel
-tunnel_keywords = extract_tunnel_keywords(tunnel);
-ranked = rank_sessions_by_keyword_density(candidate_sessions, tunnel_keywords);
-
-// Cap at 6 sessions per cycle
-selected_sessions = ranked.slice(0, 6);
 ```
 
-### Session assignment preparation
-
-Build a lightweight assignment list -- paths and metadata only. Spelunker agents read the files themselves using the Read tool.
-
-```javascript
-SIZE_THRESHOLD = 200 * 1024;    // 200KB -- above this, spelunker reads in windows
-
-// Build session assignment list -- paths only, no content loading
-// The spelunker agents will read files themselves
-session_assignments = [];
-for (session_path of selected_sessions) {
-  file_size = stat(session_path).size;
-  session_assignments.push({
-    session_path: session_path,
-    session_date: extract_date_from_path(session_path),
-    file_size: file_size,
-    large_file: file_size >= SIZE_THRESHOLD
-  });
-}
-```
-
-**Pre-filtering context for spelunkers:** `tool_result` content blocks constitute 40-60% of a typical session file. Spelunkers should skip these blocks entirely and focus on the conversation flow -- what the user asked, what the assistant decided, what tools were invoked and why -- not the raw file contents returned by those tools.
-
-### Agent dispatch
-
-Fan out Explore agents, maximum 3 per cycle. Distribute sessions round-robin across spelunkers.
-
-```javascript
-MAX_SPELUNKERS = 3;
-
-// Ensure nuggets directory exists before any glob operations
-mkdir -p ${NUGGETS_DIR}
-
-// Distribute sessions across spelunkers round-robin
-spelunker_assignments = Array.from({ length: MAX_SPELUNKERS }, () => []);
-for (let i = 0; i < session_assignments.length; i++) {
-  spelunker_assignments[i % MAX_SPELUNKERS].push(session_assignments[i]);
-}
-// Remove empty assignments (fewer sessions than agents)
-spelunker_assignments = spelunker_assignments.filter(a => a.length > 0);
-```
+**Rig persistence:** Rigs are written to `${STATE_DIR}/.prep/{tunnel-id}/` (inside the spelunk state directory, not `/tmp/`). This persists across sessions for resume. The `--fresh` flag cleans the `.prep/` directory as part of state reset. Atomic writes: the prep script writes to `.prep/{tunnel-id}.tmp/`, then renames to `.prep/{tunnel-id}/` on success. Spelunkers only ever receive paths to directories without the `.tmp` suffix.
 
 ### Prior nugget context for dedup
 
@@ -747,30 +555,49 @@ prior_nugget_context = existing_nuggets.length > 0
   : 'None yet.';
 ```
 
-### Dispatch spelunker agents
+### Read manifest and dispatch spelunker agents
 
-For each assignment, build the session list (paths + metadata) and dispatch an Explore agent using the spelunker prompt (see Agent Prompts section below):
+Read `manifest.json` from `manifest_path` to get the slab list, then fan out Explore agents at Haiku tier (max 3). Distribute slabs round-robin across spelunkers. Escalate individual spelunkers to Sonnet on zero-nugget rigs with more than 50 messages.
 
 ```javascript
+manifest = JSON.parse(Read(`${manifest_path}`));
+slabs = manifest.slabs;
+
+MAX_SPELUNKERS = 3;
+
+// Ensure nuggets directory exists before any glob operations
+mkdir -p ${NUGGETS_DIR}
+
+// Distribute slabs across spelunkers round-robin
+spelunker_assignments = Array.from({ length: MAX_SPELUNKERS }, () => []);
+for (let i = 0; i < slabs.length; i++) {
+  spelunker_assignments[i % MAX_SPELUNKERS].push(slabs[i]);
+}
+// Remove empty assignments (fewer slabs than agents)
+spelunker_assignments = spelunker_assignments.filter(a => a.length > 0);
+
+// Build a per-spelunker sub-manifest and dispatch
 spelunker_results = [];
 for (assignment of spelunker_assignments) {
-  session_list = assignment.map(s => ({
-    path: s.session_path,
-    date: s.session_date,
-    large_file: s.large_file
-  }));
+  // Write a sub-manifest containing only the slabs assigned to this spelunker
+  sub_manifest_path = `${manifest_path}-spelunker-${i}.json`;
+  Write(sub_manifest_path, JSON.stringify({ ...manifest, slabs: assignment }, null, 2));
 
   Agent({
     subagent_type: "Explore",
+    model: "haiku",
     prompt: build_spelunker_prompt(
       tunnel.label,
       cavern_map.subject,
-      session_list,        // paths + metadata, NOT content
+      sub_manifest_path,
+      tunnel_context,      // subject expansion summary from cavern_map
       prior_nugget_context
     )
   });
 }
 ```
+
+`tunnel_context` is a human-readable summary of `cavern_map.subject_expansion` for the chosen tunnel -- a brief description of the literal phrases, regex patterns, and semantic variants the spelunker should be alert to. Derive it from `cavern_map.subject_expansion` before dispatch.
 
 Wait for all spelunker agents to complete.
 
@@ -921,10 +748,11 @@ for (let i = 0; i < deduplicated.length; i++) {
 ### Update cavern map after nugget writes
 
 ```javascript
-// Mark sessions as searched for this tunnel
-for (assignment of session_assignments) {
-  if (!tunnel.sessions_searched.includes(assignment.session_path)) {
-    tunnel.sessions_searched.push(assignment.session_path);
+// Mark sessions as searched for this tunnel -- derive from manifest slabs
+searched_sessions = [...new Set(slabs.map(s => s.source_session))];
+for (session_path of searched_sessions) {
+  if (!tunnel.sessions_searched.includes(session_path)) {
+    tunnel.sessions_searched.push(session_path);
   }
 }
 
@@ -1473,25 +1301,21 @@ TUNNEL: ${tunnel_label}
 You are looking for information specifically about: ${tunnel_label} as it
 relates to ${subject}.
 
-SESSIONS ASSIGNED TO YOU:
-${session_list_formatted}
+TUNNEL CONTEXT: ${tunnel_context}
 
-READING INSTRUCTIONS:
-For each session file assigned to you:
-1. Use the Read tool to read the file
-2. Pre-filter: Skip tool_result content blocks entirely -- they are raw file
-   contents and tool outputs that inflate the file by 40-60%. Focus on the
-   conversation flow: what the user asked, what the assistant decided, what
-   tools were invoked and why.
-3. For large files (marked large_file: true), read in 150-message windows.
-   Process each window before reading the next. Do not attempt to load the
-   entire file at once.
-4. As you read, extract nuggets per the rules below. You do not need to
-   hold the entire session in memory -- process each session/window and
-   emit nuggets as you go.
+MANIFEST: ${manifest_path}
+Read manifest.json at this path. It contains a slabs[] array. Each slab has:
+- slab_file: path to the cleaned JSONL file to read
+- source_session: original session path (use for source_session in nuggets)
+- range: message range (use for source_range in nuggets)
+- confidence: session confidence level (informational only)
 
-SIZE_THRESHOLD: 200KB. Files above this are marked large_file: true.
-SLAB_SIZE: 150 messages per reading window for large files.
+Read manifest.json from the MANIFEST path. For each slab in the manifest's
+slabs[] array, read the slab_file and extract nuggets per the rules below.
+Use source_session and range from each manifest entry for provenance
+attribution -- do not derive these from the file path or content.
+
+Files already cleaned by prep-rig.sh -- read as-is.
 
 YOUR TASK HAS TWO PHASES. Complete both in a single pass over the material.
 
@@ -1538,8 +1362,8 @@ HARD RULES:
 ${prior_nugget_summaries}
 
 FORMAT RULES:
-- source_range: msg:{start}-{end} referencing JSONL message indices
-- source_session: the session filename you read
+- source_range: use the range field from the manifest slab entry (e.g. msg:1-150)
+- source_session: use the source_session field from the manifest slab entry
 - tags: 2-5 tags using domain/specific hierarchy (e.g., mcp/caching,
   perf/latency). Include parent tag when useful for clustering.
 - XML escaping: < as &lt;, > as &gt;, & as &amp;
@@ -1558,7 +1382,7 @@ Do not explain your reasoning outside the tags. Do not add preamble or summary.
   <confidence>high|medium|low</confidence>
   <weight>1-10</weight>
   <tags>comma-separated lowercase tags using domain/specific hierarchy</tags>
-  <source_session>filename.jsonl from your SESSIONS list</source_session>
+  <source_session>source_session value from the manifest slab entry</source_session>
   <source_range>msg:{start}-{end}</source_range>
 </nugget>
 
@@ -1604,9 +1428,255 @@ WHY THIS FAILS:
 **Prompt assembly notes:**
 - `${subject}` -- `cavern_map.subject`, the user's original subject string.
 - `${tunnel_label}` -- `tunnel.label`, the human-readable tunnel name.
+- `${tunnel_context}` -- a brief human-readable summary of `cavern_map.subject_expansion` for the chosen tunnel: the key literal phrases, regex patterns, and semantic variants to watch for. Derived by the orchestrator before dispatch.
+- `${manifest_path}` -- absolute path to the sub-manifest JSON file written for this spelunker's slab assignment.
 - `${prior_nugget_summaries}` -- the 1-line summaries built in D5, or `"None yet."` if this is the first cycle for this tunnel.
-- `${session_list_formatted}` -- one line per session: `  {path}  ({date})  [LARGE -- read in windows]` (the large-file marker is omitted for small files).
-- `build_spelunker_prompt()` signature: `(tunnel_label, subject, session_list, prior_nugget_context)` -- takes session metadata, not content.
+- `build_spelunker_prompt()` signature: `(tunnel_label, subject, manifest_path, tunnel_context, prior_nugget_context)` -- takes manifest path and context strings, not session content.
+
+### Rig Operator Agent Prompt
+
+Called by `build_rig_operator_prompt()` in D2/D5. Variable placeholders are marked with `${...}`.
+
+```
+You are a rig operator -- an archaeological sub-agent that prepares the
+dig environment before spelunkers descend. You do two things: reason about
+the subject to produce a rich expansion and tunnel structure, then run a
+prep script to materialise a clean rig for spelunkers. You never extract
+nuggets. You never embed session content in your return value.
+
+SUBJECT: ${subject}
+PROJECT_SESSIONS_DIR: ${project_sessions_dir}
+MODE: ${mode}
+JQ_FILTER_PATH: ${jq_filter_path}
+
+${cavern_map_json}
+${tunnel_id}
+${prior_nuggets_summary}
+
+---
+
+## INIT MODE (only when MODE == "init")
+
+### Phase 1 -- Subject Expansion
+
+Produce a `subject_expansion` object for the subject string. Think carefully
+about each category before writing values.
+
+subject_expansion = {
+  "literal":           [...],  // exact phrases the subject might appear as verbatim
+  "regex_patterns":    [...],  // regex-friendly patterns covering morphological variants
+                               // e.g. "orchestrat(e|ion|or|ing)", "sub.?agents?"
+  "semantic_variants": [...],  // domain vocabulary that signals this concept without
+                               // using the subject's own words
+                               // e.g. "swarm", "dispatch", "worker pool"
+  "co_occurring":      [...],  // terms that frequently appear alongside this subject
+                               // even when not naming it directly
+                               // e.g. "task decomposition", "multi-agent", "delegate"
+  "exclude":           [...]   // false positives -- terms that match the patterns but
+                               // are clearly off-topic for this project's context
+                               // e.g. "react" if the project is not a React app
+}
+
+For each category, explain your reasoning in a brief inline comment before
+listing terms. Do not abbreviate -- surface your inference chain so the
+orchestrator can evaluate expansion quality.
+
+### Phase 2 -- Session Scoring
+
+Use the jq filter at ${jq_filter_path} to score sessions against your
+expanded term set.
+
+- Apply regex_patterns using regex matching, not literal string comparison.
+  A session mentioning "orchestrating" scores for a pattern "orchestrat(e|ion|or|ing)".
+- Apply co_occurring terms as secondary signal -- they boost score but do
+  not anchor a session on their own.
+- Apply exclude terms to suppress false-positive matches.
+- Produce a score per session. You will use these scores in Phase 3.
+
+Run the jq filter per session file. Do not load full session content.
+
+### Phase 3 -- Tunnel Construction
+
+Cluster the scored sessions into tunnels. Each tunnel represents a semantic
+cluster of sessions -- not a keyword bucket.
+
+Rules:
+- Cluster by semantic signal: sessions that discuss the same concept from
+  different angles belong in the same tunnel even if they share few exact words.
+- Name tunnels with semantic labels: "Fan-out dispatch patterns" not "tunnel-fan-out".
+  The tunnel id is a slug of the label; the label is human-readable.
+- Minimum 2 sessions per tunnel. Do not create a tunnel for a single session.
+- Uncategorized sessions (no strong signal for any cluster) are left unassigned.
+  Do not force-assign low-signal sessions to maintain tunnel quality.
+
+Output a tunnel list:
+[
+  {
+    "id": "tunnel-{slug}",
+    "label": "{Human-readable semantic label}",
+    "session_count": N,
+    "top_sessions": [
+      {
+        "path": "/abs/path/to/session.jsonl",
+        "confidence": "high|medium|low",
+        "rationale": "One sentence explaining the signal"
+      },
+      ...
+    ]
+  },
+  ...
+]
+
+### Phase 4 -- Session Assignment
+
+For each tunnel, produce a ranked session list with confidence and rationale.
+
+confidence:
+  high   -- regex_patterns or literal terms appear in close proximity to
+            co_occurring terms; clear anchor passage exists
+  medium -- semantic_variants match or co_occurring terms appear without
+            direct subject vocabulary; indirect but plausible signal
+  low    -- only weak co_occurring matches; session may be tangentially
+            related
+
+Include low-confidence sessions in the assignment -- they provide the
+orchestrator with exhaustion signal. Flag them clearly.
+
+### Phase 5 -- Run Prep Script
+
+Construct and execute the prep-rig.sh invocation for the top-ranked tunnel.
+
+Use the highest-scored sessions (all confidence levels). Pass them as a
+comma-separated list to --sessions.
+
+Command format:
+  prep-rig.sh \
+    --sessions "/path/a.jsonl,/path/b.jsonl,..." \
+    --output-dir "${STATE_DIR}/.prep/${tunnel_id}/" \
+    --slab-size 150 \
+    --overlap 20
+
+Run this command synchronously using Bash. Wait for exit 0 before continuing.
+On non-zero exit, surface the error and stop -- do not return a partial result.
+
+### Phase 6 -- Verify Manifest
+
+After the prep script completes, read the output manifest.json at:
+  ${STATE_DIR}/.prep/${tunnel_id}/manifest.json
+
+Confirm:
+- File exists and is valid JSON
+- `slabs` array is non-empty
+- Each slab entry has: slab_file, source_session, range, message_count, confidence
+
+If any check fails, report the failure. Do not proceed to output.
+
+---
+
+## EXTEND MODE (only when MODE == "extend")
+
+The cavern map already exists. You are extending an existing tunnel with
+sessions not yet searched.
+
+### Phase 1 -- Identify Unsearched Sessions
+
+Read the cavern map from CAVERN_MAP_JSON. For the tunnel identified by
+TUNNEL_ID, compare:
+  tunnel_nodes[TUNNEL_ID].sessions_searched
+against the full session list at PROJECT_SESSIONS_DIR.
+
+Sessions not in sessions_searched are candidates for this extend cycle.
+
+### Phase 2 -- Re-rank Unsearched Sessions
+
+Use the existing subject_expansion from the cavern map (do not re-derive it).
+Apply the same jq filter scoring used in init Phase 2 against the unsearched
+candidates only.
+
+Re-rank by score descending. Produce a ranked list with confidence and
+rationale using the same rules as init Phase 4.
+
+### Phase 3 -- Run Prep Script
+
+Construct and execute prep-rig.sh for the re-ranked unsearched sessions.
+Use the same command format as init Phase 5.
+
+Output directory: ${STATE_DIR}/.prep/${tunnel_id}-extend-{timestamp}/
+
+Run synchronously. Wait for exit 0.
+
+### Phase 4 -- Verify Manifest
+
+Same verification steps as init Phase 6. Read the manifest, confirm slabs
+are present and well-formed.
+
+---
+
+## COVERAGE METRIC
+
+After scoring (init Phase 2 or extend Phase 2), compute:
+
+  sessions_covered = count of sessions with at least one regex_pattern or
+                     literal match (before exclude filtering)
+  total_candidates = total session files in PROJECT_SESSIONS_DIR
+
+Report: sessions_covered / total_candidates
+
+If sessions_covered / total_candidates < 0.40, append this warning to your
+output summary:
+  SCOPE WARNING: Coverage {sessions_covered}/{total_candidates} is below 40%.
+  The subject expansion may be too narrow. Consider broadening semantic_variants
+  or co_occurring terms before continuing.
+
+---
+
+## HARD RULES
+
+- Never embed session content in your return value. File paths only.
+- Never load full session file content for scoring. Use jq filters only.
+- The prep script does all file I/O for slab creation. Do not write slab
+  files yourself.
+- Do not re-derive subject_expansion in extend mode. Use what is in the
+  cavern map.
+- Do not assign uncategorized sessions to existing tunnels to inflate counts.
+- Do not create tunnels with fewer than 2 sessions.
+
+---
+
+## OUTPUT CONTRACT
+
+Return a structured summary only. No session content. No slab content.
+
+For both modes:
+
+TUNNEL_ID: {tunnel_id}
+SESSIONS_IN_RIG: {count}
+SLABS_TOTAL: {count}
+RIG_DIR: {path to .prep/{tunnel_id}/ directory}
+MANIFEST_PATH: {absolute path to manifest.json}
+COVERAGE: {sessions_covered}/{total_candidates}
+
+For init mode, also return:
+
+SUBJECT_EXPANSION: {the full subject_expansion JSON object}
+TUNNELS: {the full tunnel list JSON array with id, label, session_count, top_sessions}
+
+If a SCOPE WARNING applies, append it after the structured summary.
+
+Do not include any other text. The orchestrator parses this output
+programmatically.
+```
+
+**Prompt assembly notes:**
+- `${subject}` -- `cavern_map.subject`, the user's original subject string verbatim.
+- `${project_sessions_dir}` -- absolute path to the project's Claude session directory, resolved in D1.
+- `${mode}` -- `"init"` on the first dig cycle; `"extend"` on all subsequent cycles for an existing tunnel.
+- `${cavern_map_json}` -- full JSON of the current cavern map, injected as `CAVERN_MAP_JSON: <json>` in init mode; omitted in init when no prior state exists.
+- `${tunnel_id}` -- injected as `TUNNEL_ID: {id}` in extend mode only; omitted in init mode.
+- `${prior_nuggets_summary}` -- injected as `PRIOR_NUGGETS_SUMMARY: <text>` if nuggets exist for this tunnel; `"None yet."` otherwise.
+- `${jq_filter_path}` -- absolute path to `scripts/jsonl-filter.jq` in the archaeology skill directory.
+- `${STATE_DIR}` -- the spelunk state directory (e.g. `/tmp/dig/{subject-slug}/`), resolved in D1.
+- `build_rig_operator_prompt()` signature: `(subject, project_sessions_dir, mode, cavern_map, tunnel_id, prior_nuggets_summary, jq_filter_path)`.
 
 ### Connector Agent Prompt
 
@@ -1760,25 +1830,24 @@ Both agents follow the XML output convention defined in `conversation-parser.md`
 - [ ] `NUGGETS_DIR` created and `veins.json` initialized as `[]` on init (D1)
 - [ ] Schema version checked on resume -- must be `"1.0"` (D1)
 - [ ] `--fresh` confirmation guard when `total_nuggets > 0` (D1)
-- [ ] Subject expanded to 5-10 search terms (D2)
-- [ ] Survey and domain outputs incorporated if present (D2)
-- [ ] All conversation files scored against expanded terms using jq-filtered JSONL (D2)
-- [ ] Sessions ranked by score (D2)
+- [ ] Rig operator dispatched in `init` mode with subject and project sessions dir (D2)
+- [ ] `subject_expansion` object returned (literal, regex_patterns, semantic_variants, co_occurring, exclude) and stored in cavern map (D2)
+- [ ] All sessions scored and clustered into tunnels by rig operator (D2)
+- [ ] `manifest_path` received from rig operator for first cycle (D2)
 - [ ] Zero-hit guard checked -- exits cleanly if no sessions match (D2)
-- [ ] Sessions clustered into tunnels by term co-occurrence (D3)
-- [ ] Tunnels ranked by score with temporal spread bonus (D3)
-- [ ] Tunnel count capped at 10 with catch-all merge if needed (D3)
+- [ ] Tunnel nodes built from rig operator tunnel array with semantic labels (D3)
 - [ ] `cavern-map.json` written atomically with tree structure (root + tunnel_nodes) (D3)
-- [ ] Schema version is `"1.0"`, field names match schema: `started_at`, `last_modified`, `total_nuggets`, `total_veins`, `schema_version` (D3)
+- [ ] Schema version is `"1.1"`, field names match schema: `started_at`, `last_modified`, `total_nuggets`, `total_veins`, `schema_version` (D3)
 - [ ] `cavern-map.json` verified as valid JSON before display (D4)
 - [ ] Cavern map displayed to user in contract format (D4)
 - [ ] User direction received -- ready to pass to D5 (D4)
 
 ### Investigation Phase (D5-D7)
 
-- [ ] Sessions selected and assignments prepared for the active tunnel (D5)
+- [ ] Rig operator dispatched in `extend` mode (or `manifest_path` reused from D2 on first cycle) (D5)
+- [ ] `manifest_path` received and manifest read for slab list (D5)
 - [ ] `NUGGETS_DIR` verified to exist before glob operations (D5)
-- [ ] Spelunker agents dispatched (max 3 Explore agents, round-robin sessions) and all results collected (D5)
+- [ ] Spelunker agents dispatched (max 3 Explore agents, round-robin slabs) and all results collected (D5)
 - [ ] Spelunker XML parsed with source attribution (`source_session`, `source_range`) (D5)
 - [ ] Source session validated against assigned sessions with fallback (D5)
 - [ ] New nuggets deduplicated against existing (80% token overlap threshold) (D5)
@@ -1794,3 +1863,12 @@ Both agents follow the XML output convention defined in `conversation-parser.md`
 - [ ] Turn results displayed using `{#dig-iteration}` template (D7)
 - [ ] Budget check performed (2 cycles max per session) (D7)
 - [ ] Lock file removed via try/finally (D7)
+
+### Export Phase (D-FINAL)
+
+- [ ] **(Unless --no-export)** Export files written to `${CENTRAL_PROJECT_DIR}/spelunk/{subject-slug}/` (D-FINAL)
+- [ ] **(Unless --no-export)** `metadata.json` written with status, nugget count, and timestamps (D-FINAL)
+- [ ] **(Unless --no-export)** Local `INDEX.md` updated with spelunk indicator (D-FINAL)
+- [ ] **(Unless --no-export)** Central `INDEX.md` updated with spelunk entry (D-FINAL)
+- [ ] **(Unless --no-export, --done only)** `SUMMARY.md` Deep Digs section updated (D-FINAL)
+- [ ] Completion summary displayed with file locations and next step (D-FINAL)

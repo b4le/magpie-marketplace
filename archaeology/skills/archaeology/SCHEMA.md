@@ -491,7 +491,7 @@ The nugget body is markdown, not frontmatter. Two required sections:
 id: nug-004
 subject: oauth-token-refresh-strategy
 tunnel_id: tunnel-silent-refresh
-session: /Users/benpurslow/.claude/projects/-Users-benpurslow-Developer-workspace-mcp/abc123.jsonl
+session: ~/.claude/projects/-Users-username-Developer-workspace-mcp/abc123.jsonl
 session_date: 2026-02-14
 slab: "msg:41-80"
 confidence: high

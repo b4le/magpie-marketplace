@@ -1,6 +1,6 @@
 ---
 name: archaeology
-description: Use when the user says "archaeology", "survey", "workstyle", "excavation", "mine my history", "extract patterns", "scan my history", "what domains", "conserve", "preserve artifacts", "narrative extraction", "tell the story", "project story", or "dig". Analyzes past Claude Code sessions to surface reusable patterns, extract learnings from usage history, and conserve narrative artifacts across multiple knowledge domains.
+description: Use when the user says "archaeology", "survey", "workstyle", "how do I work with Claude", "my working style", "excavation", "survey all projects", "portfolio view", "scan all projects", "mine my history", "extract patterns", "scan my history", "what domains", "conserve", "preserve artifacts", "narrative extraction", "tell the story", "project story", "deep dive into", "investigate my history", or "dig". Analyzes past Claude Code sessions to surface reusable patterns, extract learnings from usage history, and conserve narrative artifacts across multiple knowledge domains.
 argument-hint: "[survey|workstyle|conserve|dig|excavation|{domain}|list] [project-name] [--no-export] [--global]"
 allowed-tools:
   - Read
@@ -24,6 +24,8 @@ Extract and document patterns from Claude Code usage history across multiple kno
 /archaeology                            # Survey mode (default) — scan project, score domains
 /archaeology survey                     # Explicit survey mode
 /archaeology survey "Project Name"        # Survey a specific project
+/archaeology survey --no-export           # Survey without exporting to central work-log
+/archaeology survey "Project Name" --no-export  # Survey specific project, local only
 /archaeology list                       # Show available domains
 /archaeology {domain}                   # Extract + export (uses current directory)
 /archaeology {domain} "Project Name"    # Specify target project explicitly

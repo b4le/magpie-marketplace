@@ -34,6 +34,20 @@ manifest_json = Bash(cmd);
 manifest = JSON.parse(manifest_json);
 ```
 
+#### E1 Verification
+
+```javascript
+// Check manifest parsed successfully
+if (!manifest || typeof manifest !== 'object') {
+  HARD STOP: "Excavation failed — manifest could not be parsed from script output. Check script stderr for details."
+}
+
+// Check at least one project was discovered
+if (!manifest.results || manifest.results.length === 0) {
+  HARD STOP: "Excavation found zero projects. Verify --scan-paths is correct or that ~/.claude/data/visibility-toolkit/work-log/archaeology exists."
+}
+```
+
 If `DRY_RUN`, display the discovery results and stop:
 ```
 Excavation Dry Run
@@ -63,6 +77,29 @@ for (result of manifest.results.filter(r => r.status === 'success' || r.status =
   if (exists(survey_path)) {
     surveys[result.slug] = Read(survey_path);
   }
+}
+```
+
+#### E2 Verification
+
+```javascript
+// Log per-project read outcomes
+readable = Object.keys(surveys);
+failed = manifest.results
+  .filter(r => r.status === 'success' || r.status === 'skipped')
+  .map(r => r.slug)
+  .filter(slug => !surveys[slug]);
+
+if (failed.length > 0) {
+  log(`Warning: Could not read surveys for: ${failed.join(', ')}`);
+}
+if (readable.length > 0) {
+  log(`Surveys loaded for: ${readable.join(', ')}`);
+}
+
+// Hard stop if no surveys could be read at all
+if (Object.keys(surveys).length === 0) {
+  HARD STOP: "Excavation aborted — no survey.md files could be read from the central work-log. Projects attempted: " + manifest.results.map(r => r.slug).join(', ')
 }
 ```
 
@@ -199,3 +236,5 @@ Excavation run is complete when:
 - [ ] Portfolio.md generated with cross-project synthesis
 - [ ] Portfolio.md written to central work-log root
 - [ ] Completion summary displayed with recommendations
+
+> **Note:** `--no-export` is not supported for excavation mode. Excavation's purpose is cross-project aggregation to the central work-log — local-only mode would be meaningless.

@@ -229,6 +229,24 @@ for cmd in survey list workstyle conserve excavation; do
     fi
 done
 
+# Check for rig operator prompt in dig-workflow.md
+dig_workflow_path="$REFS_DIR/dig-workflow.md"
+if [[ -f "$dig_workflow_path" ]]; then
+    dig_workflow_content=$(cat "$dig_workflow_path")
+    if echo "$dig_workflow_content" | grep -q "Rig Operator Agent Prompt"; then
+        log_success "dig-workflow.md contains 'Rig Operator Agent Prompt'"
+    else
+        log_error "dig-workflow.md missing 'Rig Operator Agent Prompt'"
+    fi
+    if echo "$dig_workflow_content" | grep -q "build_rig_operator_prompt"; then
+        log_success "dig-workflow.md contains 'build_rig_operator_prompt'"
+    else
+        log_error "dig-workflow.md missing 'build_rig_operator_prompt'"
+    fi
+else
+    log_error "dig-workflow.md not found at: $dig_workflow_path"
+fi
+
 # Workflow step markers live in the workflow reference files, not in SKILL.md.
 # Each workflow file declares its step range in its heading/preamble (e.g. "Steps S1-S7").
 # We check that each workflow reference file contains its expected step markers.
