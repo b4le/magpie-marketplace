@@ -131,7 +131,7 @@ cat .claude/mcp.json
 ```bash
 rm ~/.claude/mcp-tokens.json
 ```
-4. If a background subagent needs MCP access, run with `run_in_background: false` — background agents cannot access MCP tools
+4. The orchestrator must never call MCP tools directly — delegate to foreground sub-agents (`run_in_background: false`) using the dual return pattern (write raw results to `local-state/prefetch/{session}/`, return summary + path). Background agents cannot access MCP tools at all
 
 See @skills/resolving-claude-code-issues/reference/mcp-issues.md.
 

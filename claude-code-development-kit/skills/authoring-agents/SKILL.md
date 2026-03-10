@@ -110,7 +110,8 @@ Control background execution at spawn time. Background agents execute in paralle
 **Key constraints for background agents:**
 - Cannot access MCP tools (known bugs #13254, #21560)
 - Do not share the parent session's permission grants
-- Prefer foreground execution when MCP access (Groove, Aika) is needed
+
+**MCP delegation rule:** The orchestrator must never call MCP tools directly. Delegate all MCP fetching to foreground sub-agents (`run_in_background: false`) using the dual return pattern: sub-agent writes full results to `local-state/prefetch/{session}/` and returns a concise summary + file path. This keeps MCP bloat (~25KB+ per call) out of the orchestrator context.
 
 ## Agent Types
 
