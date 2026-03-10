@@ -207,10 +207,10 @@ echo "locked $(date -u +%Y-%m-%dT%H:%M:%SZ)" > ${LOCK_FILE}
 if (existing_state && !flag_fresh) {
   cavern_map = JSON.parse(Read(CAVERN_MAP));
 
-  // Schema version check -- must be "1.0"
-  if (cavern_map.schema_version !== "1.0") {
+  // Schema version check -- must be "1.1" (v1.0 maps not supported; run with --fresh to start over)
+  if (cavern_map.schema_version !== "1.1") {
     remove(LOCK_FILE);
-    error(`Unsupported schema version: ${cavern_map.schema_version}. Expected "1.0".`);
+    error(`Unsupported schema version: ${cavern_map.schema_version}. Expected "1.1". If you have a v1.0 map, run with --fresh to start over.`);
   }
 
   goto D4_RESUME;
@@ -390,6 +390,34 @@ Bash(`mv "${CAVERN_MAP}.tmp" "${CAVERN_MAP}"`);
 ```
 
 The structure is a tree: `root` + `tunnel_nodes` map. NOT a flat `tunnels` array. Field names must match the schema: `started_at`, `last_modified`, `total_nuggets`, `total_veins`, `schema_version`.
+
+### `subject_expansion` schema (v1.1)
+
+The `subject_expansion` object is written once by the rig operator in init mode and stored verbatim in the cavern map. It is never rewritten on subsequent cycles.
+
+```json
+{
+  "subject_expansion": {
+    "original_subject": "string -- the user's original query, verbatim and unmodified",
+    "expanded_terms":   ["string", "..."],
+    "domain_context":   "string -- identified domain or area inferred from the subject and project context",
+    "related_concepts": ["string", "..."],
+    "search_strategies": ["string", "..."]
+  }
+}
+```
+
+Field reference:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `original_subject` | string | The user's original query passed to D1, unmodified. Stored for provenance — display and resume logic should show this, not the slug. |
+| `expanded_terms` | array of strings | Flattened list of all expansion terms: literal phrases, regex-friendly patterns, semantic variants, and co-occurring terms. Excludes the `exclude` list. This is the canonical term set for display code (D4) and backward-compatible consumers. |
+| `domain_context` | string | The domain or area the rig operator identified for this subject (e.g. `"multi-agent orchestration"`, `"React state management"`). Used in tunnel labels and spelunker context summaries. |
+| `related_concepts` | array of strings | Conceptually related terms that frequently appear alongside the subject without naming it directly (e.g. `["task decomposition", "delegate", "spawn", "worker pool"]`). Secondary scoring signal. |
+| `search_strategies` | array of strings | Recommended search approaches produced by the rig operator (e.g. `["regex: orchestrat(e|ion|or|ing)", "co-occurrence: fan-out + dispatch", "exclude: react"]`). Stored for auditability; consumed by extend-mode re-ranking. |
+
+The `expanded_terms` field is a flattened convenience array retained for backward compatibility. The rig operator's internal expansion object (with `literal`, `regex_patterns`, `semantic_variants`, `co_occurring`, `exclude` sub-fields) feeds into `expanded_terms` at write time — see D3 code above.
 
 ---
 

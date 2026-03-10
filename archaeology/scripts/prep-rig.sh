@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # prep-rig.sh — prepare cleaned session files for spelunker agents
 #
 # Usage:
@@ -13,6 +13,8 @@
 # Exit 1: fatal error (output dir not writable, slab write failure)
 #
 # Bash 3.2 compatible (macOS default)
+
+set -euo pipefail
 
 # --------------------------------------------------------------------------
 # jq / jaq setup
@@ -251,32 +253,37 @@ while IFS= read -r session_path; do
       continue
     fi
 
-    # Apply stripping filter via jq
+    # Apply stripping filter via jq.
+    # Rules:
+    #   - Skip top-level type=="tool_result" messages entirely
+    #   - For assistant messages with content arrays, drop any content block
+    #     where type=="tool_result" and its text content exceeds 500 chars,
+    #     or where type=="tool_use" and its input payload exceeds 500 chars.
+    #   - Replace with a truncation-marker text block (not silent removal)
+    #   - All other messages pass through unchanged
     result=$(printf '%s\n' "$line" | "$JQ" -c '
-      # Skip top-level tool_result messages entirely
       if .type == "tool_result" then empty
 
-      # For assistant messages, strip noisy content blocks from content arrays
       elif .type == "assistant" then
         if (.message.content | type) == "array" then
           .message.content |= [
             .[] |
-            if (type == "object") and
-               (.type == "tool_result" or .type == "tool_use") and
-               ((.text // (.content // "") | tostring | length) > 500)
-            then empty
+            if (type == "object") and .type == "tool_result" and
+               ((.content // .text // "" | tostring | length) > 500)
+            then
+              {"type": "text",
+               "text": ("[tool_result stripped: " + (.content // .text // "" | tostring | length | tostring) + " chars]")}
+            elif (type == "object") and .type == "tool_use" and
+               ((.input // {} | tostring | length) > 500)
+            then
+              {"type": "text",
+               "text": ("[tool_use stripped: " + (.name // "unknown") + ", " + (.input // {} | tostring | length | tostring) + " chars]")}
             else .
             end
-          ] |
-          # Re-wrap in message envelope
-          . as $content |
-          # Return full message with filtered content
-          input_line_number as $_ |
-          .
+          ]
         else .
         end
 
-      # All other message types pass through unchanged
       else .
       end
     ' 2>/dev/null)
@@ -320,12 +327,12 @@ while IFS= read -r session_path; do
       exit 1
     }
 
-    # Append manifest slab entry
+    # Append manifest slab entry (range is 1-based, same format as multi-slab)
     slab_entry=$(
       "$JQ" -n \
         --arg slab_file "$slab_file" \
         --arg source_session "$session_path" \
-        --arg range "all" \
+        --arg range "msg:1-${msg_count}" \
         --argjson message_count "$msg_count" \
         --arg confidence "$session_confidence" \
         '{
