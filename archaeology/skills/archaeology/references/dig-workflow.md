@@ -690,53 +690,32 @@ ranked = rank_sessions_by_keyword_density(candidate_sessions, tunnel_keywords);
 selected_sessions = ranked.slice(0, 6);
 ```
 
-### Slab preparation
+### Session assignment preparation
 
-For each selected session file, decide whether to assign it whole or slice into overlapping slabs:
+Build a lightweight assignment list -- paths and metadata only. Spelunker agents read the files themselves using the Read tool.
 
 ```javascript
-SLAB_SIZE      = 150;           // messages per slab
-SLAB_OVERLAP   = 20;            // overlap at boundaries
-SIZE_THRESHOLD = 200 * 1024;    // 200KB -- above this, slice into slabs
+SIZE_THRESHOLD = 200 * 1024;    // 200KB -- above this, spelunker reads in windows
 
-slabs = [];
-
+// Build session assignment list -- paths only, no content loading
+// The spelunker agents will read files themselves
+session_assignments = [];
 for (session_path of selected_sessions) {
   file_size = stat(session_path).size;
-
-  if (file_size < SIZE_THRESHOLD) {
-    // Small file -- one slab covering the whole session
-    slabs.push({
-      session_path: session_path,
-      range: 'all',
-      content: pre_filter(session_path)
-    });
-  } else {
-    // Large file -- parse into messages, slice into overlapping slabs
-    messages = parse_jsonl_messages(session_path);
-
-    // Pre-filter: strip tool_result content blocks (same pattern as survey)
-    messages = messages.filter(m => m.type !== 'tool_result');
-    messages = messages.map(m => strip_tool_result_content_blocks(m));
-
-    for (let start = 0; start < messages.length; start += SLAB_SIZE - SLAB_OVERLAP) {
-      end = Math.min(start + SLAB_SIZE, messages.length);
-      slabs.push({
-        session_path: session_path,
-        range: `msg:${start + 1}-${end}`,
-        content: serialize_messages(messages.slice(start, end))
-      });
-      if (end === messages.length) break;
-    }
-  }
+  session_assignments.push({
+    session_path: session_path,
+    session_date: extract_date_from_path(session_path),
+    file_size: file_size,
+    large_file: file_size >= SIZE_THRESHOLD
+  });
 }
 ```
 
-**Pre-filtering rationale:** `tool_result` content blocks constitute 40-60% of a typical session file. Spelunkers need the conversation flow -- what the user asked, what the assistant decided, what tools were invoked and why -- not the raw file contents returned by those tools.
+**Pre-filtering context for spelunkers:** `tool_result` content blocks constitute 40-60% of a typical session file. Spelunkers should skip these blocks entirely and focus on the conversation flow -- what the user asked, what the assistant decided, what tools were invoked and why -- not the raw file contents returned by those tools.
 
 ### Agent dispatch
 
-Fan out Explore agents, maximum 3 per cycle. Distribute slabs round-robin across spelunkers.
+Fan out Explore agents, maximum 3 per cycle. Distribute sessions round-robin across spelunkers.
 
 ```javascript
 MAX_SPELUNKERS = 3;
@@ -744,12 +723,12 @@ MAX_SPELUNKERS = 3;
 // Ensure nuggets directory exists before any glob operations
 mkdir -p ${NUGGETS_DIR}
 
-// Distribute slabs across spelunkers round-robin
+// Distribute sessions across spelunkers round-robin
 spelunker_assignments = Array.from({ length: MAX_SPELUNKERS }, () => []);
-for (let i = 0; i < slabs.length; i++) {
-  spelunker_assignments[i % MAX_SPELUNKERS].push(slabs[i]);
+for (let i = 0; i < session_assignments.length; i++) {
+  spelunker_assignments[i % MAX_SPELUNKERS].push(session_assignments[i]);
 }
-// Remove empty assignments (fewer slabs than agents)
+// Remove empty assignments (fewer sessions than agents)
 spelunker_assignments = spelunker_assignments.filter(a => a.length > 0);
 ```
 
@@ -770,19 +749,15 @@ prior_nugget_context = existing_nuggets.length > 0
 
 ### Dispatch spelunker agents
 
-For each assignment, build the slab content and metadata, then dispatch an Explore agent using the spelunker prompt (see Agent Prompts section below):
+For each assignment, build the session list (paths + metadata) and dispatch an Explore agent using the spelunker prompt (see Agent Prompts section below):
 
 ```javascript
 spelunker_results = [];
 for (assignment of spelunker_assignments) {
-  slab_content = assignment.map(slab => {
-    return `--- SESSION: ${slab.session_path} | RANGE: ${slab.range} ---\n${slab.content}`;
-  }).join('\n\n');
-
-  slab_metadata = assignment.map(slab => ({
-    session: slab.session_path,
-    range: slab.range,
-    session_date: extract_date_from_path(slab.session_path)
+  session_list = assignment.map(s => ({
+    path: s.session_path,
+    date: s.session_date,
+    large_file: s.large_file
   }));
 
   Agent({
@@ -790,8 +765,7 @@ for (assignment of spelunker_assignments) {
     prompt: build_spelunker_prompt(
       tunnel.label,
       cavern_map.subject,
-      slab_content,
-      slab_metadata,
+      session_list,        // paths + metadata, NOT content
       prior_nugget_context
     )
   });
@@ -846,7 +820,7 @@ function parse_nugget_blocks(agent_output) {
 
 ### Source attribution with validation and fallback
 
-For each parsed nugget, validate the spelunker-provided `source_session` against the assigned slabs. Fall back to the first assignment if validation fails:
+For each parsed nugget, validate the spelunker-provided `source_session` against the assigned sessions. Fall back to the first assignment if validation fails:
 
 ```javascript
 all_new_nuggets = [];
@@ -859,14 +833,14 @@ for (let i = 0; i < spelunker_results.length; i++) {
     assigned_sessions = assignment.map(s => s.session_path);
 
     if (nugget.source_session) {
-      // Validate source_session matches one of the assigned slabs
+      // Validate source_session matches one of the assigned sessions
       matched = assigned_sessions.find(s =>
         s.endsWith(nugget.source_session) || s.includes(nugget.source_session)
       );
       if (matched) {
         nugget.session_path = matched;
       } else {
-        // Fallback: source_session doesn't match any assigned slab
+        // Fallback: source_session doesn't match any assigned session
         nugget.session_path = assignment[0].session_path;
       }
     } else {
@@ -874,7 +848,7 @@ for (let i = 0; i < spelunker_results.length; i++) {
       nugget.session_path = assignment[0].session_path;
     }
 
-    nugget.slab_range = nugget.source_range || assignment[0].range;
+    nugget.slab_range = nugget.source_range || 'all';
     nugget.session_date = extract_date_from_path(nugget.session_path);
     all_new_nuggets.push(nugget);
   }
@@ -948,9 +922,9 @@ for (let i = 0; i < deduplicated.length; i++) {
 
 ```javascript
 // Mark sessions as searched for this tunnel
-for (slab of slabs) {
-  if (!tunnel.sessions_searched.includes(slab.session_path)) {
-    tunnel.sessions_searched.push(slab.session_path);
+for (assignment of session_assignments) {
+  if (!tunnel.sessions_searched.includes(assignment.session_path)) {
+    tunnel.sessions_searched.push(assignment.session_path);
   }
 }
 
@@ -1499,6 +1473,26 @@ TUNNEL: ${tunnel_label}
 You are looking for information specifically about: ${tunnel_label} as it
 relates to ${subject}.
 
+SESSIONS ASSIGNED TO YOU:
+${session_list_formatted}
+
+READING INSTRUCTIONS:
+For each session file assigned to you:
+1. Use the Read tool to read the file
+2. Pre-filter: Skip tool_result content blocks entirely -- they are raw file
+   contents and tool outputs that inflate the file by 40-60%. Focus on the
+   conversation flow: what the user asked, what the assistant decided, what
+   tools were invoked and why.
+3. For large files (marked large_file: true), read in 150-message windows.
+   Process each window before reading the next. Do not attempt to load the
+   entire file at once.
+4. As you read, extract nuggets per the rules below. You do not need to
+   hold the entire session in memory -- process each session/window and
+   emit nuggets as you go.
+
+SIZE_THRESHOLD: 200KB. Files above this are marked large_file: true.
+SLAB_SIZE: 150 messages per reading window for large files.
+
 YOUR TASK HAS TWO PHASES. Complete both in a single pass over the material.
 
 PHASE 1 -- EXTRACT
@@ -1538,14 +1532,14 @@ HARD RULES:
     high: explicit statement in the conversation, direct quote, or named
           artefact you can point to
     medium: inferred from context with at least one concrete reference
-    low: synthesised from patterns across the slab, no single clear anchor
+    low: synthesised from patterns across the session, no single clear anchor
 - Do NOT re-discover findings that already exist. These nuggets have already
   been found for this tunnel:
 ${prior_nugget_summaries}
 
 FORMAT RULES:
 - source_range: msg:{start}-{end} referencing JSONL message indices
-- source_session: the session filename from the slab header
+- source_session: the session filename you read
 - tags: 2-5 tags using domain/specific hierarchy (e.g., mcp/caching,
   perf/latency). Include parent tag when useful for clustering.
 - XML escaping: < as &lt;, > as &gt;, & as &amp;
@@ -1564,7 +1558,7 @@ Do not explain your reasoning outside the tags. Do not add preamble or summary.
   <confidence>high|medium|low</confidence>
   <weight>1-10</weight>
   <tags>comma-separated lowercase tags using domain/specific hierarchy</tags>
-  <source_session>filename.jsonl from the slab header</source_session>
+  <source_session>filename.jsonl from your SESSIONS list</source_session>
   <source_range>msg:{start}-{end}</source_range>
 </nugget>
 
@@ -1605,19 +1599,14 @@ WHY THIS FAILS:
   metric (1.2s) and a measured downstream effect.
 - source_range spans 400 messages -- too broad to relocate the finding.
 
-SLAB METADATA:
-${slab_metadata_formatted}
-
-CONVERSATION CONTENT:
-${slab_content}
 ```
 
 **Prompt assembly notes:**
 - `${subject}` -- `cavern_map.subject`, the user's original subject string.
 - `${tunnel_label}` -- `tunnel.label`, the human-readable tunnel name.
 - `${prior_nugget_summaries}` -- the 1-line summaries built in D5, or `"None yet."` if this is the first cycle for this tunnel.
-- `${slab_metadata_formatted}` -- one line per slab: `Session: {path} | Range: {range} | Date: {date}`.
-- `${slab_content}` -- the pre-filtered conversation content, with session separators between slabs if the spelunker received multiple slabs.
+- `${session_list_formatted}` -- one line per session: `  {path}  ({date})  [LARGE -- read in windows]` (the large-file marker is omitted for small files).
+- `build_spelunker_prompt()` signature: `(tunnel_label, subject, session_list, prior_nugget_context)` -- takes session metadata, not content.
 
 ### Connector Agent Prompt
 
@@ -1745,7 +1734,7 @@ Both agents follow the XML output convention defined in `conversation-parser.md`
 | Scenario | Behaviour |
 |----------|-----------|
 | All sessions for tunnel already searched | Mark tunnel `exhausted`, prompt user to pick another direction |
-| 0 slabs generated (no candidate sessions) | Same as above |
+| 0 sessions selected (no candidate sessions) | Same as above |
 | Spelunker returns empty or unstructured output | Log as diagnostic, continue with remaining spelunkers |
 | All spelunkers return 0 nuggets | Record in decision log, check exhaustion signal, display "No new nuggets this cycle" |
 | 3/3 spelunkers return unstructured output | Warn: "All spelunker agents returned unusable output. Try narrowing the tunnel focus or rephrasing the subject." |
@@ -1787,11 +1776,11 @@ Both agents follow the XML output convention defined in `conversation-parser.md`
 
 ### Investigation Phase (D5-D7)
 
-- [ ] Sessions selected and slabs prepared for the active tunnel (D5)
+- [ ] Sessions selected and assignments prepared for the active tunnel (D5)
 - [ ] `NUGGETS_DIR` verified to exist before glob operations (D5)
-- [ ] Spelunker agents dispatched (max 3 Explore agents, round-robin slabs) and all results collected (D5)
+- [ ] Spelunker agents dispatched (max 3 Explore agents, round-robin sessions) and all results collected (D5)
 - [ ] Spelunker XML parsed with source attribution (`source_session`, `source_range`) (D5)
-- [ ] Source session validated against assigned slabs with fallback (D5)
+- [ ] Source session validated against assigned sessions with fallback (D5)
 - [ ] New nuggets deduplicated against existing (80% token overlap threshold) (D5)
 - [ ] Nugget files written with YAML frontmatter and body (D5)
 - [ ] Cavern map updated with new nugget IDs and searched sessions (D5)
