@@ -149,7 +149,7 @@ Running `/orchestrate` with no arguments is intentional — it prompts for a goa
 Subagents do not automatically inherit project permissions. Verify that sandbox settings allow file writes before spawning agents that need to produce output.
 
 **MCP tools unavailable in background agents**
-Background agents cannot access MCP tools. Use `run_in_background=False` for tasks that require MCP access (e.g., your organization's MCP servers).
+The orchestrator must never call MCP tools directly — delegate all MCP fetching to foreground sub-agents using the dual return pattern (write raw results to disk, return summary + path). Background agents cannot access MCP tools at all. See `references/mcp-prefetch-pattern.md` for the full protocol.
 
 ## Contributing
 

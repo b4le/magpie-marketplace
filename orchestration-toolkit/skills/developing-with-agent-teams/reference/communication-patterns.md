@@ -127,16 +127,11 @@ TaskUpdate(
 
 ### Critical: MCP Tool Access
 
-All Task calls spawning agents **must** include:
+**The orchestrator must never call MCP tools directly.** Delegate all MCP fetching to foreground sub-agents using the dual return pattern: sub-agent writes full results to `local-state/prefetch/{session}/`, returns summary + file path. Pass file paths to downstream agents, not raw data.
 
-```python
-Task(
-    description="...",
-    run_in_background=False  # REQUIRED for MCP access
-)
-```
+All agents that need MCP access **must** use `run_in_background=False` — background agents cannot access MCP tools.
 
-Without this, agents cannot access MCP tools (Groove, Aika, etc.).
+See `references/mcp-prefetch-pattern.md` for the full protocol.
 
 ### Spawning by Agent Type
 

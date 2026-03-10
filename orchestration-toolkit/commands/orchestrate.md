@@ -243,4 +243,4 @@ After all phases complete or execution is halted:
 - `references/fan-out-pattern.md` — Parallel execution pattern
 - `references/dispatch-execution.md` — Execution mode details
 - `references/verification-pattern.md` — Two-tier verification
-- `references/mcp-prefetch-pattern.md` — Pre-fetch external data
+- `references/mcp-prefetch-pattern.md` — MCP delegation (dual return)

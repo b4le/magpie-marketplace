@@ -23,20 +23,23 @@ Restart Claude Code after adding.
 
 **Symptom:** Spawned agents cannot access MCP tools (Groove, Aika, code-search, etc.).
 
-**Solution:** Always include `run_in_background=False`:
+**Causes and solutions:**
+
+1. **Background agent:** Background agents cannot access MCP tools. Use `run_in_background=False`.
+2. **Orchestrator calling MCP directly:** The orchestrator must never call MCP tools directly — delegate to foreground sub-agents using the dual return pattern (write raw results to `local-state/prefetch/{session}/`, return summary + path).
 
 ```python
-# Wrong
+# Wrong — orchestrator fetches directly or agent runs in background
 Task(description="Research using Aika...")
 
-# Correct
+# Correct — foreground sub-agent with dual return
 Task(
-    description="Research using Aika...",
+    description="Fetch Aika results, write to local-state/prefetch/{session}/, return summary + path",
     run_in_background=False
 )
 ```
 
-This is required for all agents that need MCP tool access.
+See `references/mcp-prefetch-pattern.md` for the full protocol.
 
 ## Agent Context Lost
 
@@ -189,5 +192,5 @@ phases:
 | "Team not found" | TeamCreate not called | Call TeamCreate first |
 | "Agent not found" | Wrong recipient name | Use correct agent name |
 | "Task blocked" | Dependencies not met | Complete blocking tasks |
-| "MCP unavailable" | Missing run_in_background=False | Add parameter |
+| "MCP unavailable" | Background agent or orchestrator calling directly | Use foreground sub-agent with dual return |
 | "Permission denied" | Sandbox restrictions | Check file paths |

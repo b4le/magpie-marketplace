@@ -195,17 +195,15 @@ can challenge each other's findings. Want me to set that up?"
 
 ### MCP Tool Access
 
-**Sub-agents require `run_in_background: false` to access MCP tools.**
+**The orchestrator must never call MCP tools directly.** Delegate all MCP fetching to foreground sub-agents using the dual return pattern:
 
-Background agents cannot access MCP tools (Groove, Jira, Google Drive, etc.). Always set:
+1. Spawn a foreground sub-agent (`run_in_background: false`) to execute MCP queries
+2. Sub-agent writes full results to `local-state/prefetch/{session}/` and returns a concise summary + file path
+3. Pass file paths (not raw data) to downstream agents
 
-```javascript
-Task({
-  subagent_type: "general-purpose",
-  run_in_background: false,  // CRITICAL for MCP access
-  prompt: `...`
-});
-```
+Background agents cannot access MCP tools at all (GitHub #13254, #19964).
+
+See `references/mcp-prefetch-pattern.md` for the full protocol and decision tree.
 
 ### team_name Parameter
 
@@ -262,7 +260,8 @@ Do NOT use for general sub-agent work outside teams.
 | Using Teams for independent parallel work | Overhead exceeds benefit | Parallel Task calls |
 | Using subagents when agents need to debate | Missing collaboration value | Agent Teams |
 | Using multi-agent-workflows for 2-step task | Too much structure | Direct execution |
-| Using run_in_background for MCP work | MCP tools won't work | Set run_in_background: false |
+| Orchestrator calling MCP directly | Context bloat (~25KB per call) | Delegate to foreground sub-agent with dual return |
+| Using run_in_background for MCP work | Background agents can't access MCP | Use run_in_background: false for MCP agents |
 | Arbitrary "5+ agents" threshold | Doesn't reflect intent | Ask "do agents need to discuss?" |
 
 ---

@@ -90,12 +90,14 @@ Spawn agents in parallel within each phase. Cap at 5 concurrent agents.
 ### Protocol
 
 ```
-### Phase 0: Pre-Fetch (conditional)
+### Phase 0: MCP Delegation (conditional)
 Before Phase 1, check whether any work item needs external data
 (MCP queries, shared file reads). If yes:
-- Apply mcp-prefetch-pattern.md
-- Write results to /tmp/prefetch/{session}/
-- Pass file paths to agents, not raw data
+- Delegate to foreground sub-agents per mcp-prefetch-pattern.md
+  (the orchestrator must never call MCP tools directly)
+- Sub-agents write full results to local-state/prefetch/{session}/
+  and return summary + file path (dual return)
+- Pass file paths to downstream work agents, not raw data
 
 ### Per Execution Phase:
 a. Identify all work items in the phase.

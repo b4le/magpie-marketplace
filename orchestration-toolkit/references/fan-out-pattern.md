@@ -19,11 +19,11 @@ Use this structure when orchestrating parallel work. Adapt `{placeholders}` to t
 
 ```
 ### Phase 0: Pre-fetch
-Before spawning agents, gather all external data they'll need:
-- Run MCP queries in the orchestrator (sub-agents can't access MCP tools)
+Before spawning work agents, gather all external data they'll need:
+- Delegate MCP queries to foreground sub-agents using the dual return pattern
+  (the orchestrator must never call MCP tools directly — see references/mcp-prefetch-pattern.md)
 - Read shared files that multiple agents will reference
-- Write results to /tmp/prefetch/{session}/ or a known location
-See: references/mcp-prefetch-pattern.md
+- Results end up in local-state/prefetch/{session}/ with summaries returned to the orchestrator
 
 ### Phase 1: Decompose
 Break the task into N independent work items. For each item, define:
@@ -71,7 +71,7 @@ After all agents return:
 
 - **File ownership is cardinal.** One owner per file, no exceptions. If two items need to edit the same file, either merge them into one item or have Phase 3 handle the integration.
 - **Fixed pipeline > flexible instructions.** Agents can't coordinate dynamically. Tell them exactly what to do in what order.
-- **Pre-fetch everything known.** Don't make agents discover data — gather it upfront and hand it to them. See `references/mcp-prefetch-pattern.md`.
+- **Pre-fetch everything known.** Delegate MCP fetching to foreground sub-agents before spawning work agents. See `references/mcp-prefetch-pattern.md`.
 - **Use worktrees for overlapping trees.** When agents work in the same repo but different files, `isolation: "worktree"` prevents accidental conflicts.
 - **Prefer fewer, focused agents.** 3 agents with clear scope outperform 6 agents with overlapping scope.
 - **Model-match agents to work.** See `~/.claude/rules/specialist-routing.md` § Model selection: Opus for complex reasoning, Sonnet for standard implementation, Haiku for mechanical tasks.

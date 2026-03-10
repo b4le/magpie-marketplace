@@ -73,19 +73,11 @@ See `skills/iterative-agent-refinement/SKILL.md` for the pause/resume pattern.
 
 ## Critical: MCP Tool Access
 
-**Sub-agents require `run_in_background: false` to access MCP tools.**
+**The orchestrator must never call MCP tools directly.** Delegate all MCP fetching to foreground sub-agents using the dual return pattern: sub-agent writes full results to `local-state/prefetch/{session}/`, returns summary + file path to the orchestrator. Background agents cannot access MCP tools at all.
 
-Background agents in Claude Code cannot access MCP tools (Groove, Jira, Google Drive, etc.). Always set `run_in_background: false` when launching Task agents that need MCP access:
+All sub-agents that need MCP access must use `run_in_background: false`.
 
-```javascript
-Task({
-  subagent_type: "general-purpose",
-  run_in_background: false,  // CRITICAL: Required for MCP tool access
-  prompt: `...`
-});
-```
-
-All examples in this skill include this parameter.
+See `references/mcp-prefetch-pattern.md` for the full protocol.
 
 ## Quick Start: For Orchestrators
 

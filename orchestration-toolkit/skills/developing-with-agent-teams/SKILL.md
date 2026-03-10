@@ -177,10 +177,7 @@ SendMessage(type="shutdown_request", recipient="researcher",
             content="Research complete, shutting down")
 ```
 
-**Critical:** All Task calls spawning agents must include:
-```python
-Task(..., run_in_background=False)  # Required for MCP access
-```
+**Critical MCP rule:** The orchestrator must never call MCP tools directly. Delegate MCP fetching to foreground sub-agents using the dual return pattern (write raw to disk, return summary + path). All agents needing MCP access must use `run_in_background=False`. See `references/mcp-prefetch-pattern.md`.
 
 For full communication patterns, see @reference/communication-patterns.md
 
