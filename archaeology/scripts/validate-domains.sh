@@ -47,8 +47,8 @@ for domain_file in "$DOMAIN_DIR"/*.md; do
 
     # Check status is valid enum
     status_value=$(echo "$frontmatter" | grep "^status:" | sed 's/status: *//' || true)
-    if [[ ! "$status_value" =~ ^(active|planned|deprecated|archived)$ ]]; then
-        echo "  ERROR: Invalid status '$status_value' (must be active|planned|deprecated|archived)"
+    if [[ ! "$status_value" =~ ^(confirmed|active|draft|planned|deprecated|archived)$ ]]; then
+        echo "  ERROR: Invalid status '$status_value' (must be confirmed|active|draft|planned|deprecated|archived)"
         ERRORS=$((ERRORS + 1))
     fi
 done

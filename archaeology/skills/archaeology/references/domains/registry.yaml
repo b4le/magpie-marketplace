@@ -1,11 +1,24 @@
 # Domain Registry
-# Schema Version: 1.0.0
+# Schema Version: 2.0.0
 # Generated: 2026-02-26
 
-schema_version: "1.0.0"
+schema_version: "2.0.0"
 
 domains:
   # Active domains (have definition files)
+  #
+  # Domain lifecycle stages tracked in this registry:
+  #   confirmed — In registry; has keywords but no .md file. Can be extracted against with defaults.
+  #               The `file` field is optional for confirmed entries.
+  #   active    — In registry; has full .md domain file with complete spec. `file` is required.
+  #   draft     — In development; `file` is required but domain spec may be incomplete.
+  #
+  # Optional fields for confirmed entries:
+  #   discovered_from: string  — how this domain was discovered (e.g. "survey-candidates", "manual")
+  #   confirmed_at: string     — ISO date when the domain was confirmed (e.g. "2026-03-10")
+  #   extraction_count: int    — number of times extracted against
+  #
+  # Note: `file` is required for active/draft entries and optional for confirmed entries.
   - id: orchestration
     name: Orchestration Patterns
     file: orchestration.md
@@ -81,7 +94,9 @@ validation:
     - description
 
   valid_statuses:
+    - confirmed     # In registry with keywords; no .md file required; extractable with defaults
     - active        # Production-ready, has definition file
+    - draft         # In development, has definition file but spec may be incomplete
     - planned       # In development, no file yet
     - deprecated    # Do not use
     - archived      # Historical reference only

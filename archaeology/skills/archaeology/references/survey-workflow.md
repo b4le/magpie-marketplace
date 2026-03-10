@@ -1,6 +1,6 @@
 # Survey Workflow Reference
 
-> This file is referenced from `SKILL.md`. It defines the full survey workflow (Steps S1-S7).
+> This file is referenced from `SKILL.md`. It defines the full survey workflow (Steps S1-S8).
 > Context variables (`PROJECT_NAME`, `PROJECT_SLUG`, `ARCHAEOLOGY_DIR`, `CENTRAL_BASE`, etc.) are set by SKILL.md Step 1 / routing logic before this workflow executes.
 > Path variables `SKILL_DIR` and `PLUGIN_ROOT` are set by SKILL.md Path Resolution before this workflow executes.
 
@@ -79,11 +79,16 @@ source_files = Glob(`${PROJECT_ROOT}/**/*`, exclude: ['.git', 'node_modules', '_
 
 LARGE_PROJECT = conversation_files.length > 50 || source_files.length > 500;
 
+// Discovery activates when corpus has enough data for meaningful term extraction
+discovery_enabled = conversation_files.length >= 3;
+// Below 3 files, term extraction produces noise — skip S3.5 entirely
+
 // Log project size for rationale generation
 project_size = {
   conversations: conversation_files.length,
   source_files: source_files.length,
-  is_large: LARGE_PROJECT
+  is_large: LARGE_PROJECT,
+  discovery_enabled: discovery_enabled
 };
 ```
 
@@ -111,142 +116,56 @@ all_domains = parse_yaml(registry).domains.filter(d => d.status === 'active');
 
 // jq filter for extracting conversation text (excludes system prompts, meta, toolUseResult)
 JQ_FILTER_PATH = `${SKILL_DIR}/references/jsonl-filter.jq`;
+// Script directory for delegated scoring/profiling/discovery
+SCRIPT_DIR = `${PLUGIN_ROOT}/scripts`;
 
-// Scoring strategy depends on project size (determined in S2)
-// For LARGE_PROJECT: batch conversation_files into slices of ~10,
-// spawn sub-agents per S2 batching prompt, aggregate returned counts.
-// For normal projects: use sequential per-file counting loop below.
+// Domain keyword scoring — delegates to arch-score.sh for reproducible, cacheable scoring
+// The script replicates the exact formula: (primary * 3) + (secondary * 1), diversity multiplier,
+// per-session caps (PRIMARY_CAP=5, SECONDARY_CAP=3), signal classification thresholds.
 //
-// The batching path uses the same scoring formula — only the file scanning
-// differs. Sub-agents return { keyword: count } JSON, which feeds into
-// primary_score/secondary_score the same way. Sub-agents MUST use the
-// jq filter (see batching prompt update in S2).
-
-if (LARGE_PROJECT) {
-  // Batch files into slices and spawn counting sub-agents
-  // Each sub-agent uses the prompt template from S2
-  // Sub-agent prompt MUST include: "For each file, run:
-  //   jq -r -f ${JQ_FILTER_PATH} <file> | grep -oi '\b<keyword>\b' | wc -l"
-  // Aggregate returned counts into primary_score, secondary_score, session_set
-  // Then continue with scoring below
-}
-
+// Scoring formula reference (implemented in arch-score.sh):
+//   raw_score = (primary_score * 3) + (secondary_score * 1)
+//   diversity_factor = min(1.5, 1.0 + (session_count * 0.1))
+//   final_score = round(raw_score * diversity_factor, 1dp)
+//   Signal: strong (>=20, 2+ sessions) | moderate (>=8) | weak (>=2) | none (<2)
+//
 // Per-keyword-per-session caps prevent any single keyword from dominating.
 // Even with tool_result exclusion in the jq filter, assistant text can still
 // contain long quoted code blocks or file content summaries.
-PRIMARY_CAP_PER_SESSION = 5;
-SECONDARY_CAP_PER_SESSION = 3;
+//   PRIMARY_CAP_PER_SESSION = 5
+//   SECONDARY_CAP_PER_SESSION = 3
+//
+// Session-count invariant (enforced by script):
+//   0 sessions -> signal = 'none'
+//   1 session  -> signal capped at 'moderate' (never 'strong')
+//
+// Confidence classification (enforced by script):
+//   3+ sessions -> 'high' | 2 sessions -> 'medium' | 1 session -> 'low' | 0 -> '-'
+//
+// Rationale strings follow these patterns:
+//   "14 primary hits across 5 sessions"
+//   "6 pytest refs in 2 sessions"
+//   "No matching keywords detected"
+//
+// For LARGE_PROJECT: the script handles batching internally using parallel
+// jq invocations. The scoring formula is identical regardless of project size.
 
-// Score each domain
-domain_scores = [];
-for (domain of all_domains) {
-  // Load domain definition to get full keyword lists
+SCORE_OUTPUT = Bash(`${SCRIPT_DIR}/arch-score.sh "${HISTORY_DIR}" --registry "${REGISTRY_PATH}" --filter "${JQ_FILTER_PATH}" --quiet`);
+domain_scores = JSON.parse(SCORE_OUTPUT);
+
+// Build comprehensive known-terms set for discovery exclusion (S3.5)
+KNOWN_DOMAIN_TERMS = new Set();
+for (domain of domain_scores) {
+  // Load domain file keywords to build exclusion set
   domain_def = Read(`${SKILL_DIR}/references/domains/${domain.file}`);
   keywords = parse_frontmatter(domain_def).keywords;
-
-  primary_score = 0;
-  secondary_score = 0;
-  session_set = new Set();  // Track unique sessions (files) for confidence
-
-  // Count primary keyword hits using jq-filtered content
-  // For each file: pipe through jq filter to extract conversation text,
-  // then count keyword occurrences in the filtered output.
-  // Bash equivalent per file:
-  //   jq -r -f $JQ_FILTER_PATH $file 2>/dev/null | grep -oi '\bkeyword\b' | wc -l
-  for (keyword of keywords.primary) {
-    for (file of conversation_files) {
-      count = count_filtered(file, keyword, JQ_FILTER_PATH);
-      capped = Math.min(count, PRIMARY_CAP_PER_SESSION);
-      primary_score += capped;
-      if (count > 0) session_set.add(file);  // each matching file = one session
-    }
+  for (kw of [...keywords.primary, ...keywords.secondary]) {
+    KNOWN_DOMAIN_TERMS.add(kw.toLowerCase());
   }
-
-  // Count secondary keyword hits (same jq-filtered approach)
-  for (keyword of keywords.secondary) {
-    for (file of conversation_files) {
-      count = count_filtered(file, keyword, JQ_FILTER_PATH);
-      capped = Math.min(count, SECONDARY_CAP_PER_SESSION);
-      secondary_score += capped;
-    }
-  }
-
-  // Compute weighted score with file-diversity multiplier
-  raw_score = (primary_score * 3) + (secondary_score * 1);
-  diversity_factor = Math.min(1.5, 1.0 + (session_set.size * 0.1));
-  final_score = Math.round(raw_score * diversity_factor * 10) / 10;  // 1 decimal place
-
-  // Classify signal strength
-  signal = final_score >= 20 ? 'strong'
-         : final_score >= 8  ? 'moderate'
-         : final_score >= 2  ? 'weak'
-         : 'none';
-
-  // Session-count cap (contract invariant — see Signal Scale below)
-  // A single session cannot produce 'strong' signal regardless of score.
-  if (session_set.size === 0) signal = 'none';
-  else if (session_set.size === 1 && signal === 'strong') signal = 'moderate';
-
-  // Classify confidence based on session spread
-  confidence = session_set.size >= 3 ? 'high'
-             : session_set.size >= 2 ? 'medium'
-             : session_set.size >= 1 ? 'low'
-             : '-';
-
-  // Build rationale string for the output table
-  rationale = build_rationale(primary_score, secondary_score, session_set.size, keywords);
-
-  domain_scores.push({
-    id: domain.id,
-    name: domain.name,
-    signal: signal,
-    confidence: confidence,
-    score: final_score,
-    sessions: session_set.size,
-    rationale: rationale
-  });
-}
-
-// Sort by score descending
-domain_scores.sort((a, b) => b.score - a.score);
-```
-
-**`count_filtered()` helper:**
-
-Pipes a single JSONL file through the jq conversation filter, then counts case-insensitive keyword occurrences:
-
-```bash
-# count_filtered(file, keyword, jq_filter_path)
-# Returns integer count of keyword matches in filtered conversation text
-jq -r -f "$jq_filter_path" "$file" 2>/dev/null | grep -oi "\b${keyword}\b" | wc -l
-```
-
-**`build_rationale()` function:**
-
-Generate a concise human-readable explanation. Examples:
-- "14 primary hits across 5 sessions"
-- "6 pytest refs in 2 sessions"
-- "1 CLAUDE.md edit found"
-- "No matching keywords detected"
-
-```javascript
-function build_rationale(primary_count, secondary_count, session_count, keywords) {
-  if (primary_count === 0 && secondary_count === 0) {
-    return "No matching keywords detected";
-  }
-
-  parts = [];
-  if (primary_count > 0) {
-    parts.push(`${primary_count} primary keyword hit${primary_count > 1 ? 's' : ''}`);
-  }
-  if (secondary_count > 0) {
-    parts.push(`${secondary_count} secondary hit${secondary_count > 1 ? 's' : ''}`);
-  }
-
-  session_info = session_count > 0 ? ` across ${session_count} session${session_count > 1 ? 's' : ''}` : '';
-  return parts.join(', ') + session_info;
 }
 ```
+
+> **Algorithm reference:** The scoring logic previously inlined here is now executed by `arch-score.sh`. The script reads the domain registry, loads keyword lists from each domain file, pipes conversation files through the jq filter, applies per-session caps, computes weighted scores with diversity multipliers, classifies signal/confidence, and builds rationale strings. The exact formula and thresholds are documented in the comment block above and in the script itself. See the Signal Scale and Confidence Scale tables below for the classification contract.
 
 #### Signal Scale (Contract — do not change between versions)
 
@@ -268,96 +187,156 @@ function build_rationale(primary_count, secondary_count, session_count, keywords
 | low | 1 session | Single occurrence, may be one-off |
 | - | 0 sessions | No signal |
 
+### Survey Step S3.5: Domain Discovery (Phase 1.5)
+
+**Gate:** Only runs when `discovery_enabled === true` (>=3 conversation files). When skipped, set `discovered_signals = []` and note in survey output: "Discovery requires 3+ sessions."
+
+**Purpose:** Extract terms from conversation history not covered by existing domains, cluster them into potential domain candidates, and assess coherence. All statistical work is programmatic; LLM reserved for semantic clustering only.
+
+**Signal ceiling:** Discovered signals NEVER exceed `moderate` signal strength, regardless of raw scores. This prevents uncurated domains from appearing more authoritative than curated ones.
+
+```javascript
+if (!discovery_enabled) {
+  discovered_signals = [];
+  // Note in output: "Discovery requires 3+ sessions."
+  // Skip to S4
+} else {
+
+  // Step 1: Programmatic term extraction via arch-discover.sh
+  DISCOVER_OUTPUT = Bash(`${SCRIPT_DIR}/arch-discover.sh "${HISTORY_DIR}" --registry "${REGISTRY_PATH}" --filter "${JQ_FILTER_PATH}" --top 30 --quiet`);
+  raw_candidates = JSON.parse(DISCOVER_OUTPUT);
+
+  if (raw_candidates.length === 0) {
+    discovered_signals = [];
+    // Note in output: "No uncovered terms found — existing domains have good coverage."
+    // Skip to S4
+  } else {
+
+    // Step 2: LLM semantic assessment (single Explore agent call)
+    // This is the ONLY LLM call in the discovery pipeline.
+    // Purpose: group related terms into coherent domain clusters.
+    cluster_result = Agent({
+      subagent_type: "Explore",
+      model: "haiku",
+      prompt: `You are assessing whether a set of high-frequency terms from developer conversations
+form coherent domain clusters.
+
+TERMS (sorted by relevance score):
+${raw_candidates.map(c => `  ${c.term} (${c.total_count} occurrences, ${c.session_spread} sessions)`).join('\n')}
+
+EXISTING DOMAINS (do not duplicate these):
+${domain_scores.map(d => `  ${d.domain}: ${d.name}`).join('\n')}
+
+Instructions:
+1. Group related terms into clusters. Maximum 4 clusters.
+2. For each cluster, provide:
+   - A 2-4 word domain name (noun phrase, not a verb)
+   - The terms that belong to it
+   - A one-sentence description of what practice area this represents
+   - Coherence assessment: high / medium / low
+     - high: 4+ terms with clear semantic relationship, distinct from existing domains
+     - medium: 3+ terms with plausible relationship
+     - low: terms grouped by proximity but no clear practice area
+
+3. Discard terms that don't fit any cluster (noise).
+4. Do NOT create clusters that substantially overlap existing domains.
+
+Return ONLY XML blocks:
+<cluster>
+<name>domain name</name>
+<terms>term1, term2, term3</terms>
+<description>what this practice area covers</description>
+<coherence>high|medium|low</coherence>
+</cluster>`
+    });
+
+    // Step 3: Parse clusters and build discovered_signals[]
+    discovered_signals = [];
+    for (cluster of parse_xml_clusters(cluster_result)) {
+      // Signal ceiling: cap at 'moderate' regardless of term scores
+      signal = cluster.coherence === 'high' ? 'moderate' : 'weak';
+
+      discovered_signals.push({
+        name: cluster.name,
+        terms: cluster.terms,
+        description: cluster.description,
+        coherence: cluster.coherence,
+        signal: signal,  // never exceeds 'moderate'
+        term_count: cluster.terms.length,
+        session_spread: max_session_spread(cluster.terms, raw_candidates)
+      });
+    }
+
+    // Sort by coherence (high first), then term_count descending
+    discovered_signals.sort((a, b) => {
+      const coherence_order = { high: 0, medium: 1, low: 2 };
+      return (coherence_order[a.coherence] - coherence_order[b.coherence])
+        || (b.term_count - a.term_count);
+    });
+  }
+}
+```
+
+**`parse_xml_clusters()` helper:**
+
+Extracts cluster elements from the agent's XML response:
+
+```javascript
+function parse_xml_clusters(xml_text) {
+  clusters = [];
+  // Match each <cluster>...</cluster> block
+  for (match of xml_text.matchAll(/<cluster>([\s\S]*?)<\/cluster>/g)) {
+    block = match[1];
+    clusters.push({
+      name: extract_xml_field(block, 'name'),
+      terms: extract_xml_field(block, 'terms').split(',').map(t => t.trim()),
+      description: extract_xml_field(block, 'description'),
+      coherence: extract_xml_field(block, 'coherence').trim().toLowerCase()
+    });
+  }
+  return clusters;
+}
+```
+
+**`max_session_spread()` helper:**
+
+Returns the maximum session_spread value across all raw_candidates that belong to a cluster:
+
+```javascript
+function max_session_spread(cluster_terms, raw_candidates) {
+  return Math.max(...cluster_terms.map(term => {
+    candidate = raw_candidates.find(c => c.term === term);
+    return candidate ? candidate.session_spread : 0;
+  }));
+}
+```
+
 ### Survey Step S4: Project Profiling (Phase 2)
 
 Characterize the project based on source files and session metadata:
 
 ```javascript
-// File extension counting for language breakdown
-extensions = {};
-for (file of source_files) {
-  ext = path.extname(file);
-  if (ext && ext !== '') {
-    extensions[ext] = (extensions[ext] || 0) + 1;
-  }
-}
-total_source = source_files.length;
-
-// Map extensions to language names and compute percentages
-EXT_TO_LANG = {
-  '.py': 'Python', '.js': 'JavaScript', '.ts': 'TypeScript', '.tsx': 'TypeScript',
-  '.jsx': 'JavaScript', '.java': 'Java', '.go': 'Go', '.rs': 'Rust',
-  '.rb': 'Ruby', '.sh': 'Shell', '.bash': 'Shell', '.zsh': 'Shell',
-  '.yaml': 'YAML', '.yml': 'YAML', '.json': 'JSON', '.md': 'Markdown',
-  '.html': 'HTML', '.css': 'CSS', '.scss': 'SCSS', '.sql': 'SQL',
-  '.swift': 'Swift', '.kt': 'Kotlin', '.c': 'C', '.cpp': 'C++',
-  '.h': 'C/C++ Header', '.toml': 'TOML', '.ini': 'INI', '.cfg': 'Config',
-  '.xml': 'XML', '.proto': 'Protobuf', '.graphql': 'GraphQL'
-};
-
-// Aggregate by language (not extension) and sort by count
-lang_counts = {};
-for ([ext, count] of Object.entries(extensions)) {
-  lang = EXT_TO_LANG[ext] || ext;
-  lang_counts[lang] = (lang_counts[lang] || 0) + count;
-}
-
-language_breakdown = Object.entries(lang_counts)
-  .sort((a, b) => b[1] - a[1])
-  .slice(0, 5)  // Top 5 languages
-  .map(([lang, count]) => `${lang} (${Math.round(count / total_source * 100)}%)`)
-  .join(', ');
-
-// Session metadata from conversation files
-session_count = conversation_files.length;
-// Get file modification times for date range
-// Use: stat -f %m <file> on macOS to get mtime
-session_dates = conversation_files.map(f => stat(f).mtime).sort();
-if (session_dates.length > 0) {
-  earliest = format_date(session_dates[0]);
-  latest = format_date(session_dates[session_dates.length - 1]);
-  history_depth = `${earliest} → ${latest}`;
-} else {
-  history_depth = 'No session history found';
-}
-
-// Framework/tool detection from well-known config files
-FRAMEWORK_INDICATORS = {
-  'package.json': 'Node.js',
-  'requirements.txt': 'Python (pip)',
-  'pyproject.toml': 'Python (modern)',
-  'Cargo.toml': 'Rust',
-  'go.mod': 'Go',
-  'Gemfile': 'Ruby',
-  'pom.xml': 'Java (Maven)',
-  'build.gradle': 'Java (Gradle)',
-  'docker-compose.yml': 'Docker',
-  'Dockerfile': 'Docker',
-  '.github/workflows': 'GitHub Actions',
-  'Makefile': 'Make',
-  'tsconfig.json': 'TypeScript',
-  'jest.config': 'Jest',
-  'pytest.ini': 'pytest',
-  'setup.cfg': 'Python (setuptools)',
-  '.pre-commit-config.yaml': 'pre-commit'
-};
-
-detected_frameworks = [];
-for ([indicator, framework] of Object.entries(FRAMEWORK_INDICATORS)) {
-  matches = Glob(`${PROJECT_ROOT}/${indicator}*`);
-  if (matches.length > 0) {
-    detected_frameworks.push(framework);
-  }
-}
-
-project_profile = {
-  languages: language_breakdown,
-  session_count: session_count,
-  history_depth: history_depth,
-  source_file_count: total_source,
-  frameworks: [...new Set(detected_frameworks)]  // Deduplicate
-};
+// Project profiling — delegates to arch-profile.sh for reusable profiling
+PROFILE_OUTPUT = Bash(`${SCRIPT_DIR}/arch-profile.sh "${PROJECT_ROOT}" "${HISTORY_DIR}" --quiet`);
+project_profile = JSON.parse(PROFILE_OUTPUT);
 ```
+
+> **Algorithm reference:** The profiling logic previously inlined here is now executed by `arch-profile.sh`. The script performs the following steps, documented here for reference:
+>
+> - **Language breakdown:** Counts file extensions in the project (excluding `.git`, `node_modules`, `__pycache__`, `.venv`, `venv`), maps them to language names via a built-in extension-to-language table, aggregates by language, and returns the top 5 by percentage.
+> - **Session metadata:** Counts conversation files, extracts file modification times for date range (`earliest -> latest`), formats as `history_depth`.
+> - **Framework detection:** Checks for well-known config files (`package.json`, `requirements.txt`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Gemfile`, `pom.xml`, `build.gradle`, `docker-compose.yml`, `Dockerfile`, `.github/workflows`, `Makefile`, `tsconfig.json`, `jest.config`, `pytest.ini`, `setup.cfg`, `.pre-commit-config.yaml`) and maps each to its framework name. Results are deduplicated.
+>
+> The script returns a JSON object with the following shape:
+> ```json
+> {
+>   "languages": "TypeScript (45%), JavaScript (20%), ...",
+>   "session_count": 12,
+>   "history_depth": "2025-11-01 -> 2026-03-10",
+>   "source_file_count": 342,
+>   "frameworks": ["Node.js", "TypeScript", "Jest", "Docker"]
+> }
+> ```
 
 ### Survey Step S5: Unknown Detection (Phase 3)
 
@@ -485,6 +464,28 @@ deep_dives_section = suggested_dives.length > 0
     ).join('\n')
   : '_No uncovered patterns detected. All high-frequency tools are covered by existing domains._';
 
+// Build Discovered Signals section
+if (discovered_signals.length > 0) {
+  discovered_section = `## Discovered Signals
+
+Terms not covered by existing domains, clustered by semantic similarity.
+Signal ceiling: discovered signals are capped at \`moderate\` — run extraction to validate.
+
+| Cluster | Signal | Coherence | Terms | Description |
+|---------|--------|-----------|-------|-------------|
+${discovered_signals.map(s => `| ${s.name} | ${s.signal} | ${s.coherence} | ${s.terms.join(', ')} | ${s.description} |`).join('\n')}
+
+To extract against a discovered signal: \`/archaeology extract <cluster-name>\``;
+} else if (discovery_enabled) {
+  discovered_section = `## Discovered Signals
+
+No uncovered domain signals detected — existing domains have good coverage.`;
+} else {
+  discovered_section = `## Discovered Signals
+
+Discovery requires 3+ conversation sessions (found ${conversation_files.length}).`;
+}
+
 // Build Next Steps section
 domains_with_signal = domain_scores.filter(d => d.signal !== 'none');
 next_steps = [];
@@ -525,6 +526,8 @@ ${domain_table_rows}
 - **high**: Signal from 3+ distinct sessions
 - **medium**: Signal from 2 sessions
 - **low**: Signal from 1 session only
+
+${discovered_section}
 
 ## Suggested Deep Dives
 
@@ -611,7 +614,42 @@ function update_central_index() {
 > The survey.md file still exists at `${CENTRAL_PROJECT_DIR}/survey.md` and is discoverable directly.
 > This is by design — the central INDEX focuses on extraction results. Survey is a discovery step.
 
-### Survey Step S7: Export to Central Work-Log
+### Survey Step S7: Write Structured Intermediates
+
+Write `survey-candidates.json` alongside `survey.md` for consumption by dig, excavation, and conserve modes:
+
+```javascript
+survey_candidates = {
+  generated: new Date().toISOString(),
+  project: PROJECT_NAME,
+  discovery_enabled: discovery_enabled,
+  domain_scores: domain_scores,
+  discovered_signals: discovered_signals,
+  known_domain_terms: Array.from(KNOWN_DOMAIN_TERMS)
+};
+
+// Write alongside survey.md
+Write(`${ARCHAEOLOGY_DIR}/survey-candidates.json`, JSON.stringify(survey_candidates, null, 2));
+console.log(`Created: ${ARCHAEOLOGY_DIR}/survey-candidates.json`);
+```
+
+**Schema:**
+```json
+{
+  "generated": "2026-03-10T14:00:00Z",
+  "project": "magpie-marketplace",
+  "discovery_enabled": true,
+  "domain_scores": [
+    {"domain": "orchestration", "name": "Orchestration Patterns", "score": 34.5, "signal": "strong", "confidence": "high", "sessions": 5}
+  ],
+  "discovered_signals": [
+    {"name": "MCP Integration", "terms": ["mcp__", "mcp-server", "stdio"], "description": "MCP tool integration patterns", "coherence": "high", "signal": "moderate", "term_count": 3, "session_spread": 4}
+  ],
+  "known_domain_terms": ["orchestration", "sub-agent", "TeamCreate"]
+}
+```
+
+### Survey Step S8: Export to Central Work-Log
 
 **Skip this step if `--no-export` flag was provided.**
 
@@ -623,6 +661,10 @@ if (NO_EXPORT) {
   // Write survey.md to central location
   Write(`${CENTRAL_PROJECT_DIR}/survey.md`, survey_content);
   console.log(`Exported to: ${CENTRAL_PROJECT_DIR}/survey.md`);
+
+  // Write survey-candidates.json to central location
+  Write(`${CENTRAL_PROJECT_DIR}/survey-candidates.json`, JSON.stringify(survey_candidates, null, 2));
+  console.log(`Exported to: ${CENTRAL_PROJECT_DIR}/survey-candidates.json`);
 
   // Update central INDEX.md (add survey info to project entry)
   update_central_index();
@@ -649,10 +691,15 @@ Survey run is complete when:
 - [ ] Registry loaded and all active domains enumerated
 - [ ] Size check performed (sequential vs batched determined)
 - [ ] All domains scored with signal/confidence/rationale
+- [ ] S3.5 discovery ran (or noted skip reason) when discovery_enabled
+- [ ] Discovered signals table present in survey.md (or skip note)
+- [ ] Signal ceiling enforced: no discovered signal exceeds 'moderate'
 - [ ] Project profile generated (languages, sessions, frameworks)
 - [ ] Unknown detection completed (tool frequency + LLM sampling)
 - [ ] `survey.md` written to `.claude/archaeology/`
+- [ ] `survey-candidates.json` written alongside survey.md
 - [ ] Local `INDEX.md` updated with survey link
 - [ ] **(Unless --no-export)** `survey.md` exported to central work-log
+- [ ] **(Unless --no-export)** `survey-candidates.json` exported to central work-log
 - [ ] **(Unless --no-export)** Central `INDEX.md` updated
 - [ ] Completion summary displayed with file locations and next step

@@ -10,9 +10,10 @@ ERRORS=0
 
 echo "Checking registry sync..."
 
-# Get active domains from registry (those with file != null)
+# Get active/draft domains from registry (those with file != null)
+# Confirmed entries are intentionally excluded — they have no .md file by design.
 # Using grep/sed since yq may not be available
-active_domains=$(awk '/^  - id:/{block=""} /file:/{file=$2} /status: active/{if(file) print file}' "$REGISTRY" | tr -d '"')
+active_domains=$(awk '/^  - id:/{file=""} /file:/{file=$2} /status: (active|draft)/{if(file) print file}' "$REGISTRY" | tr -d '"')
 
 # shellcheck disable=SC2086  # intentional word-split: active_domains is newline/space-separated filenames with no spaces
 for domain_file in $active_domains; do
@@ -40,6 +41,11 @@ for filepath in "$DOMAIN_DIR"/*.md; do
         ERRORS=$((ERRORS + 1))
     fi
 done
+
+# Report confirmed domains (informational — no files expected by design)
+echo ""
+echo "Confirmed domains (no .md files expected):"
+grep -B2 "status: confirmed" "$REGISTRY" | grep "id:" | sed 's/.*id: */  - /' || true
 
 # Report planned domains (informational)
 echo ""

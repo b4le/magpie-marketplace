@@ -43,6 +43,27 @@ last_search_date: 2026-02-26
 ---
 ```
 
+**Extended fields (dynamic domains):**
+
+- **domain_tier** - (optional) The tier of the domain being extracted: `curated`, `confirmed`, or `suggested`. Omitted for curated domains (backward-compatible default).
+- **coverage_note** - (optional) Brief note on extraction coverage limitations for non-curated tiers:
+  - For `confirmed`: "Extracted with primary keywords only — no custom locations or output templates"
+  - For `suggested`: "Extracted from survey candidate — single-agent conservative sweep"
+
+**Extended example:**
+```yaml
+---
+generated: 2026-03-10
+project: E-Commerce Platform
+domain: mcp-integration
+source_count: 12
+confidence: medium
+last_search_date: 2026-03-10
+domain_tier: confirmed
+coverage_note: "Extracted with primary keywords only — no custom locations or output templates"
+---
+```
+
 ---
 
 ## README Template {#readme}
@@ -1151,6 +1172,29 @@ Next: /archaeology {domains_with_signal[0].id}
 **If `--no-export`:** Use title `Archaeology Survey Complete (export skipped)`, omit Central paths.
 **If sandbox-forced local-only:** Use title `Archaeology Survey Complete (local only — sandbox mode)`, omit Central paths.
 
+### Discovered Signals Table {#discovered-signals}
+
+Added to survey.md output when discovery runs and finds candidate clusters.
+
+```
+## Discovered Signals
+
+Terms not covered by existing domains, clustered by semantic similarity.
+Signal ceiling: discovered signals are capped at `moderate` — run extraction to validate.
+
+| Cluster | Signal | Coherence | Terms | Description |
+|---------|--------|-----------|-------|-------------|
+| {signal.name} | {signal.signal} | {signal.coherence} | {signal.terms} | {signal.description} |
+
+To extract against a discovered signal: `/archaeology extract <cluster-name>`
+```
+
+**Variables:**
+- `signal.*` — from `discovered_signals[]` (S3.5). One line per cluster.
+- Signal never exceeds `moderate` (ceiling enforced in S3.5).
+- If no discovered signals AND discovery ran: show "No uncovered domain signals detected — existing domains have good coverage."
+- If discovery skipped (< 3 files): show "Discovery requires 3+ conversation sessions (found {count})."
+
 ### Extraction Completion Display {#extraction-completion}
 
 ```
@@ -1179,6 +1223,19 @@ Central index: ~/.claude/data/visibility-toolkit/work-log/archaeology/INDEX.md
 
 **If `--no-export`:** Use title `Archaeology Complete (export skipped)`, show only the Local block, end with `View findings: .claude/archaeology/{domain}/README.md`
 
+**Tier annotation (dynamic domains):**
+
+When `domain_tier !== 'curated'` (or is present), append after the title line:
+
+```
+{SIGIL_EXTRACTION} Archaeology Complete ({domain_tier} tier)
+
+  Domain tier: {domain_tier}
+  Coverage: {coverage_note}
+```
+
+This makes it clear to the user that the extraction used reduced configuration. Omit the tier annotation entirely for curated domains (backward-compatible).
+
 ### Excavation Completion Display {#excavation-completion}
 
 ```
@@ -1202,6 +1259,75 @@ Run /archaeology {domain} in a project directory to extract patterns.
 - `manifest.*` — from E1 shell script output.
 - Top recommendations — from E4 synthesis, one per line, max 3.
 - If no recommendations: replace block with `No strong signals found across projects.`
+
+### Domain Landscape Template {#domain-landscape}
+
+Added to excavation portfolio when domain signal data exists across 2+ projects.
+
+```markdown
+## Domain Landscape
+
+### Established Domains
+
+Curated domains with extraction outputs across multiple projects.
+
+| Domain | Projects | Avg Score | Signal | Last Extracted |
+|--------|----------|-----------|--------|----------------|
+| {domain.name} | {domain.project_count} | {domain.avg_score} | {domain.signal} | {domain.last_extracted} |
+
+### Emerging Domains
+
+Confirmed domains gaining traction across projects.
+
+| Domain | Projects | Avg Score | Signal | Extractions |
+|--------|----------|-----------|--------|-------------|
+| {domain.name} | {domain.project_count} | {domain.avg_score} | {domain.signal} | {domain.extraction_count} |
+
+### Candidate Signals
+
+Discovered but not yet confirmed. Appears in 3+ project surveys.
+
+| Candidate | Projects | Coherence | Key Terms |
+|-----------|----------|-----------|-----------|
+| {candidate.name} | {candidate.project_count} | {candidate.coherence} | {candidate.terms} |
+```
+
+**Variables:**
+- Established = domains with `status: active` in registry
+- Emerging = domains with `status: confirmed` in registry
+- Candidate = clusters from `survey-candidates.json` appearing in 3+ projects
+- If a section is empty, show "{Section} — none yet" instead of empty table
+
+### Graduation Candidates Template {#graduation-candidates}
+
+Written by excavation when any candidate signal crosses the 3-project emergence threshold.
+
+```markdown
+# Graduation Candidates
+
+Candidate domain signals that have appeared across 3+ projects.
+These are strong candidates for confirmation in the registry.
+
+| Candidate | Projects | Coherence | Recommended Action |
+|-----------|----------|-----------|--------------------|
+| {candidate.name} | {candidate.projects} | {candidate.coherence} | `/archaeology confirm {candidate.id}` |
+
+## How to confirm a candidate
+
+1. Run `/archaeology confirm <name>` to add a confirmed entry to registry.yaml
+2. The confirmed domain will be extractable with default settings
+3. After 3+ successful extractions, consider upgrading to a full curated domain file
+
+## Projects where signal was detected
+
+### {candidate.name}
+{candidate.project_list}
+```
+
+**Variables:**
+- `candidate.*` — from cross-project aggregation in excavation E4
+- `candidate.projects` — comma-separated project names
+- Only written when at least one candidate crosses the 3-project threshold
 
 ### Workstyle Completion Display {#workstyle-completion}
 
@@ -1467,4 +1593,4 @@ Shown when the user runs `/archaeology dig list`. Lists all in-progress and comp
 
 ---
 
-*Last updated: 2026-03-09*
+*Last updated: 2026-03-10*
