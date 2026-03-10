@@ -88,7 +88,7 @@ HAS_SURVEY = exists(`${ARCHAEOLOGY_DIR}/survey.md`) || exists(`${CENTRAL_PROJECT
 
 ### Conservation Step C3: Session Selection
 
-Two paths depending on whether findings exist.
+Three paths depending on whether findings and/or survey data exist.
 
 ```javascript
 conversation_files = Glob(`${HISTORY_DIR}/**/*.jsonl`);
@@ -122,6 +122,52 @@ if (HAS_FINDINGS) {
   }
 
   selected_sessions = [...referenced_sessions].slice(0, 8);
+} else if (HAS_SURVEY) {
+  // SURVEY-GUIDED: use survey domain scores to weight session selection
+  // This is an intermediate path — better than pure heuristic, worse than findings-guided
+  survey_path = exists(`${ARCHAEOLOGY_DIR}/survey.md`)
+    ? `${ARCHAEOLOGY_DIR}/survey.md`
+    : `${CENTRAL_PROJECT_DIR}/survey.md`;
+  survey_content = Read(survey_path);
+
+  REGISTRY_PATH = `${SKILL_DIR}/references/domains/registry.yaml`;
+  registry = parse_yaml(Read(REGISTRY_PATH));
+
+  top_domains = extract_table_rows(survey_content, 'Recommended Domains')
+    .filter(d => d.signal === 'strong' || d.signal === 'moderate')
+    .slice(0, 3);
+
+  if (top_domains.length > 0) {
+    // Load keywords for top domains
+    domain_keywords = [];
+    for (d of top_domains) {
+      entry = registry.domains.find(r => r.id === d.domain);
+      if (entry?.keywords) {
+        domain_keywords.push(...(entry.keywords.primary || entry.keywords || []));
+      }
+    }
+
+    // Score sessions by keyword density
+    scored_sessions = conversation_files.map(file => {
+      text = jq_filter(file);
+      score = domain_keywords.reduce((sum, kw) =>
+        sum + count_occurrences(text, kw), 0
+      );
+      return { file, score };
+    }).sort((a, b) => b.score - a.score);
+
+    // Select top 6 sessions plus anchors
+    selected_sessions = [
+      min_by_mtime(conversation_files),  // earliest
+      ...scored_sessions.slice(0, 5).map(s => s.file)
+    ].filter(unique).slice(0, 8);
+
+    warn("Using survey-guided session selection (no findings.json). Run domain extraction for better results.");
+  } else {
+    // No strong/moderate domains in survey — fall through to heuristic
+    selected_sessions = heuristic_sample(conversation_files);
+    warn("No prior extractions found. Running with session sampling only -- confidence will be lower. Run /archaeology survey first for better results.");
+  }
 } else {
   // HEURISTIC FALLBACK: sample like workstyle W4
   warn("No prior extractions found. Running with session sampling only -- confidence will be lower. Run /archaeology survey first for better results.");
@@ -254,6 +300,19 @@ for (i = 0; i < agents.length; i++) {
     ? build_seed_context(narrative_seeds, agents[i].types, 12, 2500)
     : 'No prior findings available. Extract narrative from session content directly.';
 
+  // Build domain hint context for survey-guided path
+  domain_hint = '';
+  if (!HAS_FINDINGS && HAS_SURVEY && top_domains && top_domains.length > 0) {
+    domain_hint = `\nDOMAIN CONTEXT (from survey, use as narrative focus hints):\n` +
+      top_domains.map(d => `  ${d.domain}: signal ${d.signal}`).join('\n') +
+      `\nThese domains have strong signal in this project. Look for narratives involving these areas.\n`;
+  }
+
+  // Note: survey-guided artifacts should generally produce medium confidence
+  // because session selection is keyword-weighted, not evidence-grounded.
+  // The agent's own confidence assessment still applies, but survey-guided
+  // paths lack the direct evidence chain that findings-guided paths have.
+
   Agent({
     subagent_type: "Explore",
     prompt: `You are extracting narrative artifacts from Claude Code session history.
@@ -268,7 +327,7 @@ ${session_assignments[i].join('\n')}
 
 PRIOR FINDINGS (use as seeds -- look for the stories behind these):
 ${seed_context}
-
+${domain_hint}
 For each narrative you find, return an artifact using this EXACT format:
 
 <artifact>
@@ -643,6 +702,7 @@ function update_artifacts_registry(new_artifacts, project_slug) {
 | 0 sessions | Error: "No session history found for {project}." |
 | < 3 sessions | Warn, proceed with low confidence, note in output |
 | No prior findings | Warn, fall back to heuristic session sampling |
+| No findings but survey available | Use survey-guided session selection (intermediate confidence) |
 | Findings evidence doesn't resolve to sessions | Supplement with heuristic sampling |
 | < 3 artifacts at medium+ confidence | Warn: "Insufficient narrative evidence. Run /archaeology survey and domain extraction first." |
 | 0 artifacts extracted | Do not create output files. Suggest running survey/extraction first. |
@@ -658,6 +718,7 @@ Conservation run is complete when:
 - [ ] Project context resolved (C1)
 - [ ] Prior extractions scanned for narrative seeds (C2)
 - [ ] Sessions selected (findings-guided or heuristic fallback) (C3)
+- [ ] Survey-guided path used when findings absent but survey available (C3)
 - [ ] All 5 extraction agents completed (C4)
 - [ ] Artifacts assembled with IDs, frontmatter, and body (C5)
 - [ ] Default exhibition generated (C6)

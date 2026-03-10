@@ -267,6 +267,47 @@ Return ONLY XML blocks:
       });
     }
 
+    // Step 4: Check for dig-sourced candidates (feedback loop: dig → survey)
+    // If prior digs have completed, import their domain_candidates and suppress
+    // re-suggestion of candidates already under investigation.
+    dig_dirs = Glob(`${ARCHAEOLOGY_DIR}/spelunk/*/metadata.json`);
+    dig_candidate_prefixes = new Set();
+    for (meta_path of dig_dirs) {
+      meta = JSON.parse(Read(meta_path));
+      if (meta.domain_candidates) {
+        for (candidate of meta.domain_candidates) {
+          dig_candidate_prefixes.add(candidate.prefix);
+          // Import non-existing-domain candidates as dig-sourced signals
+          if (!candidate.is_existing_domain) {
+            existing = discovered_signals.find(s =>
+              s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === candidate.prefix
+            );
+            if (!existing) {
+              discovered_signals.push({
+                name: candidate.prefix,
+                terms: [],
+                description: `Discovered from dig "${meta.subject}" (${candidate.nugget_count} nuggets)`,
+                coherence: candidate.nugget_count >= 5 ? 'high' : 'medium',
+                signal: 'moderate',  // ceiling still applies
+                term_count: 0,
+                session_spread: 0,
+                discovered_from: 'dig',
+                dig_subject: meta.subject
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Annotate candidates that overlap with active dig investigations
+    for (signal of discovered_signals) {
+      signal_slug = signal.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      if (dig_candidate_prefixes.has(signal_slug)) {
+        signal.under_investigation = true;
+      }
+    }
+
     // Sort by coherence (high first), then term_count descending
     discovered_signals.sort((a, b) => {
       const coherence_order = { high: 0, medium: 1, low: 2 };
@@ -471,11 +512,14 @@ if (discovered_signals.length > 0) {
 Terms not covered by existing domains, clustered by semantic similarity.
 Signal ceiling: discovered signals are capped at \`moderate\` — run extraction to validate.
 
-| Cluster | Signal | Coherence | Terms | Description |
-|---------|--------|-----------|-------|-------------|
-${discovered_signals.map(s => `| ${s.name} | ${s.signal} | ${s.coherence} | ${s.terms.join(', ')} | ${s.description} |`).join('\n')}
+| Cluster | Signal | Coherence | Terms | Description | Status |
+|---------|--------|-----------|-------|-------------|--------|
+${discovered_signals.map(s => {
+  status = s.under_investigation ? '🔍 under dig investigation' : (s.discovered_from === 'dig' ? '⛏ dig-sourced' : '—');
+  return `| ${s.name} | ${s.signal} | ${s.coherence} | ${s.terms.join(', ')} | ${s.description} | ${status} |`;
+}).join('\n')}
 
-To extract against a discovered signal: \`/archaeology extract <cluster-name>\``;
+To extract against a discovered signal: \`/archaeology <cluster-name>\``;
 } else if (discovery_enabled) {
   discovered_section = `## Discovered Signals
 

@@ -126,6 +126,30 @@ for ([slug, survey_content] of Object.entries(surveys)) {
   // Parse suggested deep dives
   deep_dives = extract_bullet_items(survey_content, 'Suggested Deep Dives');
 
+  // Parse discovered signals and survey-candidates.json
+  candidates_path = `${CENTRAL_BASE}/${result.slug}/survey-candidates.json`;
+  candidate_signals = [];
+  if (exists(candidates_path)) {
+    candidates_data = JSON.parse(Read(candidates_path));
+    candidate_signals = candidates_data.candidates.map(c => ({
+      id: c.id,
+      signal: c.signal,
+      terms: c.terms,
+      coherence: c.coherence,
+      source: 'survey'
+    }));
+  } else {
+    // Fallback: parse Discovered Signals table from survey.md if available
+    discovered_signals = extract_table_rows(survey_content, 'Discovered Signals');
+    candidate_signals = discovered_signals.map(d => ({
+      id: d.candidate || d.name,
+      signal: d.signal,
+      terms: [],
+      coherence: 'unknown',
+      source: 'survey_table'
+    }));
+  }
+
   project_data.push({
     slug: slug,
     scan_date: scan_date,
@@ -133,7 +157,8 @@ for ([slug, survey_content] of Object.entries(surveys)) {
     top_domain: top_domain ? { id: top_domain.domain, signal: top_domain.signal } : null,
     languages: profile['Primary languages'] || 'Unknown',
     deep_dives: deep_dives,
-    all_domains: domain_rows
+    all_domains: domain_rows,
+    candidate_signals: candidate_signals
   });
 }
 ```
@@ -168,6 +193,31 @@ all_deep_dives = project_data.flatMap(p =>
   p.deep_dives.map(d => ({ ...d, project: p.slug }))
 );
 
+// Aggregate candidate signals across projects
+candidate_cross = {};
+for (p of project_data) {
+  for (c of p.candidate_signals || []) {
+    if (!candidate_cross[c.id]) {
+      candidate_cross[c.id] = {
+        id: c.id,
+        projects: [],
+        total_signal_score: 0,
+        all_terms: new Set()
+      };
+    }
+    candidate_cross[c.id].projects.push(p.slug);
+    candidate_cross[c.id].total_signal_score += (c.signal === 'moderate' ? 2 : 1);
+    for (term of c.terms) {
+      candidate_cross[c.id].all_terms.add(term);
+    }
+  }
+}
+
+// Emergence threshold: 3+ projects
+emerged_candidates = Object.values(candidate_cross)
+  .filter(c => c.projects.length >= 3)
+  .sort((a, b) => b.total_signal_score - a.total_signal_score);
+
 // Build failed/skipped table
 skipped_failed = manifest.results
   .filter(r => r.status === 'skipped' || r.status === 'failed')
@@ -179,14 +229,44 @@ skipped_failed = manifest.results
 
 The skill should use its own reasoning to generate:
 1. **Cross-Project Patterns** — which domains appear across multiple projects, what that means, any uncovered themes appearing in 2+ projects
-2. **Recommended Next Steps** — ranked list of which project+domain to run first (strongest signal * most sessions), new domains to create, projects to skip
+2. **Recommended Next Steps** — ranked list of which project+domain to run first (strongest signal * most sessions), new domains to create, projects to skip; also surface graduation candidates from `emerged_candidates` when any exist
 
-These sections are written directly by the skill's LLM capabilities based on the `domain_cross`, `all_deep_dives`, and `project_data` context.
+These sections are written directly by the skill's LLM capabilities based on the `domain_cross`, `all_deep_dives`, `candidate_cross`, `emerged_candidates`, and `project_data` context.
 
 ### Excavation Step E5: Write Portfolio
 
 ```javascript
 PORTFOLIO_PATH = `${CENTRAL_BASE}/portfolio.md`;
+
+// Build Domain Landscape rows
+// Established: domains with status 'active' in registry
+established_rows = Object.entries(domain_cross)
+  .filter(([domain]) => registry_status(domain) === 'active')
+  .map(([domain, entries]) => {
+    projects_with_signal = entries.length;
+    strongest = entries.sort((a, b) => (b.score || 0) - (a.score || 0))[0]?.signal || '-';
+    avg_score = (entries.reduce((sum, e) => sum + (parseFloat(e.score) || 0), 0) / entries.length).toFixed(1);
+    return `| ${domain} | ${projects_with_signal} | ${strongest} | ${avg_score} |`;
+  }).join('\n') || '| _(none)_ | | | |';
+
+// Emerging: domains with status 'confirmed' in registry
+emerging_rows = Object.entries(domain_cross)
+  .filter(([domain]) => registry_status(domain) === 'confirmed')
+  .map(([domain, entries]) => {
+    projects = entries.map(e => e.project).join(', ');
+    findings = entries.reduce((sum, e) => sum + (e.findings || 0), 0);
+    confirmed_at = registry_confirmed_at(domain) || '-';
+    return `| ${domain} | ${projects} | ${findings} | ${confirmed_at} |`;
+  }).join('\n') || '| _(none)_ | | | |';
+
+// Candidate: all entries in candidate_cross
+candidate_rows = Object.values(candidate_cross)
+  .map(c => {
+    projects = c.projects.join(', ');
+    coherence = candidate_coherence(c.id) || '-';
+    terms = [...c.all_terms].join(', ') || '-';
+    return `| ${c.id} | ${projects} | ${coherence} | ${terms} |`;
+  }).join('\n') || '| _(none)_ | | | |';
 
 portfolio_content = `# Archaeology Portfolio — ${current_date()}
 
@@ -201,6 +281,26 @@ ${overview_rows}
 ## Cross-Project Patterns
 
 ${cross_project_patterns}
+
+## Domain Landscape
+
+### Established (curated, active extraction)
+
+| Domain | Projects with Signal | Strongest Signal | Avg Score |
+|--------|---------------------|------------------|-----------|
+${established_rows}
+
+### Emerging (confirmed, validated by extraction)
+
+| Domain | Projects | Findings | Confirmed At |
+|--------|----------|----------|-------------|
+${emerging_rows}
+
+### Candidate (discovered by survey, not yet extracted)
+
+| Candidate | Projects | Coherence | Terms |
+|-----------|----------|-----------|-------|
+${candidate_rows}
 
 ## Recommended Next Steps
 
@@ -217,6 +317,25 @@ ${skipped_failed || '| _(none)_ | |'}
 `;
 
 Write(PORTFOLIO_PATH, portfolio_content);
+
+if (emerged_candidates.length > 0) {
+  grad_content = `# Graduation Candidates — ${current_date()}
+
+> Candidates appearing in 3+ projects. Consider promoting to confirmed domains.
+
+${emerged_candidates.map(c => `## ${c.id}
+
+- **Projects:** ${c.projects.join(', ')}
+- **Signal score:** ${c.total_signal_score}
+- **Terms:** ${[...c.all_terms].join(', ')}
+- **Action:** \`/archaeology ${c.id}\` to run suggested-tier extraction
+`).join('\n')}
+
+---
+*Generated by archaeology excavation — ${current_date()}*
+`;
+  Write(`${CENTRAL_BASE}/graduation-candidates.md`, grad_content);
+}
 ```
 
 ### Excavation Step E6: Completion Display
@@ -233,8 +352,11 @@ Excavation run is complete when:
 - [ ] Shell script executed successfully (or --dry-run displayed results)
 - [ ] All survey.md files read from central work-log
 - [ ] Survey data parsed (domain scores, profiles, deep dives)
+- [ ] Survey candidate signals parsed from survey-candidates.json (E3)
 - [ ] Portfolio.md generated with cross-project synthesis
+- [ ] Domain Landscape section included in portfolio (E5)
 - [ ] Portfolio.md written to central work-log root
+- [ ] graduation-candidates.md written when candidates cross 3-project threshold (E5)
 - [ ] Completion summary displayed with recommendations
 
 > **Note:** `--no-export` is not supported for excavation mode. Excavation's purpose is cross-project aggregation to the central work-log — local-only mode would be meaningless.

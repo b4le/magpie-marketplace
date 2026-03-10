@@ -146,10 +146,65 @@ Verify: agents find relevant content, outputs are useful, no false positives fro
 
 ## Domain Lifecycle
 
-1. **Planned** — Registered in registry, not yet implemented
-2. **Active** — Fully functional, tested
-3. **Deprecated** — Replaced by newer domain, kept for reference
+Domains graduate through tiers of increasing curation:
+
+```
+Signal → Candidate → Suggested → Confirmed → Active (curated)
+```
+
+| Stage | Where It Lives | How It Gets There | Extraction Support |
+|-------|---------------|-------------------|-------------------|
+| **Signal** | Survey output (Discovered Signals table) | TF-IDF term extraction + LLM clustering | None |
+| **Candidate** | `survey-candidates.json` | Survey S3.5 writes structured candidates | None |
+| **Suggested** | `survey-candidates.json` | Same as candidate, but user runs `/archaeology {id}` | 1 agent, system defaults, exploratory |
+| **Confirmed** | `registry.yaml` (status: confirmed) | Auto-promoted when suggested extraction yields 3+ findings | 2 agents, system defaults |
+| **Active** | `registry.yaml` + `.md` domain file | Manual authoring of full domain spec | Full spec from domain file |
+
+### Auto-Promotion (Suggested → Confirmed)
+
+When you run `/archaeology {domain}` on a suggested-tier domain and extraction finds 3+ findings, the domain is automatically promoted to `confirmed` in the registry. No manual intervention needed. The confirmed entry includes the keywords discovered by survey and the extraction count.
+
+### Promoting Confirmed → Active
+
+To create a fully curated domain from a confirmed entry:
+
+1. Check what keywords and findings exist: `/archaeology list` shows confirmed domains
+2. Create `references/domains/{domain}.md` starting from an existing domain file
+3. Fill in the frontmatter using the confirmed entry's keywords as a starting point
+4. Add domain-specific body content to guide extraction focus
+5. Update the registry entry: change `status` from `confirmed` to `active`, add the `file` field
+6. Run `scripts/validate-domains.sh` to verify
+
+### Lightweight Domain Creation (Confirmed Tier)
+
+If you want to create a confirmed domain directly (without waiting for survey discovery):
+
+```yaml
+# Add to registry.yaml domains list:
+- id: my-new-domain
+  name: My New Domain
+  file: null
+  version: "0.1.0"
+  status: confirmed
+  description: Brief description of what this covers
+  pattern_types: []
+  keywords:
+    primary: [keyword1, keyword2, keyword3]
+    secondary: [related1, related2]
+    exclusion: []
+  discovered_from: manual
+  confirmed_at: "2026-03-10"
+  extraction_count: 0
+```
+
+This is extractable immediately with `/archaeology my-new-domain` — no `.md` file needed.
 
 ## Discovering New Domains
 
-Use survey mode (`/archaeology` with no arguments) to discover potential new domains. Survey scans conversation history for high-frequency tools and patterns not covered by existing domains, and lists them under "Suggested Deep Dives" in the output. If a suggested theme appears consistently across projects, it's a strong candidate for a new domain.
+Use survey mode (`/archaeology` with no arguments) to discover potential new domains. Survey scans conversation history for high-frequency tools and patterns not covered by existing domains:
+
+- **Discovered Signals** table in `survey.md` shows candidate clusters with coherence ratings
+- **`survey-candidates.json`** provides structured data for other modes to consume
+- Run `/archaeology {candidate-id}` to extract against a suggested domain — if 3+ findings are found, it auto-promotes to confirmed
+
+If a candidate appears across 3+ projects (visible in excavation's Domain Landscape), it's listed in `graduation-candidates.md` as a strong promotion candidate.

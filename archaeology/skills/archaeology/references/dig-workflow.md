@@ -305,6 +305,52 @@ if (rig_operator_result.includes("SCOPE WARNING")) {
 No sessions found matching '{subject}'. Try a different subject or run /archaeology survey first.
 ```
 
+### D2 Domain Enrichment (additive — fires only when rig operator expansion produced limited terms)
+
+After parsing the rig operator result, enrich the expansion with domain vocabulary from the registry and survey candidates. This is additive — it never replaces the rig operator's own reasoning, only supplements it when the expansion is thin.
+
+```javascript
+REGISTRY_PATH = `${SKILL_DIR}/references/domains/registry.yaml`;
+CANDIDATES_PATH = `${ARCHAEOLOGY_DIR}/survey-candidates.json`;
+
+// Only enrich if the rig operator's expansion is thin (< 8 semantic variants)
+if (subject_expansion.semantic_variants.length < 8) {
+  // Registry keyword fallback: inject domain keywords matching the subject
+  registry = parse_yaml(Read(REGISTRY_PATH));
+  matching_domains = registry.domains.filter(d =>
+    d.keywords?.primary?.some(kw =>
+      subject.toLowerCase().includes(kw.toLowerCase()) ||
+      kw.toLowerCase().includes(subject.toLowerCase())
+    ) ||
+    d.keywords?.secondary?.some(kw =>
+      subject.toLowerCase().includes(kw.toLowerCase())
+    )
+  );
+
+  if (matching_domains.length > 0) {
+    for (domain of matching_domains) {
+      subject_expansion.semantic_variants.push(...(domain.keywords.primary || domain.keywords || []));
+      subject_expansion.co_occurring.push(...(domain.keywords.secondary || []));
+    }
+    subject_expansion.semantic_variants = [...new Set(subject_expansion.semantic_variants)];
+    subject_expansion.co_occurring = [...new Set(subject_expansion.co_occurring)];
+  }
+
+  // Survey-candidates.json enrichment: import candidate terms matching the subject
+  if (exists(CANDIDATES_PATH)) {
+    candidates = JSON.parse(Read(CANDIDATES_PATH));
+    matching_candidates = candidates.candidates.filter(c =>
+      subject.toLowerCase().includes(c.id.toLowerCase()) ||
+      c.terms.some(t => subject.toLowerCase().includes(t.toLowerCase()))
+    );
+    for (candidate of matching_candidates) {
+      subject_expansion.co_occurring.push(...candidate.terms);
+    }
+    subject_expansion.co_occurring = [...new Set(subject_expansion.co_occurring)];
+  }
+}
+```
+
 ---
 
 ## Dig Step D3: Cavern Map Construction
@@ -383,6 +429,37 @@ cavern_map = {
 
 // The `expanded_terms` field is a flattened convenience array for display code (D4).
 // The full `subject_expansion` object is used by the rig operator for scoring.
+
+// Domain-seeded tunnel scaffolding: add tunnels from matching domain pattern_types
+// These are suggestions — marked as unexplored with a _source annotation.
+// Only fires when matching_domains were found in D2 enrichment.
+if (matching_domains && matching_domains.length > 0) {
+  existing_labels = Object.values(tunnel_nodes).map(t => t.label.toLowerCase());
+  for (domain of matching_domains) {
+    for (pattern_type of domain.pattern_types || []) {
+      if (!existing_labels.includes(pattern_type.toLowerCase())) {
+        seeded_id = `tunnel-${pattern_type.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+        if (!tunnel_nodes[seeded_id]) {
+          tunnel_nodes[seeded_id] = {
+            id:                seeded_id,
+            label:             pattern_type,
+            status:            'unexplored',
+            depth:             1,
+            parent_id:         'root',
+            children:          [],
+            nugget_ids:        [],
+            sessions_searched: [],
+            discovered_at:     now,
+            last_dug:          null,
+            _source:           `domain-seeded:${domain.id}`
+          };
+          cavern_map.root.children.push(seeded_id);
+          existing_labels.push(pattern_type.toLowerCase());
+        }
+      }
+    }
+  }
+}
 
 // Atomic write
 Write(`${CAVERN_MAP}.tmp`, JSON.stringify(cavern_map, null, 2));
@@ -1098,6 +1175,11 @@ for (suggestion of new_tunnel_suggestions) {
   cavern_map.tunnel_nodes[new_tunnel_id] = new_node;
 }
 
+// Aggregate unique tag prefixes from this cycle's nuggets (observability — non-mutating)
+cycle_tag_prefixes = [...new Set(
+  deduplicated.flatMap(n => n.tags.map(t => t.split('/')[0]))
+)].sort();
+
 // Append decision log entry
 turn_number = cavern_map.decision_log.length + 1;
 cavern_map.decision_log.push({
@@ -1108,7 +1190,8 @@ cavern_map.decision_log.push({
                      + (CONNECTOR_ELIGIBLE ? ` Connector found ${new_veins.length} veins.` : ''),
   rationale:         build_turn_rationale(tunnel, deduplicated, new_tunnel_suggestions),
   tunnels_explored:  [tunnel.id],
-  nuggets_found:     deduplicated.length
+  nuggets_found:     deduplicated.length,
+  tag_prefixes:      cycle_tag_prefixes
 });
 
 // Atomic write
@@ -1250,7 +1333,11 @@ Where `CENTRAL_PROJECT_DIR = ~/.claude/data/visibility-toolkit/work-log/archaeol
   "started_at": "2026-03-09T10:00:00Z",
   "completed_at": "2026-03-09T11:30:00Z",
   "sessions_analyzed": 8,
-  "dig_cycles": 3
+  "dig_cycles": 3,
+  "domain_candidates": [
+    { "prefix": "mcp-integration", "nugget_count": 5, "is_existing_domain": false },
+    { "prefix": "orchestration", "nugget_count": 3, "is_existing_domain": true }
+  ]
 }
 ```
 
@@ -1268,8 +1355,39 @@ Where `CENTRAL_PROJECT_DIR = ~/.claude/data/visibility-toolkit/work-log/archaeol
 | `completed_at` | ISO timestamp | no | Set when status is `"complete"`. Omitted when `"in-progress"` |
 | `sessions_analyzed` | integer | yes | Total unique sessions analyzed across all cycles |
 | `dig_cycles` | integer | yes | Number of completed dig cycles |
+| `domain_candidates` | object[] | no | Tag prefixes with 3+ nuggets, for survey/excavation consumption |
 
 `status` is `"complete"` when exported via `--done`; `"in-progress"` when exported via `--export`. `completed_at` is omitted if status is `"in-progress"`.
+
+### domain_candidates generation
+
+Analyze tag prefixes across all nuggets at export time. Prefixes with 3+ nuggets are domain candidates:
+
+```javascript
+// In D-FINAL export, after building metadata
+tag_counts = {};
+all_nugget_files = Glob(`${NUGGETS_DIR}/nug-*.md`);
+for (nug_file of all_nugget_files) {
+  fm = parse_frontmatter(Read(nug_file));
+  for (tag of fm.tags) {
+    prefix = tag.split('/')[0];
+    tag_counts[prefix] = (tag_counts[prefix] || 0) + 1;
+  }
+}
+
+registry = parse_yaml(Read(REGISTRY_PATH));
+domain_candidates = Object.entries(tag_counts)
+  .filter(([prefix, count]) => count >= 3)
+  .map(([prefix, count]) => ({
+    prefix: prefix,
+    nugget_count: count,
+    is_existing_domain: registry.domains.some(d => d.id === prefix)
+  }));
+
+metadata.domain_candidates = domain_candidates;
+```
+
+This is non-mutating — it provides a breadcrumb trail for survey and excavation to assess domain signal from dig outputs.
 
 ### Completion display
 
@@ -1394,6 +1512,7 @@ FORMAT RULES:
 - source_session: use the source_session field from the manifest slab entry
 - tags: 2-5 tags using domain/specific hierarchy (e.g., mcp/caching,
   perf/latency). Include parent tag when useful for clustering.
+${domain_tag_hints}
 - XML escaping: < as &lt;, > as &gt;, & as &amp;
 
 OUTPUT FORMAT:
@@ -1459,6 +1578,16 @@ WHY THIS FAILS:
 - `${tunnel_context}` -- a brief human-readable summary of `cavern_map.subject_expansion` for the chosen tunnel: the key literal phrases, regex patterns, and semantic variants to watch for. Derived by the orchestrator before dispatch.
 - `${manifest_path}` -- absolute path to the sub-manifest JSON file written for this spelunker's slab assignment.
 - `${prior_nugget_summaries}` -- the 1-line summaries built in D5, or `"None yet."` if this is the first cycle for this tunnel.
+- `${domain_tag_hints}` -- when `matching_domains` were found during D2 enrichment, inject known domain IDs as tag prefix suggestions. Built as:
+  ```javascript
+  domain_tag_hints = '';
+  if (matching_domains && matching_domains.length > 0) {
+    domain_tag_hints = '- KNOWN DOMAIN PREFIXES (use these as tag prefixes where relevant):\n' +
+      matching_domains.map(d => `    ${d.id}/`).join('\n') +
+      '\n  Example: if a finding relates to MCP caching, tag it "mcp-integration/caching" not just "caching".';
+  }
+  ```
+  When no matching domains exist, this variable is empty and the tag instruction is unchanged.
 - `build_spelunker_prompt()` signature: `(tunnel_label, subject, manifest_path, tunnel_context, prior_nugget_context)` -- takes manifest path and context strings, not session content.
 
 ### Rig Operator Agent Prompt
@@ -1895,8 +2024,16 @@ Both agents follow the XML output convention defined in `conversation-parser.md`
 ### Export Phase (D-FINAL)
 
 - [ ] **(Unless --no-export)** Export files written to `${CENTRAL_PROJECT_DIR}/spelunk/{subject-slug}/` (D-FINAL)
-- [ ] **(Unless --no-export)** `metadata.json` written with status, nugget count, and timestamps (D-FINAL)
+- [ ] **(Unless --no-export)** `metadata.json` written with status, nugget count, timestamps, and `domain_candidates[]` (D-FINAL)
 - [ ] **(Unless --no-export)** Local `INDEX.md` updated with spelunk indicator (D-FINAL)
 - [ ] **(Unless --no-export)** Central `INDEX.md` updated with spelunk entry (D-FINAL)
 - [ ] **(Unless --no-export, --done only)** `SUMMARY.md` Deep Digs section updated (D-FINAL)
 - [ ] Completion summary displayed with file locations and next step (D-FINAL)
+
+### Domain Integration (additive — unchanged when no domains exist)
+
+- [ ] D2 domain enrichment fires only when rig operator expansion has < 8 semantic variants
+- [ ] D3 domain-seeded tunnels marked as `status: unexplored`, `_source: domain-seeded:{id}`
+- [ ] Spelunker prompt shows known domain ID prefixes when matching domains exist
+- [ ] D7 decision log entries include `tag_prefixes[]`
+- [ ] D-FINAL `metadata.json` includes `domain_candidates[]` with prefix + nugget count

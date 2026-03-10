@@ -1,8 +1,16 @@
-# Domain File Schema v1.0
+# Domain File Schema v2.0
 
-All domain files MUST use this YAML frontmatter structure.
+All domain files MUST use this YAML frontmatter structure. Confirmed-tier domains (registry-only, no `.md` file) use a subset of these fields — see Registry Schema below.
 
-## Required Fields
+## Domain Tiers
+
+| Tier | Source | Required Fields | Agent Count | Notes |
+|------|--------|----------------|-------------|-------|
+| curated | `.md` file with full frontmatter | All fields below | From domain file (1-6) | Full spec, body text guides extraction |
+| confirmed | `registry.yaml` entry, `status: confirmed` | id, name, status, keywords | 2 (system default) | Registry keywords + system default locations/outputs |
+| suggested | `survey-candidates.json` entry | id, terms | 1 (system default) | Ephemeral until promoted; top 5 terms as primary keywords |
+
+## Required Fields (Curated Tier)
 
 ```yaml
 ---
@@ -101,6 +109,69 @@ Artifacts to generate. Each output has:
 ## Validation
 
 Run `scripts/validate-domains.sh` to check compliance.
+
+---
+
+# Registry Schema v2.0.0
+
+The domain registry (`references/domains/registry.yaml`) tracks all domains across tiers. Schema version: `2.0.0`.
+
+## Registry Entry Fields
+
+| Field | Type | Required | Curated | Confirmed | Description |
+|-------|------|----------|---------|-----------|-------------|
+| `id` | string | yes | yes | yes | Domain identifier, must be unique |
+| `name` | string | yes | yes | yes | Human-readable name |
+| `file` | string | conditional | required | optional (null) | Domain `.md` filename. Required for active/draft, optional for confirmed |
+| `version` | semver | yes | yes | yes | e.g., `"1.0.0"` for curated, `"0.1.0"` for auto-promoted |
+| `status` | enum | yes | yes | yes | `confirmed` \| `active` \| `draft` \| `planned` \| `deprecated` \| `archived` |
+| `description` | string | yes | yes | yes | Brief description |
+| `pattern_types` | string[] | no | yes | optional | Category labels for findings |
+| `keywords` | string[] or object | yes | yes | yes | Flat array or `{primary, secondary, exclusion}` object |
+| `discovered_from` | string | no | no | optional | How discovered: `"survey"`, `"dig"`, `"manual"` |
+| `confirmed_at` | date string | no | no | optional | ISO date when promoted to confirmed |
+| `extraction_count` | integer | no | no | optional | Number of times extracted against |
+
+## Status Lifecycle
+
+```
+Signal → Candidate → Suggested → Confirmed → Active (curated)
+         (survey)    (survey-candidates.json)  (registry)   (.md file)
+```
+
+- **Suggested → Confirmed**: Automatic when extraction yields 3+ findings (Step 4c)
+- **Confirmed → Active**: Manual — requires authoring a `.md` domain file with full frontmatter
+
+## Validation Rules
+
+- `confirmed` entries: `file` field is optional (may be null)
+- `active`/`draft` entries: `file` field is required and file must exist
+- `keywords` must be non-empty for all entries
+- `validate-domains.sh` and `check-registry-sync.sh` handle both formats
+
+---
+
+# Extraction Output Frontmatter Extension
+
+All extraction outputs include these frontmatter fields:
+
+```yaml
+---
+domain: mcp-integration
+domain_tier: confirmed          # curated | confirmed | suggested
+coverage_note: "Extracted with system defaults. Create a domain file for targeted extraction."
+extracted_at: 2026-03-10
+---
+```
+
+| Field | Type | When Present | Description |
+|-------|------|-------------|-------------|
+| `domain` | string | always | Domain identifier |
+| `domain_tier` | enum | always | `curated` \| `confirmed` \| `suggested` |
+| `coverage_note` | string | confirmed/suggested only | Actionable guidance. Omitted for curated tier |
+| `extracted_at` | date | always | Extraction date (YYYY-MM-DD) |
+
+Backward-compatible: existing curated domain outputs gain `domain_tier: curated` and `extracted_at`. No `coverage_note` for curated.
 
 ---
 
@@ -339,6 +410,7 @@ Every routing decision — including automated ones — is appended to the decis
 | `rationale` | string | yes | Why this action was taken (1–2 sentences) |
 | `tunnels_explored` | string[] | yes | IDs of tunnels spelunkers entered this turn |
 | `nuggets_found` | integer | yes | Count of new nuggets added this turn |
+| `tag_prefixes` | string[] | no | Unique tag prefixes from this cycle's nuggets (observability, non-mutating) |
 
 ### Node Lookup Convention
 

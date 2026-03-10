@@ -56,7 +56,7 @@ Extract and document patterns from Claude Code usage history across multiple kno
 - **workstyle** - Analyse working style with Claude (tool usage, session shapes, delegation, communication patterns)
 - **conserve** - Extract narrative artifacts from project history, generate default exhibition
 - **dig** - Deep investigation of a specific subject across project history
-- **{domain}** - Run extraction for specified domain (orchestration, prompting-patterns, python-practices, git-workflows)
+- **{domain}** - Run extraction for specified domain. Supports three tiers: curated (full spec), confirmed (registry with defaults), suggested (survey candidates). Run `list` to see available domains at all tiers
 - **excavation** - Cross-project portfolio scan: discover projects, survey each, generate portfolio report
 
 ## Execution Workflow
@@ -131,6 +131,27 @@ if (args.command === 'list') {
   //
   // IMPORTANT: Do NOT put sigils in the domains table — they are for mode states only.
   list_domains();
+
+  // Display graduation candidates when available
+  CENTRAL_BASE = `~/.claude/data/visibility-toolkit/work-log/archaeology`;
+  GRAD_PATH = `${CENTRAL_BASE}/graduation-candidates.md`;
+  if (exists(GRAD_PATH)) {
+    grad_content = Read(GRAD_PATH);
+    // Parse candidate sections: each starts with "## {id}"
+    candidates = grad_content.split(/^## /m).filter(Boolean).slice(1); // skip header
+    if (candidates.length > 0) {
+      print(`\n## Graduation Candidates\n`);
+      print(`> Candidates appearing in 3+ projects — ready for promotion.\n`);
+      print(`| Candidate | Projects | Action |`);
+      print(`|-----------|----------|--------|`);
+      for (c of candidates) {
+        id = c.split('\n')[0].trim();
+        projects_line = c.match(/\*\*Projects:\*\* (.+)/);
+        project_count = projects_line ? projects_line[1].split(',').length : '?';
+        print(`| ${id} | ${project_count} projects | \`/archaeology ${id}\` to extract, then \`/archaeology confirm ${id}\` |`);
+      }
+    }
+  }
   return;
 }
 
@@ -199,27 +220,103 @@ if (!NO_EXPORT) mkdir -p ${CENTRAL_OUTPUT_DIR}
 # Write .gitignore with ".work/" if ${ARCHAEOLOGY_DIR}/.gitignore doesn't exist
 ```
 
-### Step 2: Load Domain Definition
+### Step 2: Load Domain Definition (Tier-Aware)
+
+Three-tier fallback: curated domain file → confirmed registry entry → survey candidate. Existing curated domains load exactly as before; the new tiers provide defaults for domains without full `.md` files.
 
 ```javascript
+REGISTRY_PATH = `${SKILL_DIR}/references/domains/registry.yaml`;
+
+// System defaults for non-curated domains
+DEFAULT_LOCATIONS = [
+  {
+    path: "~/.claude/projects/-Users-*-{PROJECT_PATH_PATTERN}/",
+    purpose: "Conversation history",
+    priority: "high"
+  },
+  {
+    path: "~/{PROJECT_ROOT}/",
+    purpose: "Project source files",
+    priority: "medium"
+  }
+];
+
+DEFAULT_OUTPUTS = [
+  { file: "README.md", required: true, template: "readme" },
+  { file: "patterns.md", required: false, template: "patterns" }
+];
+
+// Tier 1: Curated — full .md file exists
 DOMAIN_FILE = `${SKILL_DIR}/references/domains/${domain}.md`;
-domain_spec = Read(DOMAIN_FILE);
-domain_config = parse_frontmatter(domain_spec);
+if (exists(DOMAIN_FILE)) {
+  domain_spec = Read(DOMAIN_FILE);
+  domain_config = parse_frontmatter(domain_spec);
+  if (domain_config.status === 'active') {
+    domain_tier = 'curated';
+    domain_body = domain_spec;  // body text used as agent guidance
+    KEYWORDS_PRIMARY = domain_config.keywords.primary;
+    KEYWORDS_SECONDARY = domain_config.keywords.secondary;
+    KEYWORDS_EXCLUSION = domain_config.keywords.exclusion;
+    AGENT_COUNT = domain_config.agent_count;
+    LOCATIONS = domain_config.locations;
+    OUTPUTS = domain_config.outputs;
+  }
+}
 
-if (!domain_spec) { list_domains(); error(`Domain '${domain}' not found.`); }
-if (domain_config.status !== 'active') error(`Domain '${domain}' is not active.`);
+// Tier 2: Confirmed — registry entry with status: confirmed
+if (!domain_tier) {
+  registry = parse_yaml(Read(REGISTRY_PATH));
+  registry_entry = registry.domains.find(d => d.id === domain && d.status === 'confirmed');
+  if (registry_entry) {
+    domain_tier = 'confirmed';
+    domain_body = null;
+    KEYWORDS_PRIMARY = registry_entry.keywords?.primary || registry_entry.keywords || [];
+    KEYWORDS_SECONDARY = registry_entry.keywords?.secondary || [];
+    KEYWORDS_EXCLUSION = registry_entry.keywords?.exclusion || [];
+    AGENT_COUNT = 2;
+    LOCATIONS = DEFAULT_LOCATIONS;
+    OUTPUTS = DEFAULT_OUTPUTS;
+  }
+}
 
-// Extract config (see SCHEMA.md for field definitions)
-KEYWORDS_PRIMARY = domain_config.keywords.primary;
-KEYWORDS_SECONDARY = domain_config.keywords.secondary;
-KEYWORDS_EXCLUSION = domain_config.keywords.exclusion;
-AGENT_COUNT = domain_config.agent_count;
-LOCATIONS = domain_config.locations;
-OUTPUTS = domain_config.outputs;
+// Tier 3: Suggested — check survey-candidates.json
+if (!domain_tier) {
+  CANDIDATES_PATH = `${ARCHAEOLOGY_DIR}/survey-candidates.json`;
+  if (exists(CANDIDATES_PATH)) {
+    candidates = JSON.parse(Read(CANDIDATES_PATH));
+    candidate = candidates.candidates.find(c => c.id === domain);
+    if (candidate) {
+      domain_tier = 'suggested';
+      domain_body = null;
+      KEYWORDS_PRIMARY = candidate.terms.slice(0, 5);   // top 5 terms as primary
+      KEYWORDS_SECONDARY = candidate.terms.slice(5);      // remainder as secondary
+      KEYWORDS_EXCLUSION = [];
+      AGENT_COUNT = 1;
+      LOCATIONS = DEFAULT_LOCATIONS;
+      OUTPUTS = DEFAULT_OUTPUTS;
+    }
+  }
+}
+
+// Not found at any tier
+if (!domain_tier) {
+  list_domains();
+  error(`Domain '${domain}' not found. Run /archaeology survey to discover new domains.`);
+}
 ```
 
 #### Step 2 Verification
-Before proceeding: confirm `DOMAIN_FILE` was read and `domain_config.status === 'active'`. Hard stop if domain file is missing or status is not active — do not launch agents against an undefined domain spec. Review: does the loaded domain's `KEYWORDS_PRIMARY` match the user's intent? If the domain spec looks mismatched (e.g., user said "orchestration" but the keywords are unrelated), flag it before burning agent calls.
+Before proceeding: confirm `domain_tier` is set and keywords are non-empty. For curated tier, verify `domain_config.status === 'active'` — do not launch agents against an undefined domain spec. For confirmed/suggested tiers, verify `KEYWORDS_PRIMARY` has at least one entry. Review: does the loaded domain's `KEYWORDS_PRIMARY` match the user's intent? If the domain spec looks mismatched, flag it before burning agent calls.
+
+Log the tier for user awareness:
+```javascript
+if (domain_tier === 'confirmed') {
+  log(`Using confirmed domain '${domain}' with system defaults (${AGENT_COUNT} agents). Create a domain file for targeted extraction.`);
+}
+if (domain_tier === 'suggested') {
+  log(`Using suggested domain '${domain}' from survey candidates (exploratory, 1 agent). Run /archaeology survey to refresh candidates.`);
+}
+```
 
 ### Step 3: Parallel Search
 
@@ -231,10 +328,13 @@ Launch `AGENT_COUNT` Explore agents. Each searches `LOCATIONS` using domain keyw
 ```
 You are exploring Claude Code history for ${domain} patterns.
 PROJECT: ${PROJECT_NAME}
+DOMAIN TIER: ${domain_tier}
 SEARCH LOCATIONS: ${LOCATIONS}
 PRIMARY KEYWORDS (must match): ${KEYWORDS_PRIMARY}
 SECONDARY KEYWORDS (boost): ${KEYWORDS_SECONDARY}
 EXCLUDE: ${KEYWORDS_EXCLUSION}
+
+${tier_guidance}
 
 Search with Grep, focus on successful patterns, capture context.
 
@@ -246,6 +346,12 @@ OUTPUT FORMAT per finding:
 
 Write findings to: ${output_file}
 ```
+
+**Tier-specific guidance (`tier_guidance`):**
+
+- **curated:** Uses the domain body text as guidance (existing behavior). Append the domain `.md` body content after keywords.
+- **confirmed:** `"This is a confirmed domain without detailed extraction guidance. Cast a wider net:\n- Search for recurring patterns involving these keywords\n- Look for decisions, configurations, and workflows\n- Note tool usage patterns and integration approaches\n- Capture any reusable techniques or notable outcomes"`
+- **suggested:** `"This is a newly discovered domain candidate. Your extraction is exploratory:\n- Verify these keywords actually cluster around a coherent practice area\n- Extract only high-confidence findings with clear evidence\n- If the keywords seem scattered across unrelated contexts, note that\n- Prioritize patterns and decisions over single-use capabilities"`
 
 Wait for all agents to complete.
 
@@ -259,9 +365,17 @@ extraction_files = Glob(pattern: `${WORK_DIR}/extraction/${domain}-agent-*-findi
 all_findings = extraction_files.map(f => Read(f)).join('\n\n---\n\n');
 
 // Generate each output file from domain config with frontmatter (see references/output-templates.md#frontmatter)
+// Frontmatter includes domain_tier for all tiers; coverage_note for non-curated tiers only
+COVERAGE_NOTES = {
+  confirmed: "Extracted with system defaults. Create a domain file for targeted extraction.",
+  suggested: "Exploratory extraction from survey candidate. Results may be incomplete."
+};
+
 for (output of OUTPUTS) {
   content = synthesize_findings(all_findings, output.template);
-  Write(`${DOMAIN_OUTPUT_DIR}/${output.file}`, frontmatter + content);
+  fm = { domain: domain, domain_tier: domain_tier, extracted_at: current_date() };
+  if (domain_tier !== 'curated') fm.coverage_note = COVERAGE_NOTES[domain_tier];
+  Write(`${DOMAIN_OUTPUT_DIR}/${output.file}`, build_frontmatter(fm) + content);
 }
 
 // Update local INDEX.md (canonical impl: references/survey-workflow.md)
@@ -291,6 +405,37 @@ for (extraction_file of extraction_files) {
   }
 }
 ```
+
+### Step 4c: Auto-Promotion (Suggested → Confirmed)
+
+When a suggested-tier extraction yields 3+ findings, automatically promote the domain to `confirmed` in the registry. This closes the gap between survey discovery and repeatable extraction — no manual authoring needed.
+
+```javascript
+if (domain_tier === 'suggested' && all_findings_parsed.length >= 3) {
+  registry = parse_yaml(Read(REGISTRY_PATH));
+  registry.domains.push({
+    id: domain,
+    name: domain.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    file: null,
+    version: "0.1.0",
+    status: "confirmed",
+    description: `Auto-promoted from survey candidate. ${all_findings_parsed.length} findings extracted.`,
+    pattern_types: [],
+    keywords: {
+      primary: KEYWORDS_PRIMARY,
+      secondary: KEYWORDS_SECONDARY,
+      exclusion: []
+    },
+    discovered_from: "survey",
+    confirmed_at: current_date(),
+    extraction_count: 1
+  });
+  Write(REGISTRY_PATH, serialize_yaml(registry));
+  log(`Promoted '${domain}' to confirmed domain (${all_findings_parsed.length} findings).`);
+}
+```
+
+No auto-promotion from `confirmed` to `active`. The `active` status requires a hand-authored `.md` file — that is a deliberate quality gate.
 
 ### Step 5: Export to Central Work-Log
 
