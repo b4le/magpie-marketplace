@@ -37,7 +37,7 @@ CAVERN_MAP="${SPELUNK_DIR}/cavern-map.json"
 PASS_COUNT=0
 FAIL_COUNT=0
 WARN_COUNT=0
-TOTAL_CHECKS=11
+TOTAL_CHECKS=13  # Note: .prep checks are conditional; count is approximate
 
 # --------------------------------------------------------------------------
 # Helpers
@@ -88,8 +88,8 @@ if [ "$check2_failed" -eq 1 ]; then
 fi
 
 schema_version=$(jq -r '.schema_version' "${CAVERN_MAP}" 2>/dev/null)
-if [ "$schema_version" != "1.0" ]; then
-  fail "schema_version is \"${schema_version}\", expected \"1.0\""
+if [ "$schema_version" != "1.0" ] && [ "$schema_version" != "1.1" ]; then
+  fail "schema_version is \"${schema_version}\", expected \"1.0\" or \"1.1\""
   printf "Result: %d/%d checks passed, %d warnings\n" "${PASS_COUNT}" "${TOTAL_CHECKS}" "${WARN_COUNT}"
   exit 1
 fi
@@ -391,6 +391,45 @@ if [ "$nugget_count" -gt 0 ] && [ ! -f "${TROVE_FILE}" ]; then
 fi
 
 pass "trove.md check complete"
+
+# --------------------------------------------------------------------------
+# Check 12 — .prep directory (optional — only if rig operator has been used)
+# --------------------------------------------------------------------------
+
+PREP_DIR="${SPELUNK_DIR}/.prep"
+if [ -d "$PREP_DIR" ]; then
+  # Check each rig directory has a manifest.json
+  for rig_dir in "$PREP_DIR"/*/; do
+    [ -d "$rig_dir" ] || continue
+    rig_name=$(basename "$rig_dir")
+    # Skip .tmp directories (incomplete rigs)
+    case "$rig_name" in *.tmp) continue ;; esac
+    manifest="${rig_dir}manifest.json"
+    if [ ! -f "$manifest" ]; then
+      printf '  WARN: rig %s has no manifest.json\n' "$rig_name"
+      WARN_COUNT=$((WARN_COUNT + 1))
+    elif ! jq empty "$manifest" 2>/dev/null; then
+      printf '  FAIL: rig %s manifest.json is not valid JSON\n' "$rig_name"
+      FAIL_COUNT=$((FAIL_COUNT + 1))
+    else
+      PASS_COUNT=$((PASS_COUNT + 1))
+    fi
+  done
+fi
+
+# --------------------------------------------------------------------------
+# Check 13 — subject_expansion field for schema v1.1
+# --------------------------------------------------------------------------
+
+if [ "$schema_version" = "1.1" ]; then
+  has_expansion=$(jq -r 'has("subject_expansion")' "${CAVERN_MAP}" 2>/dev/null)
+  if [ "$has_expansion" = "true" ]; then
+    PASS_COUNT=$((PASS_COUNT + 1))
+  else
+    printf '  FAIL: schema v1.1 requires subject_expansion field\n'
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+  fi
+fi
 
 # --------------------------------------------------------------------------
 # Summary

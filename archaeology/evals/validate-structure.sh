@@ -293,7 +293,9 @@ SCRIPTS_DIR="$PLUGIN_ROOT/scripts"
 EXPECTED_SCRIPTS=(
     "archaeology-excavation.sh"
     "check-registry-sync.sh"
+    "prep-rig.sh"
     "validate-conserve.sh"
+    "validate-dig.sh"
     "validate-domains.sh"
 )
 

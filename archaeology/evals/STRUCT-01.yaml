@@ -31,7 +31,9 @@ checks:
   - scripts_present_and_executable:
     - "scripts/archaeology-excavation.sh"
     - "scripts/check-registry-sync.sh"
+    - "scripts/prep-rig.sh"
     - "scripts/validate-conserve.sh"
+    - "scripts/validate-dig.sh"
     - "scripts/validate-domains.sh"
   - version_aligned: "skills/archaeology/SKILL.md == .claude-plugin/plugin.json"
   - file_exists: "README.md"
