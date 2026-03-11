@@ -1,7 +1,7 @@
 # Composable Pipeline Design: brainstorm → decompose → execute
 
 **Created:** 2026-03-09
-**Status:** Design complete — ready for implementation
+**Status:** All steps (0-5) complete — pipeline fully implemented
 **Scope:** Wire brainstorm, decompose, and execution dispatch into a single composable pipeline via an upgraded `/orchestrate` command
 
 > **Plugin root:** `~/Personal/personal-marketplaces/magpie-marketplace/orchestration-toolkit/`
@@ -585,6 +585,7 @@ Five steps, ordered by dependency. Each step is independently testable.
 ### Step 0: Schema Fixes
 
 **Effort:** Small (1 session)
+**Status: Complete**
 **Files:** `{plugin}/skills/decompose/references/plan-schema.md`
 
 - Add `execution_status`, `isolation`, `project_root`, `plan_path` fields with defaults table
@@ -596,6 +597,7 @@ Five steps, ordered by dependency. Each step is independently testable.
 ### Step 1: Decompose Path Migration + Optimizations
 
 **Effort:** Medium (1-2 sessions)
+**Status: Complete**
 **Files:** `{plugin}/skills/decompose/SKILL.md`, `{plugin}/skills/decompose/references/plan-schema.md`
 
 - Change output path to `~/.claude/decompose/plans/{plan-id}/`
@@ -607,6 +609,7 @@ Five steps, ordered by dependency. Each step is independently testable.
 ### Step 2: Rewrite Orchestrate
 
 **Effort:** Large (2-3 sessions)
+**Status: Complete**
 **Files:** `{plugin}/commands/orchestrate.md`, `{plugin}/references/dispatch-execution.md` (new)
 
 - Replace entire orchestrate command with the spec from §4
@@ -633,6 +636,7 @@ Each mode includes per-phase error handling (Step 7 of spec) and post-execution 
 ### Step 4: Peripheral Updates
 
 **Effort:** Small (1 session)
+**Status: In progress**
 **Files:** `~/.claude/skills/handoff/SKILL.md`, `~/.claude/skills/resume/SKILL.md`, routing docs
 
 - Handoff: add `## Plan Reference` section

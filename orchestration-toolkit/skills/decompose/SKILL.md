@@ -74,6 +74,13 @@ Map the existing codebase structure relevant to the goal. This phase uses **doma
 #### Step 3a: Initial scan
 Run a quick Glob/Grep pass to identify the primary domains involved (e.g., TypeScript frontend, Python backend, SQL migrations, infrastructure). Group the goal's requirements by domain.
 
+**Claude Code domain recognition:** Files in these paths constitute a distinct "claude-code" domain and should be tagged as such:
+- `~/.claude/skills/`, `~/.claude/hooks/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/rules/`
+- `.claude-plugin/` directories, `CLAUDE.md` project files
+- Files named `SKILL.md`, `SCHEMA.md`, `plugin.json`, `settings.json` (when in a Claude Code plugin/skill context)
+
+Tag these as domain `claude-code` so that Step 3b dispatches an agent with CCDK conventions knowledge rather than a generic markdown or JSON specialist.
+
 #### Step 3b: Dispatch domain specialists
 For each domain identified, spawn a specialist sub-agent from the registry to explore and assess their domain's portion of the work:
 
@@ -113,37 +120,66 @@ Guidelines:
 
 ---
 
-### Phase 4: Agent Matching
+### Phase 4: Agent Matching (Intent-Driven)
 
-For each file in the manifest, assign the best available agent using a 3-tier lookup:
+You are the router. Instead of mechanical file-extension lookups, reason about what expertise each group of files actually needs, then find the best specialist.
 
-**Tier 1 — Registry exact match:**
-Search `capabilities.json` for an agent whose `domain_tags` match the file's domain AND whose `source` is `user-agent`, `project-agent`, `plugin-agent`, or `built-in-subagent`. Prefer enabled entries. Check that the agent's `subagent_type` is usable.
+#### Step 4a: Intent classification
 
-**Tier 2 — Domain routing fallback:**
-If no exact match, consult `references/domain-routing.md`. Match by file extension first, then by work category.
+For each logical group of files from the manifest (grouped by domain from Phase 3), write a 1-sentence intent statement describing what expertise the work requires. Operate at the group level, not per-file. Examples:
+- "Author a Claude Code skill with SKILL.md and reference files"
+- "Write a defensive shell script for a SessionStart hook"
+- "Implement TypeScript React components for the settings page"
+- "Create database migration SQL files"
+- "Design a REST API contract with OpenAPI schema"
 
-**Tier 3 — Generic fallback:**
-If neither tier matches, use `implementation-agent` (model: sonnet) for implementation work, or `general-purpose` (model: opus) for design/research work.
+#### Step 4b: Semantic registry search
 
-For each file, produce an `agent_config`:
+For each intent statement, extract 2-4 keywords and Grep `~/.claude/registry/capabilities.json` for them across both `description` and `domain_tags` fields. Read the top 5-10 matching capability entries. The registry has hundreds of entries with rich descriptions — use them.
+
+```bash
+# Example: intent is "Write a defensive shell script for a SessionStart hook"
+# Search for: "shell", "bash", "hook", "defensive"
+```
+
+This replaces exact domain_tag matching with semantic search that leverages the registry's detailed descriptions.
+
+#### Step 4c: Agent + skill selection
+
+From the registry matches, reason about the best fit for each group:
+
+- **Agent:** Which agent best matches the work intent? Prefer specialists (`*-pro`, domain-specific) over generic types. Consider the agent's description, not just its name.
+- **Skills:** Which skills should layer on? Skills are additive — select all that are relevant to the intent.
+- **Model tier:** Use specialist-routing heuristics — opus for complex reasoning/design, sonnet for standard implementation, haiku for mechanical/formatting tasks.
+
+**Fallback chain:**
+1. If semantic search returns good matches with `enabled: true` → use them.
+2. If search is inconclusive → consult `references/domain-routing.md` as a heuristic fallback.
+3. If nothing matches → `implementation-agent` (sonnet) for implementation, `general-purpose` (opus) for design/research.
+
+#### Step 4d: Produce agent_config
+
+For each file group, produce an `agent_config`:
 ```json
 {
-  "subagent_type": "typescript-pro",
-  "skills": [],
+  "subagent_type": "shell-scripting:bash-pro",
+  "skills": ["claude-code-development-kit:understanding-hooks", "shell-scripting:bash-defensive-patterns"],
   "model": "sonnet",
   "mode": "acceptEdits",
   "max_turns": 30,
-  "missing_specialist": false
+  "missing_specialist": false,
+  "isolation": "none"
 }
 ```
 
-Set `missing_specialist: true` when Tier 1 found a match but the agent is disabled/unavailable.
+Set `missing_specialist: true` when a good specialist was found but is disabled/unavailable.
+
+Set `isolation: "worktree"` when multiple agents in the same execution phase will edit files in overlapping directory trees — this signals the orchestrator to check out separate git worktrees so agents don't stomp each other's writes.
 
 #### Phase 4 Verification
 Before proceeding:
-- **Tier 1:** Every file in the manifest has an `agent_config` with a non-empty `subagent_type`. Hard stop if any file is unassigned.
-- **Tier 2:** Check that agent assignments are sensible — `.ts` files should have TypeScript-aware agents, test files should have test runners, etc. Flag and self-correct mismatches.
+- **Tier 1:** Every file in the manifest has an `agent_config` with a non-empty `subagent_type`. Every group has an intent statement. Hard stop if any file is unassigned.
+- **Tier 2:** Check that agent assignments are not uniformly generic. If >70% of work items use `implementation-agent`, the semantic search likely underperformed — go back to Step 4b with broader keywords and re-run. Flag and self-correct mismatches.
 
 ---
 

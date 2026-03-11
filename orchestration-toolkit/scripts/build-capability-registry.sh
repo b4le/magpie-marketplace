@@ -229,6 +229,14 @@ add_entry() {
     local domain_tags="$4"
     local enabled="$5"
     local path="$6"
+    # subagent_type: the value passed to the Agent tool's subagent_type parameter.
+    # - plugin-agent: fully-qualified name (e.g. "shell-scripting:bash-pro")
+    # - built-in-subagent: the agent type name itself (e.g. "implementation-agent")
+    # - built-in: the agent name (e.g. "general-purpose", "Explore")
+    # - user-agent / project-agent: filename stem (e.g. "web-researcher")
+    # - skills (user-skill, project-skill, plugin-skill): null — skills layer onto agents
+    # - everything else: null
+    local subagent_type="${7:-null}"
 
     ENTRIES=$(printf '%s' "$ENTRIES" | jq \
         --arg name "$name" \
@@ -237,13 +245,15 @@ add_entry() {
         --argjson tags "$domain_tags" \
         --argjson enabled "$enabled" \
         --arg path "$path" \
+        --argjson subagent_type "$subagent_type" \
         '. + [{
             name: $name,
             source: $source,
             description: $desc,
             domain_tags: $tags,
             enabled: $enabled,
-            path: $path
+            path: $path,
+            subagent_type: $subagent_type
         }]')
     entry_count=$((entry_count + 1))
 }
@@ -258,7 +268,8 @@ for skill_file in "${CLAUDE_DIR}"/skills/*/SKILL.md; do
     fi
     desc=$(extract_description "$skill_file")
     tags=$(infer_domain_tags "$desc")
-    add_entry "$skill_name" "user-skill" "$desc" "$tags" "true" "$skill_file"
+    # Skills are layered onto agents — no subagent_type
+    add_entry "$skill_name" "user-skill" "$desc" "$tags" "true" "$skill_file" "null"
 done
 
 # --- 2. Project skills (.claude/skills/*/SKILL.md in cwd) ---
@@ -272,7 +283,8 @@ if [ -d ".claude/skills" ]; then
         fi
         desc=$(extract_description "$skill_file")
         tags=$(infer_domain_tags "$desc")
-        add_entry "$skill_name" "project-skill" "$desc" "$tags" "true" "$skill_file"
+        # Skills are layered onto agents — no subagent_type
+        add_entry "$skill_name" "project-skill" "$desc" "$tags" "true" "$skill_file" "null"
     done
 fi
 
@@ -286,7 +298,9 @@ for agent_file in "${CLAUDE_DIR}"/agents/*.md; do
     fi
     desc=$(extract_description "$agent_file")
     tags=$(infer_domain_tags "$desc")
-    add_entry "$agent_name" "user-agent" "$desc" "$tags" "true" "$agent_file"
+    # User agents: subagent_type is the filename stem (the Agent tool identifier)
+    agent_stem=$(basename "$agent_file" .md)
+    add_entry "$agent_name" "user-agent" "$desc" "$tags" "true" "$agent_file" "\"${agent_stem}\""
 done
 
 # --- 4. Project agents (.claude/agents/*.md in cwd) ---
@@ -300,7 +314,9 @@ if [ -d ".claude/agents" ]; then
         fi
         desc=$(extract_description "$agent_file")
         tags=$(infer_domain_tags "$desc")
-        add_entry "$agent_name" "project-agent" "$desc" "$tags" "true" "$agent_file"
+        # Project agents: subagent_type is the filename stem (the Agent tool identifier)
+        agent_stem=$(basename "$agent_file" .md)
+        add_entry "$agent_name" "project-agent" "$desc" "$tags" "true" "$agent_file" "\"${agent_stem}\""
     done
 fi
 
@@ -336,7 +352,8 @@ scan_plugin_dir() {
         */.claude-plugin) plugin_dir=$(dirname "$plugin_dir") ;;
     esac
 
-    add_entry "$pname" "$source_type" "$pdesc" "$tags" "$enabled" "$plugin_dir"
+    # Plugin container entries have no direct subagent_type (agents are the typed entries below)
+    add_entry "$pname" "$source_type" "$pdesc" "$tags" "$enabled" "$plugin_dir" "null"
 
     # Scan nested skills
     for nested_skill in "${plugin_dir}"/skills/*/SKILL.md; do
@@ -350,7 +367,8 @@ scan_plugin_dir() {
         sdesc=$(extract_description "$nested_skill")
         local stags
         stags=$(infer_domain_tags "$sdesc")
-        add_entry "${pname}:${sname}" "plugin-skill" "$sdesc" "$stags" "$enabled" "$nested_skill"
+        # Plugin skills are layered onto agents — no subagent_type
+        add_entry "${pname}:${sname}" "plugin-skill" "$sdesc" "$stags" "$enabled" "$nested_skill" "null"
     done
 
     # Scan nested agents
@@ -365,7 +383,8 @@ scan_plugin_dir() {
         adesc=$(extract_description "$nested_agent")
         local atags
         atags=$(infer_domain_tags "$adesc")
-        add_entry "${pname}:${aname}" "plugin-agent" "$adesc" "$atags" "$enabled" "$nested_agent"
+        # Plugin agents: subagent_type is the fully-qualified "plugin:agent" name
+        add_entry "${pname}:${aname}" "plugin-agent" "$adesc" "$atags" "$enabled" "$nested_agent" "\"${pname}:${aname}\""
     done
 }
 
@@ -396,7 +415,8 @@ add_builtin() {
     local name="$1"
     local desc="$2"
     local tags="$3"
-    add_entry "$name" "built-in" "$desc" "$tags" "true" "built-in"
+    # Built-in subagents: subagent_type is the agent name (used directly with the Agent tool)
+    add_entry "$name" "built-in" "$desc" "$tags" "true" "built-in" "\"${name}\""
 }
 
 add_builtin "general-purpose" \
@@ -475,7 +495,8 @@ for agent_type in \
         plugin_enabled="true"
     fi
 
-    add_entry "$agent_type" "built-in-subagent" "Plugin-provided subagent type from ${plugin_part}" '["meta"]' "$plugin_enabled" "built-in"
+    # built-in-subagent: the fully-qualified "plugin:agent" name is the subagent_type
+    add_entry "$agent_type" "built-in-subagent" "Plugin-provided subagent type from ${plugin_part}" '["meta"]' "$plugin_enabled" "built-in" "\"${agent_type}\""
 done
 
 # --- 7. Assemble output ---

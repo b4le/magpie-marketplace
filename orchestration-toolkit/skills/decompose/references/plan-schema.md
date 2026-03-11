@@ -49,7 +49,7 @@ The `plan-id` is `decompose-{YYYYMMDD}-{HHMMSS}`. If a collision occurs (two dec
       "files": ["src/auth/login.ts", "src/auth/login.test.ts"],
       "agent_config": {
         "subagent_type": "typescript-pro",
-        "skills": ["javascript-testing-patterns"],
+        "skills": ["javascript-typescript:javascript-testing-patterns"],
         "model": "sonnet",
         "mode": "acceptEdits",
         "max_turns": 30,

@@ -1,25 +1,26 @@
 id: OUTPUT-02
-name: multi-agent-workflows provides phase-structured output
+name: orchestration-guide provides phase-structured output
 plugin: orchestration-toolkit
-skill: multi-agent-workflows
+skill: orchestration-guide
 type: output_quality
-description: Verify that multi-agent workflow guidance includes phase structure
+description: Verify that orchestration guidance includes decomposed phases and coordination patterns
 
 prompts:
   - context: "complex feature development"
-    prompt: "Help me design a multi-agent workflow for building a new feature"
+    prompt: "Help me orchestrate a multi-agent workflow for building a new feature"
     expected_contains:
-      - phase structure or numbered steps
+      - decomposed phases or numbered steps
       - agent role definitions
       - coordination patterns
       - task dependencies
+      - phase sequencing
 
 scoring:
   type: rubric
   rubric:
-    - criterion: "Phase structure clarity"
+    - criterion: "Phase decomposition clarity"
       weight: 0.3
-      levels: ["No phases", "Unclear phases", "Clear phases"]
+      levels: ["No decomposition", "Unclear phases", "Clear phase boundaries"]
     - criterion: "Agent role definitions"
       weight: 0.25
       levels: ["No roles", "Vague roles", "Well-defined roles"]
