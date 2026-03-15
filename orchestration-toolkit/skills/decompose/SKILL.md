@@ -2,6 +2,8 @@
 name: decompose
 description: Use when the user says "decompose", "break this down", "work breakdown", "plan the work", "create work items", "structure this task", "make an execution plan", "decompose this goal", "split into work packets", or needs to turn a fuzzy goal into structured, agent-ready work items with file ownership and dependency ordering.
 argument-hint: "[goal text | file path | handoff path]"
+version: 1.0.0
+last_updated: 2026-03-13
 allowed-tools:
   - Read
   - Write
@@ -153,9 +155,12 @@ From the registry matches, reason about the best fit for each group:
 - **Model tier:** Use specialist-routing heuristics — opus for complex reasoning/design, sonnet for standard implementation, haiku for mechanical/formatting tasks.
 
 **Fallback chain:**
+
+Agent selection MUST follow the specialist-routing.md decision tree (Steps 2A→2D). The fallback chain below applies only after exhausting all steps.
+
 1. If semantic search returns good matches with `enabled: true` → use them.
 2. If search is inconclusive → consult `references/domain-routing.md` as a heuristic fallback.
-3. If nothing matches → `implementation-agent` (sonnet) for implementation, `general-purpose` (opus) for design/research.
+3. If nothing matches after exhausting specialist-routing.md Steps 2A→2D → `general-purpose` (sonnet) for implementation, `general-purpose` (opus) for design/research. Set `missing_specialist: true` and log: "No specialist match: [reason]. Falling back to [agent]."
 
 #### Step 4d: Produce agent_config
 
@@ -179,7 +184,7 @@ Set `isolation: "worktree"` when multiple agents in the same execution phase wil
 #### Phase 4 Verification
 Before proceeding:
 - **Tier 1:** Every file in the manifest has an `agent_config` with a non-empty `subagent_type`. Every group has an intent statement. Hard stop if any file is unassigned.
-- **Tier 2:** Check that agent assignments are not uniformly generic. If >70% of work items use `implementation-agent`, the semantic search likely underperformed — go back to Step 4b with broader keywords and re-run. Flag and self-correct mismatches.
+- **Tier 2:** Check that agent assignments are not uniformly generic. If >70% of work items use `general-purpose`, the semantic search likely underperformed — go back to Step 4b with broader keywords and re-run. Flag and self-correct mismatches.
 
 ---
 
@@ -218,9 +223,11 @@ For each implementation work item, assign a review agent:
 | Implementation agent | Review agent | Review skills |
 |---------------------|-------------|---------------|
 | Any `*-pro` type | Explore | comprehensive-review |
-| implementation-agent | Explore | comprehensive-review |
+| general-purpose | Explore | comprehensive-review |
 | test-runner | Explore | — |
 | general-purpose | Explore | — |
+
+*Fallback agents (`general-purpose`, `general-purpose`) should appear only with `missing_specialist: true`. If >30% of work items use fallback agents, revisit Phase 4 agent matching.*
 
 **Validation mode:**
 - `after_complete` (default): Review runs immediately after the implementation agent finishes. Use for items that block other items.
