@@ -18,12 +18,9 @@ The key insight: agents fail when they share state, negotiate ownership, or inte
 Use this structure when orchestrating parallel work. Adapt `{placeholders}` to the task.
 
 ```
-### Phase 0: Pre-fetch
-Before spawning work agents, gather all external data they'll need:
-- Delegate MCP queries to foreground sub-agents using the dual return pattern
-  (the orchestrator must never call MCP tools directly — see references/mcp-prefetch-pattern.md)
-- Read shared files that multiple agents will reference
-- Results end up in local-state/prefetch/{session}/ with summaries returned to the orchestrator
+### Phase 0: Pre-fetch (if MCP data needed)
+Delegate all MCP queries to foreground sub-agents using the dual return pattern
+defined in `~/.claude/rules/mcp-delegation.md`. The orchestrator must never call MCP tools directly.
 
 ### Phase 1: Decompose
 Break the task into N independent work items. For each item, define:
@@ -38,7 +35,7 @@ Launch N agents in parallel (single message, multiple Agent tool calls):
 - Each agent receives: its item scope, owned files, pipeline steps, input paths
 - Use `isolation: "worktree"` when agents modify files in overlapping directories
 - Cap at 5 agents — diminishing returns beyond this, coordination overhead grows
-- Assign model tier per agent using `~/.claude/rules/specialist-routing.md` § Model selection
+- Assign model tier per agent using `~/.claude/references/model-routing-criteria.md`
 
 ### Phase 3: Collect & Verify
 After all agents return:
@@ -54,6 +51,8 @@ After all agents return:
 ```
 
 ## When to Use
+
+For the full decision tree across all four patterns (standard, MCP, team, sequential), see `~/.claude/references/fan-out-patterns.md`.
 
 - 2+ independent work items, each completable by one agent
 - Research tasks: "investigate N topics in parallel"
@@ -71,10 +70,10 @@ After all agents return:
 
 - **File ownership is cardinal.** One owner per file, no exceptions. If two items need to edit the same file, either merge them into one item or have Phase 3 handle the integration.
 - **Fixed pipeline > flexible instructions.** Agents can't coordinate dynamically. Tell them exactly what to do in what order.
-- **Pre-fetch everything known.** Delegate MCP fetching to foreground sub-agents before spawning work agents. See `references/mcp-prefetch-pattern.md`.
+- **Pre-fetch everything known.** Delegate MCP fetching to foreground sub-agents before spawning work agents. See `~/.claude/rules/mcp-delegation.md`.
 - **Use worktrees for overlapping trees.** When agents work in the same repo but different files, `isolation: "worktree"` prevents accidental conflicts.
 - **Prefer fewer, focused agents.** 3 agents with clear scope outperform 6 agents with overlapping scope.
-- **Model-match agents to work.** See `~/.claude/rules/specialist-routing.md` § Model selection: Opus for complex reasoning, Sonnet for standard implementation, Haiku for mechanical tasks.
+- **Model-match agents to work.** See `~/.claude/references/model-routing-criteria.md` for tier selection.
 
 ## Mapping to Team-Spawn Presets
 

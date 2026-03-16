@@ -193,7 +193,7 @@ for (domain of domain_scores) {
 
 **Purpose:** Extract terms from conversation history not covered by existing domains, cluster them into potential domain candidates, and assess coherence. All statistical work is programmatic; LLM reserved for semantic clustering only.
 
-**Signal ceiling:** Discovered signals NEVER exceed `moderate` signal strength, regardless of raw scores. This prevents uncurated domains from appearing more authoritative than curated ones.
+**Signal ceiling:** Discovered signals are capped at `moderate` by default. High-coherence candidates with 4+ terms and 3+ session spread can reach `strong`.
 
 ```javascript
 if (!discovery_enabled) {
@@ -253,15 +253,26 @@ Return ONLY XML blocks:
     // Step 3: Parse clusters and build discovered_signals[]
     discovered_signals = [];
     for (cluster of parse_xml_clusters(cluster_result)) {
-      // Signal ceiling: cap at 'moderate' regardless of term scores
-      signal = cluster.coherence === 'high' ? 'moderate' : 'weak';
+      // Signal ceiling: discovered signals are capped, but high-coherence candidates
+      // with strong data backing (4+ terms, 3+ session spread) earn 'strong'.
+      // This rewards candidates with genuine statistical evidence while keeping
+      // lower-evidence discoveries appropriately restrained.
+      if (cluster.coherence === 'high'
+          && cluster.terms.length >= 4
+          && max_session_spread(cluster.terms, raw_candidates) >= 3) {
+        signal = 'strong';
+      } else if (cluster.coherence === 'high') {
+        signal = 'moderate';
+      } else {
+        signal = 'weak';
+      }
 
       discovered_signals.push({
         name: cluster.name,
         terms: cluster.terms,
         description: cluster.description,
         coherence: cluster.coherence,
-        signal: signal,  // never exceeds 'moderate'
+        signal: signal,  // capped; 'strong' only for high-coherence + 4 terms + 3 sessions
         term_count: cluster.terms.length,
         session_spread: max_session_spread(cluster.terms, raw_candidates)
       });
@@ -486,6 +497,31 @@ Return ONLY the XML tags below — no prose, no headers, no explanation outside 
 
 If `LARGE_PROJECT` is true, skip the LLM sampling step (Step 3) and use the tool name directly as the theme to avoid additional context consumption.
 
+**Step 4 — Bridge discovered signals into deep dives:**
+
+When S3.5 discovery found high-coherence candidates, surface them as additional suggested deep dives so the two mechanisms reinforce each other. This runs after tool-based dives (Steps 1-3) to avoid duplicating signals that tools already covered.
+
+```javascript
+// Inject high-coherence discovery candidates as suggested dives
+if (discovered_signals && discovered_signals.length > 0) {
+  for (signal of discovered_signals.filter(s => s.coherence === 'high')) {
+    signal_slug = signal.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    // Skip if already covered by a tool-based dive
+    already_covered = suggested_dives.some(d =>
+      d.theme.toLowerCase().includes(signal_slug) ||
+      signal_slug.includes(d.theme.toLowerCase().replace(/\s+/g, '-'))
+    );
+    if (!already_covered) {
+      suggested_dives.push({
+        theme: signal.name,
+        evidence: `${signal.term_count} terms across ${signal.session_spread} sessions (discovered)`,
+        description: signal.description
+      });
+    }
+  }
+}
+```
+
 ### Survey Step S6: Generate survey.md
 
 > **Output Contract:** The `survey.md` file format below is a stable contract used by excavation mode and cross-project comparison. The file MUST be written as a markdown table exactly matching the template below. Do NOT use ASCII box-drawing characters, indented plain text, or any alternative format. The completion display (shown in terminal after writing) is a SEPARATE format defined in `output-templates.md#survey-completion`.
@@ -510,7 +546,7 @@ if (discovered_signals.length > 0) {
   discovered_section = `## Discovered Signals
 
 Terms not covered by existing domains, clustered by semantic similarity.
-Signal ceiling: discovered signals are capped at \`moderate\` — run extraction to validate.
+Signal ceiling: most discovered signals cap at \`moderate\`. High-coherence candidates (4+ terms, 3+ sessions) can reach \`strong\`.
 
 | Cluster | Signal | Coherence | Terms | Description | Status |
 |---------|--------|-----------|-------|-------------|--------|
@@ -725,6 +761,8 @@ Key variable mappings for this workflow:
 - `{d.*}` → iterate `domain_scores.filter(d => d.signal !== 'none')` (from S3)
 - `{d.signal}` → classification string: one of `strong`, `moderate`, `weak` (from S3 thresholds)
 - `{d.score}` → use `d.score.toFixed(1)` to ensure 1 decimal place
+- `{s.*}` → iterate `discovered_signals` (from S3.5). Omit entire block if empty.
+- `{s.id}` → `s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')` (slugified for command use)
 - `{dive.*}` → iterate `suggested_dives` (from S5)
 - `{domains_with_signal[0].id}` → first domain with signal (from S3)
 - `{PROJECT_SLUG}` → from S1

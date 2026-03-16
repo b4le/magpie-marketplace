@@ -1149,6 +1149,10 @@ Scanned {project_size.conversations} conversations, {project_size.source_files} 
 Domains with signal:
   {d.id}  {d.signal}  score: {d.score}  ({d.sessions} sessions)
 
+Discovered domains:
+  {s.name}  {s.signal}  ({s.term_count} terms, {s.session_spread} sessions)
+  → /archaeology {s.id}
+
 Suggested deep dives:
   {dive.theme} — {dive.evidence}
 
@@ -1165,8 +1169,10 @@ Next: /archaeology {domains_with_signal[0].id}
 **Variables:**
 - `d.*` — from `domain_scores` (S3), filtered to `d.signal !== 'none'`, sorted score-descending. One line per domain.
 - `d.id` — domain ID from registry (NOT display name). `d.score` — use `.toFixed(1)`.
+- `s.*` — from `discovered_signals` (S3.5). One line per discovered domain. `s.id` is the slugified name: `s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')`.
 - `dive.*` — from `suggested_dives` (S5). One line per dive.
 - If no domains have signal: replace the "Domains with signal:" block with `No domains with signal detected.`
+- If no discovered signals: omit the "Discovered domains:" block entirely. Do NOT show an empty placeholder.
 - If no suggested dives: replace the "Suggested deep dives:" block with `No uncovered patterns detected.`
 
 **If `--no-export`:** Use title `Archaeology Survey Complete (export skipped)`, omit Central paths.
@@ -1180,7 +1186,7 @@ Added to survey.md output when discovery runs and finds candidate clusters.
 ## Discovered Signals
 
 Terms not covered by existing domains, clustered by semantic similarity.
-Signal ceiling: discovered signals are capped at `moderate` — run extraction to validate.
+Signal ceiling: most discovered signals cap at `moderate`. High-coherence candidates (4+ terms, 3+ sessions) can reach `strong`.
 
 | Cluster | Signal | Coherence | Terms | Description |
 |---------|--------|-----------|-------|-------------|
@@ -1191,7 +1197,7 @@ To extract against a discovered signal: `/archaeology extract <cluster-name>`
 
 **Variables:**
 - `signal.*` — from `discovered_signals[]` (S3.5). One line per cluster.
-- Signal never exceeds `moderate` (ceiling enforced in S3.5).
+- Signal caps at `moderate` by default; `strong` for high-coherence candidates with 4+ terms and 3+ sessions (ceiling in S3.5).
 - If no discovered signals AND discovery ran: show "No uncovered domain signals detected — existing domains have good coverage."
 - If discovery skipped (< 3 files): show "Discovery requires 3+ conversation sessions (found {count})."
 

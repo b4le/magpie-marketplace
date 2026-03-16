@@ -207,20 +207,9 @@ if echo "$FRONTMATTER" | grep -q "^description:"; then
     # Extract description value (handles both inline and YAML block scalar formats)
     DESC_RAW=$(echo "$FRONTMATTER" | grep "^description:" | sed 's/^description:[[:space:]]*//' | tr -d '"' | tr -d "'")
     if [[ "$DESC_RAW" == "|" || "$DESC_RAW" == ">" || "$DESC_RAW" == "|+" || "$DESC_RAW" == "|-" || "$DESC_RAW" == ">-" ]]; then
-        # Block scalar: use Python to extract the full value
-        if command -v python3 >/dev/null 2>&1; then
-            DESC_VALUE=$(python3 -c "
-import yaml, sys
-with open(sys.argv[1]) as f:
-    content = f.read()
-fm = content.split('---')[1]
-data = yaml.safe_load(fm)
-print(data.get('description', ''))
-" "$AGENT_PATH" 2>/dev/null || echo "$DESC_RAW")
-        else
-            DESC_VALUE="$DESC_RAW"
-            log_info "Block scalar description detected but python3 not available for parsing"
-        fi
+        # Block scalar: extract the indented lines that follow the description: | line
+        DESC_VALUE=$(echo "$FRONTMATTER" | awk '/^description:/{found=1; next} found && /^[[:space:]]/{print; next} found && /^[^[:space:]]/{exit}' | sed 's/^[[:space:]]*//' | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+        [[ -z "$DESC_VALUE" ]] && DESC_VALUE="$DESC_RAW"
     else
         DESC_VALUE="$DESC_RAW"
     fi

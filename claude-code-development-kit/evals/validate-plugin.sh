@@ -15,13 +15,12 @@ NC='\033[0m' # No Color
 ERRORS=()
 WARNINGS=()
 COMPONENT_ERRORS=0
-COMPONENT_WARNINGS=0
 
 # Get script directory for finding other validators
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source shared schema validation helper
-# shellcheck source=_schema-validate.sh
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/_schema-validate.sh"
 
 log_error() {
@@ -411,29 +410,32 @@ if [[ -n "${HOOK_PATHS:-}" ]]; then
         fi
     done <<< "$HOOK_PATHS"
 else
-    # Look for hooks/scripts directory
-    for hook_dir in "$PLUGIN_ROOT/hooks" "$PLUGIN_ROOT/scripts"; do
-        if [[ -d "$hook_dir" ]]; then
-            for hook_file in "$hook_dir"/*; do
-                [[ ! -f "$hook_file" ]] && continue
-                [[ "$hook_file" =~ \.md$ ]] && continue  # Skip markdown docs
-                [[ "$hook_file" =~ \.json$ ]] && continue  # Skip JSON config files
+    # Only scan the dedicated hooks/ directory. scripts/ is a utility directory
+    # and must not be treated as a hook source — doing so causes false positives
+    # for plugins that have utility scripts but no hooks.
+    if [[ -d "$PLUGIN_ROOT/hooks" ]]; then
+        for hook_file in "$PLUGIN_ROOT/hooks"/*; do
+            [[ ! -f "$hook_file" ]] && continue
+            [[ "$hook_file" =~ \.md$ ]] && continue    # Skip markdown docs
+            [[ "$hook_file" =~ \.json$ ]] && continue  # Skip JSON config files
+            [[ "$hook_file" =~ \.plist$ ]] && continue # Skip launchd plist files
 
-                log_info "Found hook: $(basename "$hook_file")"
+            log_info "Found hook: $(basename "$hook_file")"
 
-                if [[ -x "$SCRIPT_DIR/validate-hook.sh" ]]; then
-                    TEMP_LOG="${TMPDIR:-/tmp}/hook_validation_$$.log"
-                    if "$SCRIPT_DIR/validate-hook.sh" "$hook_file" > "$TEMP_LOG" 2>&1; then
-                        log_success "Hook passed: $(basename "$hook_file")"
-                    else
-                        log_error "Hook failed: $(basename "$hook_file")"
-                        ((COMPONENT_ERRORS++))
-                    fi
-                    rm -f "$TEMP_LOG" 2>/dev/null
+            if [[ -x "$SCRIPT_DIR/validate-hook.sh" ]]; then
+                TEMP_LOG="${TMPDIR:-/tmp}/hook_validation_$$.log"
+                if "$SCRIPT_DIR/validate-hook.sh" "$hook_file" > "$TEMP_LOG" 2>&1; then
+                    log_success "Hook passed: $(basename "$hook_file")"
+                else
+                    log_error "Hook failed: $(basename "$hook_file")"
+                    ((COMPONENT_ERRORS++))
                 fi
-            done
-        fi
-    done
+                rm -f "$TEMP_LOG" 2>/dev/null
+            fi
+        done
+    else
+        log_info "No hooks declared — skipping hook validation"
+    fi
 fi
 
 # ============================================
@@ -468,6 +470,63 @@ if [[ -n "${HOOKS_STRING_PATH:-}" ]]; then
                     else
                         log_info "${SCHEMA_OUTPUT:-Schema validation skipped (tools not available)}"
                     fi
+                fi
+
+                # ---- Security: HTTP hook type detection ----
+                # HTTP hooks POST the full event payload (including env vars listed in
+                # allowedEnvVars) to an arbitrary URL.  They are the highest-risk hook
+                # type because they can silently exfiltrate credentials with no local
+                # script artefact visible in the repo.
+                HTTP_HOOK_COUNT=$(jq '[
+                    .hooks // {} | to_entries[] | .value[]? | .hooks[]? |
+                    select(.type == "http")
+                ] | length' "$HOOKS_JSON_FULL" 2>/dev/null || echo 0)
+
+                if [[ "$HTTP_HOOK_COUNT" -gt 0 ]]; then
+                    log_error "SECURITY [CRITICAL]: $HTTP_HOOK_COUNT HTTP hook(s) detected in hooks.json — HTTP hooks POST event payloads to external URLs and can exfiltrate credentials"
+
+                    # Surface the URLs for inspection
+                    HTTP_URLS=$(jq -r '
+                        .hooks // {} | to_entries[] | .value[]? | .hooks[]? |
+                        select(.type == "http") | .url // "(no url)"
+                    ' "$HOOKS_JSON_FULL" 2>/dev/null || true)
+                    while IFS= read -r http_url; do
+                        [[ -z "$http_url" ]] && continue
+                        log_error "  HTTP hook URL: $http_url"
+                    done <<< "$HTTP_URLS"
+
+                    # Check allowedEnvVars for credential-shaped names
+                    SENSITIVE_ENV_VARS=$(jq -r '
+                        .hooks // {} | to_entries[] | .value[]? | .hooks[]? |
+                        select(.type == "http") |
+                        (.allowedEnvVars // [])[] |
+                        select(test("KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|AUTH"; "i"))
+                    ' "$HOOKS_JSON_FULL" 2>/dev/null || true)
+                    if [[ -n "$SENSITIVE_ENV_VARS" ]]; then
+                        log_error "SECURITY [CRITICAL]: HTTP hook allowedEnvVars contains credential-shaped variable(s):"
+                        while IFS= read -r env_var; do
+                            [[ -z "$env_var" ]] && continue
+                            log_error "  $env_var"
+                        done <<< "$SENSITIVE_ENV_VARS"
+                    fi
+                fi
+
+                # ---- Security: Agent hook tool scope ----
+                # Agent hooks that list Bash or Write in their tools array can execute
+                # arbitrary commands or modify files on the host.
+                DANGEROUS_AGENT_HOOKS=$(jq -r '
+                    .hooks // {} | to_entries[] | .value[]? | .hooks[]? |
+                    select(.type == "agent") |
+                    select((.tools // []) | map(select(test("^(Bash|Write|Edit|MultiEdit)$"))) | length > 0) |
+                    "tools: \((.tools // []) | join(", "))"
+                ' "$HOOKS_JSON_FULL" 2>/dev/null || true)
+
+                if [[ -n "$DANGEROUS_AGENT_HOOKS" ]]; then
+                    log_error "SECURITY [HIGH]: agent hook(s) with powerful tools detected — agent hooks with Bash/Write/Edit can execute arbitrary code:"
+                    while IFS= read -r agent_info; do
+                        [[ -z "$agent_info" ]] && continue
+                        log_error "  $agent_info"
+                    done <<< "$DANGEROUS_AGENT_HOOKS"
                 fi
 
                 # Check that referenced scripts exist and are executable.
@@ -638,8 +697,8 @@ log_section "Global Security Check"
 
 log_info "Scanning for personal identifiers across all files..."
 
-PERSONAL_FOUND=false
 # Exclude common documentation example patterns (username, dev, <username>, yourname, you, example, etc.)
+# shellcheck disable=SC1003  # backslash in grep pattern is intentional (literal \\ in regex)
 PERSONAL_FILES=$(grep -rE '/Users/[a-zA-Z]+|/home/[a-zA-Z]+|C:\\Users\\' "$PLUGIN_ROOT" 2>/dev/null | grep -v "Binary file" | grep -v '/tests/' | grep -vE '/Users/(username|dev|yourname|you|example|user|name)|/home/(username|dev|yourname|you|example|user|name)|C:\\Users\\(<username>|username|dev|yourname|you|example|user)' | head -10 || true)
 
 if [[ -n "$PERSONAL_FILES" ]]; then
@@ -647,9 +706,109 @@ if [[ -n "$PERSONAL_FILES" ]]; then
     echo "$PERSONAL_FILES" | while read -r line; do
         echo "    $line"
     done
-    PERSONAL_FOUND=true
 else
     log_success "No personal identifiers found in plugin"
+fi
+
+# ============================================
+# MCP Server Config Validation
+# ============================================
+log_section "MCP Server Security"
+
+if [[ -n "${PLUGIN_JSON:-}" ]] && command -v jq &>/dev/null && [[ -f "${PLUGIN_JSON:-}" ]]; then
+    MCP_TYPE=$(jq -r '.mcpServers | type // "null"' "$PLUGIN_JSON" 2>/dev/null || echo "null")
+
+    if [[ "$MCP_TYPE" != "null" ]]; then
+        log_info "mcpServers field present (type: $MCP_TYPE)"
+
+        if [[ "$MCP_TYPE" == "object" ]]; then
+            # Inline MCP config — inspect each server entry for risky patterns
+            # The schema allows additionalProperties: true here, meaning any fields
+            # are accepted without validation.  We check for common risk indicators.
+
+            # Servers with 'command' fields can execute arbitrary binaries
+            MCP_COMMAND_COUNT=$(jq '[.mcpServers | to_entries[]? | select(.value | type == "object") | select(.value.command != null)] | length' "$PLUGIN_JSON" 2>/dev/null || echo 0)
+            if [[ "$MCP_COMMAND_COUNT" -gt 0 ]]; then
+                log_warning "SECURITY [HIGH]: inline mcpServers config contains $MCP_COMMAND_COUNT server(s) with 'command' fields — these execute binaries on the host"
+                MCP_COMMANDS=$(jq -r '.mcpServers | to_entries[]? | select(.value | type == "object") | select(.value.command != null) | "\(.key): \(.value.command)"' "$PLUGIN_JSON" 2>/dev/null || true)
+                while IFS= read -r mcp_cmd; do
+                    [[ -z "$mcp_cmd" ]] && continue
+                    log_warning "  MCP server command: $mcp_cmd"
+                done <<< "$MCP_COMMANDS"
+            fi
+
+            # Servers with 'url' fields make outbound network connections
+            MCP_URL_COUNT=$(jq '[.mcpServers | to_entries[]? | select(.value | type == "object") | select(.value.url != null)] | length' "$PLUGIN_JSON" 2>/dev/null || echo 0)
+            if [[ "$MCP_URL_COUNT" -gt 0 ]]; then
+                log_warning "SECURITY [MEDIUM]: inline mcpServers config contains $MCP_URL_COUNT server(s) with 'url' fields — these make outbound connections"
+                MCP_URLS=$(jq -r '.mcpServers | to_entries[]? | select(.value | type == "object") | select(.value.url != null) | "\(.key): \(.value.url)"' "$PLUGIN_JSON" 2>/dev/null || true)
+                while IFS= read -r mcp_url; do
+                    [[ -z "$mcp_url" ]] && continue
+                    log_info "  MCP server URL: $mcp_url"
+                done <<< "$MCP_URLS"
+            fi
+
+            # Servers referencing npm/npx packages from untrusted sources
+            MCP_NPX=$(jq -r '.mcpServers | to_entries[]? | select(.value | type == "object") | select((.value.command // "") | test("npx|npm")) | "\(.key): \(.value.command)"' "$PLUGIN_JSON" 2>/dev/null || true)
+            if [[ -n "$MCP_NPX" ]]; then
+                log_warning "SECURITY [HIGH]: MCP server(s) use npx/npm to launch — supply chain risk if package is not pinned"
+                while IFS= read -r npx_entry; do
+                    [[ -z "$npx_entry" ]] && continue
+                    log_warning "  $npx_entry"
+                done <<< "$MCP_NPX"
+            fi
+
+        elif [[ "$MCP_TYPE" == "string" || "$MCP_TYPE" == "array" ]]; then
+            # Path reference(s) — resolve and check existence
+            if [[ "$MCP_TYPE" == "string" ]]; then
+                MCP_PATH=$(jq -r '.mcpServers' "$PLUGIN_JSON" 2>/dev/null)
+                MCP_FULL="$PLUGIN_ROOT/$MCP_PATH"
+                if [[ -f "$MCP_FULL" ]]; then
+                    log_success "mcpServers path resolves: $MCP_PATH"
+                else
+                    log_warning "mcpServers path not found: $MCP_PATH"
+                fi
+            else
+                while IFS= read -r mcp_ref; do
+                    [[ -z "$mcp_ref" ]] && continue
+                    if [[ -f "$PLUGIN_ROOT/$mcp_ref" ]]; then
+                        log_success "mcpServers path resolves: $mcp_ref"
+                    else
+                        log_warning "mcpServers path not found: $mcp_ref"
+                    fi
+                done < <(jq -r '.mcpServers[]' "$PLUGIN_JSON" 2>/dev/null)
+            fi
+        fi
+    else
+        log_info "No mcpServers field in plugin.json"
+    fi
+fi
+
+# ============================================
+# Plugin Settings Override Detection
+# ============================================
+log_section "Settings Override Security"
+
+if [[ -n "${PLUGIN_JSON:-}" ]] && command -v jq &>/dev/null && [[ -f "${PLUGIN_JSON:-}" ]]; then
+    # Plugins that embed a settings block can override user-level Claude Code settings.
+    # This is a supply chain risk if a plugin silently sets permissive values.
+    SETTINGS_KEYS=$(jq -r 'keys[] | select(test("^(settings|config|permissions|permissionMode|allowedTools|disabledTools|env)$"))' "$PLUGIN_JSON" 2>/dev/null || true)
+    if [[ -n "$SETTINGS_KEYS" ]]; then
+        log_error "SECURITY [HIGH]: plugin.json contains settings/permissions key(s) that may override user configuration: $SETTINGS_KEYS"
+    else
+        log_success "No settings override fields found in plugin.json"
+    fi
+
+    # Also scan all JSON files in the plugin for dangerouslyAllowedTools or permissive settings
+    DANGEROUS_SETTINGS=$(grep -rE 'dangerouslyAllowedTools|permissionMode.*allow|"allowAll"|"disableSandbox"' \
+        "$PLUGIN_ROOT" --include="*.json" 2>/dev/null | grep -v "Binary file" | head -5 || true)
+    if [[ -n "$DANGEROUS_SETTINGS" ]]; then
+        log_error "SECURITY [HIGH]: dangerous permission settings found in plugin JSON files:"
+        while IFS= read -r ds_line; do
+            [[ -z "$ds_line" ]] && continue
+            log_error "  $ds_line"
+        done <<< "$DANGEROUS_SETTINGS"
+    fi
 fi
 
 # ============================================

@@ -43,6 +43,12 @@ Use this exact template:
 ## Key decisions made
 {Bullet list of decisions and their rationale. Include alternatives that were rejected and why.}
 
+## Plan Reference
+- **Plan ID:** {plan-id}
+- **Path:** {absolute path — `~/.claude/decompose/plans/{plan-id}/plan.json`}
+- **Status:** {execution_status summary — e.g., "3/5 items completed, WI-4 failed"}
+- **Timestamp:** {plan's `execution_status.started_at` or `created_at`}
+
 ## Files touched
 {output of git status --short}
 {Highlight any new files with a brief description}
@@ -60,7 +66,8 @@ Use this exact template:
 2. Run `git status` and `git diff --stat` to capture file state
 3. Run `git log --oneline -5` for recent commits
 4. Write the handoff using the template above
-5. Copy the handoff to `.claude/handoffs/latest.md` (overwriting any previous latest) for quick access
-6. After writing, confirm to the user: "Handoff saved to `.claude/handoffs/{filename}`"
+5. **Plan Reference (optional):** Include the `## Plan Reference` section only if this session used a decompose plan (invoked via `/decompose` or `/orchestrate`). To populate it: read the plan JSON at `~/.claude/decompose/plans/{plan-id}/plan.json`, extract the plan ID and `created_at`/`execution_status.started_at`, then count work item statuses from `execution_status.work_item_status` (completed/failed/skipped/pending). Omit the section entirely if no plan was active.
+6. Copy the handoff to `.claude/handoffs/latest.md` (overwriting any previous latest) for quick access
+7. After writing, confirm to the user: "Handoff saved to `.claude/handoffs/{filename}`"
 
 > **Note:** The auto-handoff hook will skip writing if this manual handoff was created within the last 60 seconds.

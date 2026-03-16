@@ -73,7 +73,7 @@ Agent tool call:
 Plan JSON:
 ```json
 {
-  "subagent_type": "implementation-agent",
+  "subagent_type": "general-purpose",
   "skills": [],
   "model": "sonnet",
   "mode": "acceptEdits",
@@ -84,7 +84,7 @@ Plan JSON:
 
 The `missing_specialist: true` flag means the preferred agent (e.g., `python-pro`) was unavailable. The orchestrator should log:
 ```
-⚠ WI-3: python-pro unavailable, using implementation-agent as fallback
+⚠ WI-3: python-pro unavailable, using general-purpose as fallback
 ```
 
 ### Agent with Skills Layered

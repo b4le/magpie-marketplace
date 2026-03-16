@@ -34,6 +34,13 @@
             "tags": ["review", "agents", "orchestration", "code-quality", "multi-agent", "code-review", "worktree"]
         },
         {
+            "name": "iterative-usability",
+            "source": "./iterative-usability",
+            "description": "Agents that improve how Claude Code explores codebases and researches topics — writing persistent findings to disk instead of bloating the main context window.",
+            "version": "1.0.0",
+            "tags": ["exploration", "research", "context-management", "dual-return"]
+        },
+        {
             "name": "knowledge-harvester",
             "source": "./knowledge-harvester",
             "description": "Multi-agent knowledge harvesting, validation, and synthesis from multiple sources",

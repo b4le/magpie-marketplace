@@ -164,7 +164,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source shared schema validation helper
-# shellcheck source=_schema-validate.sh
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/_schema-validate.sh"
 
 if [[ "$HOOK_MODE" != "true" ]]; then
@@ -310,6 +310,146 @@ else
 fi
 
 # ============================================
+# Security: Prompt Injection Scanning
+# ============================================
+# Skill files are loaded into the Claude context window and interpreted as
+# instructions.  Malicious content can hijack the agent's behaviour without
+# executing any code.
+
+if [[ "$HOOK_MODE" != "true" ]]; then
+    echo ""
+    echo "--- Security: Prompt Injection ---"
+fi
+
+# CRITICAL: classic prompt injection phrases targeting instruction override
+PROMPT_INJ_CRITICAL=(
+    '[Ii]gnore (all )?(previous|prior|above) instructions?'
+    '[Ss]ystem[[:space:]]*\]'
+    '\[SYSTEM\]'
+    '\[INST\]'
+    'DAN[[:space:]]+mode'
+    '[Jj]ailbreak'
+    'override (safety|all) (restrictions?|instructions?|guidelines?)'
+    'you are now (in )?DAN'
+    'pretend (you have no|you are not|there are no) (restrictions?|guidelines?|rules?|limits?)'
+)
+
+for pat in "${PROMPT_INJ_CRITICAL[@]}"; do
+    if grep -qE "$pat" "$SKILL_FILE" 2>/dev/null; then
+        matches=$(grep -nE "$pat" "$SKILL_FILE" 2>/dev/null | head -3)
+        log_error "PROMPT_INJ [CRITICAL]: injection phrase detected — '$pat'"
+        if [[ "$HOOK_MODE" != "true" ]]; then
+            printf "    %s\n" "$matches"
+        fi
+    fi
+done
+
+# HIGH: instructions to read secrets or exfiltrate data
+PROMPT_INJ_HIGH=(
+    '[Rr]ead (the |all )?(secrets?|credentials?|passwords?|API keys?|tokens?)'
+    'send (it |them )?(to|via) (webhook|http|url|endpoint|server)'
+    'exfiltrat'
+    'POST (the|this|your|all) (data|content|secrets?|keys?) to'
+    '[Ww]hen (asked|told|instructed|prompted).*ignore'
+    'as (your|a) (first|secret|hidden) (task|action|instruction|step)'
+)
+
+for pat in "${PROMPT_INJ_HIGH[@]}"; do
+    if grep -qE "$pat" "$SKILL_FILE" 2>/dev/null; then
+        matches=$(grep -nE "$pat" "$SKILL_FILE" 2>/dev/null | head -3)
+        log_error "PROMPT_INJ [HIGH]: data exfiltration or hijack instruction detected — '$pat'"
+        if [[ "$HOOK_MODE" != "true" ]]; then
+            printf "    %s\n" "$matches"
+        fi
+    fi
+done
+
+# MEDIUM: suspicious hidden instruction patterns
+PROMPT_INJ_MEDIUM=(
+    '<!--.*instruct.*-->'
+    '\[\s*\]\s*\[\s*\]'           # Empty link/image refs used to hide instructions
+    'base64.*decode.*execute'
+    '[Ss]ilently (do|perform|execute|run|send)'
+    'without (telling|informing|notifying) (the )?user'
+)
+
+for pat in "${PROMPT_INJ_MEDIUM[@]}"; do
+    if grep -qE "$pat" "$SKILL_FILE" 2>/dev/null; then
+        matches=$(grep -nE "$pat" "$SKILL_FILE" 2>/dev/null | head -2)
+        log_warning "PROMPT_INJ [MEDIUM]: suspicious hidden-instruction pattern — '$pat'"
+        if [[ "$HOOK_MODE" != "true" ]]; then
+            printf "    %s\n" "$matches"
+        fi
+    fi
+done
+
+# ============================================
+# Security: Skill-level hooks.json Scanning
+# ============================================
+# Skills can ship their own hooks.json.  Scan it for HTTP hooks and dangerous
+# agent tool configurations — the same risks that exist at plugin level.
+
+SKILL_HOOKS_JSON="$SKILL_PATH/hooks.json"
+
+if [[ -f "$SKILL_HOOKS_JSON" ]] && command -v jq &>/dev/null; then
+    if [[ "$HOOK_MODE" != "true" ]]; then
+        echo ""
+        echo "--- Security: Skill hooks.json ---"
+    fi
+
+    if jq empty "$SKILL_HOOKS_JSON" 2>/dev/null; then
+        # HTTP hooks in skill
+        HTTP_COUNT=$(jq '[
+            .. | objects | select(has("type")) | select(.type == "http")
+        ] | length' "$SKILL_HOOKS_JSON" 2>/dev/null || echo 0)
+
+        if [[ "$HTTP_COUNT" -gt 0 ]]; then
+            HTTP_URLS=$(jq -r '.. | objects | select(has("type")) | select(.type == "http") | .url // "(no url)"' "$SKILL_HOOKS_JSON" 2>/dev/null || true)
+            log_error "SKILL_HOOKS [CRITICAL]: $HTTP_COUNT HTTP hook(s) in skill hooks.json — can POST event data to external URLs"
+            if [[ "$HOOK_MODE" != "true" ]]; then
+                while IFS= read -r u; do
+                    [[ -z "$u" ]] && continue
+                    printf "    URL: %s\n" "$u"
+                done <<< "$HTTP_URLS"
+            fi
+
+            # allowedEnvVars with credential names
+            CRED_ENV=$(jq -r '
+                .. | objects | select(has("type")) | select(.type == "http") |
+                (.allowedEnvVars // [])[] |
+                select(test("KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|AUTH"; "i"))
+            ' "$SKILL_HOOKS_JSON" 2>/dev/null || true)
+            if [[ -n "$CRED_ENV" ]]; then
+                log_error "SKILL_HOOKS [CRITICAL]: HTTP hook allowedEnvVars contains credential-shaped variable(s): $CRED_ENV"
+            fi
+        fi
+
+        # Agent hooks with powerful tools
+        DANGEROUS_AGENT=$(jq -r '
+            .. | objects | select(has("type")) | select(.type == "agent") |
+            select((.tools // []) | map(select(test("^(Bash|Write|Edit|MultiEdit)$"))) | length > 0) |
+            "agent hook tools: \((.tools // []) | join(", "))"
+        ' "$SKILL_HOOKS_JSON" 2>/dev/null || true)
+
+        if [[ -n "$DANGEROUS_AGENT" ]]; then
+            log_error "SKILL_HOOKS [HIGH]: agent hook(s) with powerful tools detected in skill hooks.json:"
+            if [[ "$HOOK_MODE" != "true" ]]; then
+                while IFS= read -r da; do
+                    [[ -z "$da" ]] && continue
+                    printf "    %s\n" "$da"
+                done <<< "$DANGEROUS_AGENT"
+            fi
+        fi
+
+        if [[ "$HTTP_COUNT" -eq 0 ]] && [[ -z "${DANGEROUS_AGENT:-}" ]]; then
+            log_success "Skill hooks.json: no HTTP hooks or dangerous agent tool configurations"
+        fi
+    else
+        log_warning "Skill hooks.json is not valid JSON"
+    fi
+fi
+
+# ============================================
 # Output
 # ============================================
 
@@ -320,7 +460,7 @@ if [[ "$HOOK_MODE" == "true" ]]; then
         ERR_JSON=""
         for err in "${ERRORS[@]}"; do
             # Escape quotes for JSON
-            escaped=$(echo "$err" | sed 's/"/\\"/g')
+            escaped="${err//\"/\\\"}"
             ERR_JSON="${ERR_JSON}\"${escaped}\","
         done
         ERR_JSON="[${ERR_JSON%,}]"
@@ -330,7 +470,7 @@ if [[ "$HOOK_MODE" == "true" ]]; then
     elif [[ ${#WARNINGS[@]} -gt 0 ]]; then
         WARN_JSON=""
         for warn in "${WARNINGS[@]}"; do
-            escaped=$(echo "$warn" | sed 's/"/\\"/g')
+            escaped="${warn//\"/\\\"}"
             WARN_JSON="${WARN_JSON}\"${escaped}\","
         done
         WARN_JSON="[${WARN_JSON%,}]"

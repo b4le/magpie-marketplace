@@ -95,8 +95,38 @@
         },
         {
           "type": "object",
-          "description": "Inline MCP server configuration",
-          "additionalProperties": true
+          "description": "Inline MCP server configuration. Keys are server names; values are server config objects.",
+          "additionalProperties": {
+            "type": "object",
+            "description": "Configuration for a single MCP server",
+            "properties": {
+              "command": {
+                "type": "string",
+                "description": "Executable command to launch the MCP server process"
+              },
+              "args": {
+                "type": "array",
+                "description": "Arguments to pass to the command",
+                "items": { "type": "string" }
+              },
+              "env": {
+                "type": "object",
+                "description": "Environment variables to set for the server process",
+                "additionalProperties": { "type": "string" }
+              },
+              "url": {
+                "type": "string",
+                "description": "URL of a remote MCP server (SSE or HTTP transport)",
+                "format": "uri"
+              },
+              "headers": {
+                "type": "object",
+                "description": "HTTP headers to include when connecting to a remote MCP server",
+                "additionalProperties": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          }
         }
       ]
     },

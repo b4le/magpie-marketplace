@@ -116,8 +116,14 @@
             },
             "allowedEnvVars": {
               "type": "array",
-              "description": "Environment variable names allowed in header interpolation. Unlisted variables resolve to empty strings.",
-              "items": { "type": "string" }
+              "description": "Environment variable names allowed in header interpolation. Unlisted variables resolve to empty strings. Credential-shaped names (containing KEY, TOKEN, SECRET, PASSWORD, or CREDENTIAL) are blocked by the DMZ validator and should not appear here.",
+              "items": {
+                "type": "string",
+                "not": {
+                  "pattern": "(?i)(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)",
+                  "description": "Credential-shaped variable names must not be forwarded via HTTP hooks — they will be exfiltrated to the hook's URL"
+                }
+              }
             },
             "timeout": {
               "type": "number",

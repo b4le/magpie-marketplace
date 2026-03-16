@@ -6,13 +6,13 @@ Translate a work item's `agent_config` block from plan JSON into Agent tool para
 
 | `agent_config` field | Agent tool parameter | Transformation rule |
 |---|---|---|
-| `subagent_type` | `subagent_type` | Direct pass-through. If `missing_specialist: true`, use `"implementation-agent"` (file creation/modification work) or `"general-purpose"` (review/exploration/research only). |
+| `subagent_type` | `subagent_type` | Direct pass-through. If `missing_specialist: true`, use `"general-purpose"` (file creation/modification work) or `"general-purpose"` (review/exploration/research only). |
 | `skills` | _(in `prompt`)_ | Not a tool parameter. Add `"Invoke skill: {skill-name} before implementation"` to the prompt for each listed skill. |
 | `model` | `model` | Direct pass-through (`"sonnet"`, `"opus"`, or `"haiku"`). |
 | `mode` | `mode` | Direct pass-through (`"acceptEdits"`, `"bypassPermissions"`, `"default"`, `"dontAsk"`, `"plan"`). |
 | `max_turns` | `max_turns` | Direct pass-through (integer). |
 | `isolation` | `isolation` | Pass `"worktree"` when value is `"worktree"`. **Omit entirely** when value is `"none"`. |
-| `missing_specialist` | _(fallback logic)_ | If `true`, override `subagent_type` to `"implementation-agent"` and add a note to the prompt: `"Note: no specialist agent is available for this task."` |
+| `missing_specialist` | _(fallback logic)_ | If `true`, override `subagent_type` to `"general-purpose"` and add a note to the prompt: `"Note: no specialist agent is available for this task."` |
 
 **Fixed derivations (not from `agent_config`):**
 
@@ -67,7 +67,7 @@ Translate a work item's `agent_config` block from plan JSON into Agent tool para
 ```json
 {
   "agent_config": {
-    "subagent_type": "implementation-agent",
+    "subagent_type": "general-purpose",
     "skills": [],
     "model": "sonnet",
     "mode": "acceptEdits",
@@ -82,7 +82,7 @@ Translate a work item's `agent_config` block from plan JSON into Agent tool para
 ```json
 {
   "name": "wi-1-update-readme",
-  "subagent_type": "implementation-agent",
+  "subagent_type": "general-purpose",
   "model": "sonnet",
   "mode": "acceptEdits",
   "max_turns": 20,
@@ -116,7 +116,7 @@ Note: `isolation` is omitted entirely because the plan value is `"none"`. `run_i
 ```json
 {
   "name": "wi-2-add-genserver-cache",
-  "subagent_type": "implementation-agent",
+  "subagent_type": "general-purpose",
   "model": "opus",
   "mode": "acceptEdits",
   "max_turns": 40,
@@ -126,7 +126,7 @@ Note: `isolation` is omitted entirely because the plan value is `"none"`. `run_i
 }
 ```
 
-`subagent_type` is overridden from `"elixir-pro"` to `"implementation-agent"`. The gap is surfaced in the prompt so the agent compensates with extra care. The plan already specified `"opus"` — when a plan specifies `"sonnet"` or `"haiku"` and `missing_specialist: true`, consider upgrading to `"opus"` to compensate.
+`subagent_type` is overridden from `"elixir-pro"` to `"general-purpose"`. The gap is surfaced in the prompt so the agent compensates with extra care. The plan already specified `"opus"` — when a plan specifies `"sonnet"` or `"haiku"` and `missing_specialist: true`, consider upgrading to `"opus"` to compensate.
 
 ---
 
@@ -138,5 +138,5 @@ Note: `isolation` is omitted entirely because the plan value is `"none"`. `run_i
 - **Skills go in the prompt, not as a tool parameter.** For each skill in `agent_config.skills`, prepend to the prompt body: `"Invoke skill: {skill-name} before implementation"`. One line per skill.
 - **`isolation: "none"` means omit the parameter.** Do not pass `isolation: "none"` to the Agent tool — simply leave the parameter out.
 - **`run_in_background` is mode-driven:** fan-out sets it `true`; sequential mode omits it.
-- **`missing_specialist: true` requires two changes:** override `subagent_type` to `"implementation-agent"` if the work creates/modifies files, or `"general-purpose"` if it's review/exploration only; then add the gap note to the prompt. Consider upgrading `model` to `"opus"` to compensate.
+- **`missing_specialist: true` requires two changes:** override `subagent_type` to `"general-purpose"` if the work creates/modifies files, or `"general-purpose"` if it's review/exploration only; then add the gap note to the prompt. Consider upgrading `model` to `"opus"` to compensate.
 - **Do not invent parameters.** Only pass the Agent tool parameters listed in the mapping table. No additional fields.

@@ -1,7 +1,7 @@
 ---
 name: devkit-maintain
-description: Run devkit maintenance — audit, sync, validate, cleanup, or full pass
-argument-hint: "[mode: audit|sync|validate|cleanup|full]"
+description: Run devkit maintenance — audit, sync, validate, cleanup, gaps detection, or full pass
+argument-hint: "[mode: audit|sync|validate|cleanup|gaps|full]"
 allowed-tools:
   - Read
   - Write
@@ -19,7 +19,7 @@ Run maintenance on the claude-code-development-kit plugin.
 
 Parse the mode from `$ARGUMENTS`. If no mode is provided, default to `full`.
 
-Valid modes: `audit`, `sync`, `validate`, `cleanup`, `full`.
+Valid modes: `audit`, `sync`, `validate`, `cleanup`, `gaps`, `full`.
 
 If the provided mode is not one of the above, respond with an error listing the valid modes and do not proceed.
 
@@ -45,8 +45,16 @@ For the `cleanup` mode:
 1. Audit `~/.claude/` following the setup-hygiene-checklist
 2. Report findings with prioritized recommendations
 
+For the `gaps` mode:
+1. Read the roadmap at `${CLAUDE_PLUGIN_ROOT}/docs/roadmap.md`
+2. List all existing skills and extract their descriptions
+3. Fetch latest Claude Code releases (last 90 days) via WebSearch/WebFetch
+4. Cross-reference features against roadmap items and skill coverage
+5. Report untracked features, stale skills, and proposed roadmap additions
+6. Validate each proposed item against the acceptance criteria in the roadmap
+
 For the `full` mode:
-1. Run audit → sync → validate (failed components) → cleanup in sequence
+1. Run audit → sync → validate (failed components) → cleanup → gaps in sequence
 2. Apply safe auto-fixes per the auto-fix-catalog
 3. Re-validate fixed components
 4. Present comprehensive maintenance report

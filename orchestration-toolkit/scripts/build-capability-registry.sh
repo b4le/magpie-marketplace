@@ -3,16 +3,29 @@
 # Bash 3.2 compatible. Requires jq.
 #
 # Usage:
-#   build-capability-registry.sh [--force] [--ttl SECONDS] [--quiet]
+#   build-capability-registry.sh [--force] [--ttl SECONDS] [--quiet] [--help]
+#
+# Options:
+#   --force          Bypass TTL and schema cache checks; always rebuild.
+#   --ttl SECONDS    Override the default 300s cache TTL.
+#   --quiet          Suppress all log output to stderr.
+#   --help           Show this help message.
 #
 # Output: ~/.claude/registry/capabilities.json
 # Cache: 5-min TTL (300s) by default. --force bypasses. --ttl overrides.
+# Schema: cache is invalidated when SCHEMA_VERSION changes (currently "2").
 
 set -uo pipefail
 # Note: -e omitted deliberately. The script uses grep/sed in pipelines that
 # legitimately return exit 1 on no-match. set -e + pipefail would cause silent
 # exits from extract_frontmatter_field/extract_description. Errors are handled
 # explicitly where needed (jq validation at the end, etc.).
+
+# --- Dependency check ---
+if ! command -v jq >/dev/null 2>&1; then
+    echo "ERROR: jq is required but not installed. Install it (e.g. brew install jq) and retry." >&2
+    exit 1
+fi
 
 CLAUDE_DIR="${HOME}/.claude"
 REGISTRY_DIR="${CLAUDE_DIR}/registry"
@@ -25,12 +38,19 @@ TTL="${DEFAULT_TTL}"
 FORCE=false
 QUIET=false
 
+# Schema version — bump when the output structure changes.
+# Any cached registry with a different schema_version is treated as stale and rebuilt.
+SCHEMA_VERSION="2"
+
 # --- Argument parsing ---
 while [ $# -gt 0 ]; do
     case "$1" in
         --force) FORCE=true; shift ;;
         --ttl)   TTL="$2"; shift 2 ;;
         --quiet) QUIET=true; shift ;;
+        --help|-h)
+            grep '^#' "$0" | head -20 | sed 's/^# \{0,1\}//'
+            exit 0 ;;
         *)       echo "Unknown option: $1" >&2; exit 1 ;;
     esac
 done
@@ -52,27 +72,33 @@ if [ "$FORCE" = false ] && [ -f "$OUTPUT_FILE" ]; then
         now=$(date +%s)
         age=$((now - file_mtime))
         if [ "$age" -lt "$TTL" ]; then
-            # Invalidate if installed_plugins.json is newer than registry
-            # (plugin install/update/removal means registry is stale)
-            stale_plugins=false
-            if [ -f "$INSTALLED_PLUGINS" ]; then
-                case "$(uname -s)" in
-                    Darwin*) plugins_mtime=$(stat -f '%m' "$INSTALLED_PLUGINS" 2>/dev/null || echo 0) ;;
-                    Linux*)  plugins_mtime=$(stat -c '%Y' "$INSTALLED_PLUGINS" 2>/dev/null || echo 0) ;;
-                    *)       plugins_mtime=0 ;;
-                esac
-                if [ "$plugins_mtime" -gt "$file_mtime" ]; then
-                    stale_plugins=true
-                    log "installed_plugins.json is newer than registry — rebuilding."
+            # Invalidate if the cached registry was built by an older schema version.
+            cached_schema=$(jq -r '.schema_version // ""' "$OUTPUT_FILE" 2>/dev/null || true)
+            if [ "$cached_schema" != "$SCHEMA_VERSION" ]; then
+                log "Cached registry schema_version ('${cached_schema}') != expected '${SCHEMA_VERSION}' — rebuilding."
+            else
+                # Invalidate if installed_plugins.json is newer than registry
+                # (plugin install/update/removal means registry is stale)
+                stale_plugins=false
+                if [ -f "$INSTALLED_PLUGINS" ]; then
+                    case "$(uname -s)" in
+                        Darwin*) plugins_mtime=$(stat -f '%m' "$INSTALLED_PLUGINS" 2>/dev/null || echo 0) ;;
+                        Linux*)  plugins_mtime=$(stat -c '%Y' "$INSTALLED_PLUGINS" 2>/dev/null || echo 0) ;;
+                        *)       plugins_mtime=0 ;;
+                    esac
+                    if [ "$plugins_mtime" -gt "$file_mtime" ]; then
+                        stale_plugins=true
+                        log "installed_plugins.json is newer than registry — rebuilding."
+                    fi
                 fi
-            fi
-            if [ "$stale_plugins" = false ]; then
-                log "Cache valid (${age}s < ${TTL}s TTL). Use --force to rebuild."
-                exit 0
-            fi
-        fi
-    fi
-fi
+                if [ "$stale_plugins" = false ]; then
+                    log "Cache valid (${age}s < ${TTL}s TTL). Use --force to rebuild."
+                    exit 0
+                fi
+            fi  # end schema_version check
+        fi  # end age -lt TTL
+    fi  # end stat command check
+fi  # end FORCE/file check
 
 # --- Ensure output dir ---
 mkdir -p "$REGISTRY_DIR"
@@ -306,12 +332,12 @@ add_entry() {
     local path="$6"
     # subagent_type: the value passed to the Agent tool's subagent_type parameter.
     # - plugin-agent: fully-qualified name (e.g. "shell-scripting:bash-pro")
-    # - built-in-subagent: the agent type name itself (e.g. "implementation-agent")
+    # - built-in-subagent: the agent type name itself (e.g. "general-purpose")
     # - built-in: the agent name (e.g. "general-purpose", "Explore")
     # - user-agent / project-agent: filename stem (e.g. "web-researcher")
     # - skills (user-skill, project-skill, plugin-skill): null — skills layer onto agents
     # - everything else: null
-    local subagent_type="${7:-null}"
+    local subagent_type="${7:?build-capability-registry: add_entry arg 7 (subagent_type) is required — pass the literal string \"null\" for skills/containers}"
 
     ENTRIES=$(printf '%s' "$ENTRIES" | jq \
         --arg name "$name" \
@@ -514,10 +540,6 @@ add_builtin "Plan" \
     "Software architect agent for designing implementation plans — returns step-by-step plans, identifies critical files, considers architectural trade-offs" \
     '["meta", "workflow", "planning"]'
 
-add_builtin "implementation-agent" \
-    "Production code implementation specialist with autonomous file editing capabilities" \
-    '["meta", "implementation"]'
-
 add_builtin "test-runner" \
     "Test execution and failure analysis specialist with autonomous fix capabilities" \
     '["meta", "testing"]'
@@ -656,7 +678,7 @@ log "Writing registry (${entry_count} entries)..."
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 OUTPUT=$(jq -n \
-    --arg version "1.0" \
+    --arg version "$SCHEMA_VERSION" \
     --arg generated "$TIMESTAMP" \
     --argjson count "$entry_count" \
     --argjson entries "$ENTRIES" \

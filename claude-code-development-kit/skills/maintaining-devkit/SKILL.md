@@ -1,6 +1,6 @@
 ---
 name: maintaining-devkit
-description: This skill should be used when the user asks to "maintain the dev-kit", "audit plugin health", "sync schemas with changelog", "check for schema drift", "cleanup setup", "run devkit maintenance", or needs structured playbooks for devkit maintenance modes.
+description: This skill should be used when the user asks to "maintain the dev-kit", "audit plugin health", "sync schemas with changelog", "check for schema drift", "cleanup setup", "run devkit maintenance", "find gaps", "check coverage", "what features are missing", or needs structured playbooks for devkit maintenance modes.
 allowed-tools:
   - Read
   - Write
@@ -45,6 +45,7 @@ Structured playbooks for maintaining the claude-code-development-kit plugin and 
 | `sync` | "sync schemas", "check changelog", "update schemas" | Fetch changelog → diff schemas → flag gaps | Schema drift report |
 | `validate` | "validate [component]", "check [skill/agent]" | Run targeted validator → report | Component-specific results |
 | `cleanup` | "cleanup", "hygiene", "disk usage" | Audit ~/.claude/ → report stale items | Hygiene recommendations |
+| `gaps` | "find gaps", "check coverage", "what's missing" | Roadmap + skills vs latest features | Untracked feature report |
 | `full` | "full maintenance", "run everything" | All modes in sequence | Comprehensive report |
 
 ## Mode: Audit
@@ -114,17 +115,55 @@ Audit ~/.claude/ for accumulated entropy and recommend cleanup actions.
 
 For detailed cleanup procedures, see `references/setup-hygiene-checklist.md`.
 
+## Mode: Gaps
+
+Cross-reference the roadmap and existing skills against the latest Claude Code releases to find untracked capabilities.
+
+1. **Build coverage inventory:**
+   - Read the roadmap: `${CLAUDE_PLUGIN_ROOT}/docs/roadmap.md`
+   - List all existing skills: `Glob ${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md`
+   - Extract each skill's `description` from YAML frontmatter
+   - Build combined topic set: roadmap items + existing skill topics
+
+2. **Fetch latest features (last 90 days):**
+   - WebSearch: `site:github.com/anthropics/claude-code/releases`
+   - WebFetch the releases page; extract feature names by category (tools, hooks, agents, MCP, CLI, UI, settings, plugins, skills)
+
+3. **Cross-reference each feature:**
+   - Search skill descriptions and reference file contents for coverage
+   - Search roadmap items and sub-problems for tracking
+   - If neither → classify as **untracked gap**
+
+4. **Classify each gap:**
+   - **Extends existing theme** → recommend adding as sub-problem to relevant roadmap item
+   - **New theme needed** → recommend new roadmap theme with problem statement
+   - **Existing skill stale** → recommend refresh with specific missing content
+
+5. **Validate before recommending:**
+   Before proposing a new roadmap item, confirm:
+   - The feature is in a **published release** (not just a PR or issue)
+   - The feature is **user-facing** (not internal refactoring or bug fixes)
+   - The feature is **not already covered** by reference file content (search content, not just titles)
+   - The feature has **enough substance** for at least a reference file (not a one-line config change)
+
+6. **Report** using the Coverage Gaps section of the standard output format.
+
+For the current roadmap and gap analysis context, see:
+- Roadmap: `${CLAUDE_PLUGIN_ROOT}/docs/roadmap.md`
+- Gap analysis: `${CLAUDE_PLUGIN_ROOT}/docs/2026-03-11-devkit-gap-analysis.md`
+
 ## Mode: Full
 
-Run all modes in sequence: audit → sync → validate → cleanup.
+Run all modes in sequence: audit → sync → validate → cleanup → gaps.
 
 1. Run `audit` mode — capture report section
 2. Run `sync` mode — capture report section
 3. Run `validate` on any components that failed audit — capture report section
 4. Run `cleanup` mode — capture report section
-5. Merge all sections into comprehensive maintenance report
-6. Apply safe auto-fixes; re-validate fixed components
-7. Present final report with summary statistics
+5. Run `gaps` mode — capture report section
+6. Merge all sections into comprehensive maintenance report
+7. Apply safe auto-fixes; re-validate fixed components
+8. Present final report with summary statistics
 
 ## Auto-Fix Catalog
 
