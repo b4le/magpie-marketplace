@@ -75,11 +75,8 @@ If any field is missing, use sensible defaults: scope from the dispatch context,
 
 ### Step 3: Read the format references
 
-1. Read `@references/prompt-template.md` to confirm the 7-section structure.
-2. Read `@templates/prompt-scaffold.md` as your starting template.
-
-The `@` paths are relative to the todo-manage skill directory:
-`<plugin-root>/skills/todo-manage/`
+1. Read `${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/references/prompt-template.md` to confirm the 7-section structure.
+2. Read `${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/templates/prompt-scaffold.md` as your starting template.
 
 Use Glob to locate the plugin root if needed (search for `skills/todo-manage/references/prompt-template.md`).
 

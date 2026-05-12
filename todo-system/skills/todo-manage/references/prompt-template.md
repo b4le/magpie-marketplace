@@ -93,7 +93,7 @@ Prompts are point-in-time artifacts. They freeze dates, names, state, and strate
 
 ## How Prompts Are Created
 
-Dispatch the `llm-application-dev:prompt-engineer` specialist, one agent per todo, fan-out style. The main session writes only the todo entry; the sub-agent writes the prompt file.
+Dispatch the plugin's `prompt-writer` agent, one agent per todo, fan-out style. The main session writes only the todo entry; the sub-agent writes the prompt file.
 
 ## Complete Example
 

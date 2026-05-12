@@ -59,7 +59,7 @@ Controls quality checkpoints before code lands.
 
 ## Per-Project Configuration
 
-Location: `<scope>/.claude/todos.config.md`
+Location: `<scope>/.claude/prompts/todos/todos.config.md`
 
 ```yaml
 ---
@@ -92,8 +92,8 @@ Resolution order (highest wins):
 | Priority | Source | Example |
 |----------|--------|---------|
 | 1 (highest) | Per-prompt `### Gates` block | Inline in the todo prompt file |
-| 2 | Project `<project>/.claude/todos.config.md` | Project-level defaults |
-| 3 | Root `~/.claude/todos.config.md` | User-wide defaults |
+| 2 | Project `<project>/.claude/prompts/todos/todos.config.md` | Project-level defaults |
+| 3 | Root `~/.claude/prompts/todos/todos.config.md` | User-wide defaults |
 | 4 (lowest) | Hardcoded defaults | Most conservative settings |
 
 **Hardcoded defaults** (applied when no config exists):

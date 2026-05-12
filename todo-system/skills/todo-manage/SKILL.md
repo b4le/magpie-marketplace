@@ -10,6 +10,7 @@ allowed-tools:
   - Glob
   - Grep
   - Agent
+  - AskUserQuestion
 ---
 
 # Todo Management
@@ -274,7 +275,6 @@ Per-prompt `### Gates` blocks override project config. Project config overrides 
 | "Mark the auth bug todo as done" | B | Find by title, mark complete |
 | "Bump the migration todo to P1" | B | Reprioritize + move bucket |
 | "Capture these next steps" | C | Batch capture, confirm with user |
-| "What's left to do?" | B (read-only) | Read _INDEX, display summary |
 | "I should remember to update the API docs" | A | Natural language trigger |
 | "We need to fix the flaky test" | A | Natural language trigger |
 
