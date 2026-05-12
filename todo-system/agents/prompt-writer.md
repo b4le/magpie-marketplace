@@ -150,6 +150,11 @@ Write each section following these rules:
 **Write path:**
 `<scope>/.claude/prompts/todos/<category>/<filename>`
 
+Before writing, validate the assembled path:
+- Resolve the full path and confirm it starts with `<scope>/.claude/prompts/todos/`
+- Reject if `category` or `filename` contains `..`, leading `/`, or any absolute path component
+- If validation fails, return an error to the dispatching skill instead of writing
+
 Create the category directory if it does not exist. Use Glob to verify the parent path before writing.
 
 ### Step 6: Return the result

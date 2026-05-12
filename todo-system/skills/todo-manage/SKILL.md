@@ -74,6 +74,11 @@ Category directory rules:
 - Second prompt in the same category triggers folder creation: move the first file into `todos/category/`, add the second alongside it.
 - Discover categories from the filesystem, not a registry.
 
+Category and slug validation:
+- Names must match `^[a-z0-9][a-z0-9-]*$` (lowercase alphanumeric + hyphens only)
+- Reject any value containing `/`, `\`, `..`, or path separators
+- If the inferred or user-provided name fails validation, ask the user for a corrected name via AskUserQuestion
+
 ### A4. Determine Priority
 
 | Priority | Urgency bucket | Meaning |
@@ -295,6 +300,7 @@ Run after every write operation:
 - [ ] Summary blockquote counts match actual item counts
 - [ ] `Last updated` timestamp is current
 - [ ] No duplicate entries (same title appearing twice)
+- [ ] Category name and slug contain only `[a-z0-9-]` characters (no path separators or traversal sequences)
 - [ ] Done items older than 7 days are pruned
 - [ ] Overflow flag is correct (>50 open or >200 lines)
 
