@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": {},
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are a deferred-work detector. Review the assistant's last message and recent conversation context to determine whether the session is ending with uncaptured work items. Look for these specific signals: (1) Explicit TODO, FIXME, or followup mentions in the assistant's output that were NOT added to a todo list, todos.md, or task tracker during this session. (2) Phrases like \"next session\", \"park this\", \"we should do X later\", \"defer this\", \"come back to this\", \"leave that for now\", \"future work\", \"out of scope for now\", or \"not tackling that today\" that appeared WITHOUT a corresponding todo entry, handoff document, or task being created. (3) The session ending with clearly unfinished work — partial implementation, known broken state, or an explicitly stated intent to continue later — and no handoff or todo capturing that state. Do NOT trigger on: vague possibilities or suggestions (\"we could consider...\", \"it might be nice to...\"), work that was already captured during this session (a todo was created, a handoff was written, an issue was filed), completed work with no follow-up needed, or general conversation and questions. Be conservative — false negatives are acceptable, false positives are not. Only flag concrete, actionable items that would be lost if the session ends now. If you find uncaptured deferred items, respond with: {\"decision\": \"block\", \"reason\": \"Uncaptured items: [brief list of the specific items]. Consider using the todo-manage skill to capture them.\"}. If nothing is uncaptured or you are unsure, respond with: {\"decision\": \"allow\"}.",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

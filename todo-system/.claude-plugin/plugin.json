@@ -1,0 +1,11 @@
+{
+  "name": "todo-system",
+  "version": "1.0.0",
+  "description": "Portable todo management with paired session-launch prompts, category folders, modular gates, and auto-capture.",
+  "author": { "name": "Ben Purslow" },
+  "license": "MIT",
+  "keywords": [
+    "todo", "tasks", "prompts", "session-launch", "productivity",
+    "gates", "workflow", "project-management"
+  ]
+}
