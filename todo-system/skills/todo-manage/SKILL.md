@@ -1,12 +1,13 @@
 ---
 name: todo-manage
+version: 1.0.0
+tags: [todo, productivity, prompts, workflow]
 description: |
   Add, update, complete, and capture todo items with paired session-launch prompts. Use when adding a todo, updating a todo, marking a todo done, creating a todo prompt, capturing deferred work, parking something for later, deferring items, tracking followups, capturing next steps, reprioritizing, or at session end to record unfinished work. Trigger on: "add a todo", "create a todo", "capture this", "park this for later", "defer this", "followup needed", "next steps", "track this", "todo:add", "I should remember to", "we need to", "mark as done", "complete the todo", "bump to P1", "reprioritize", "update the todo".
 allowed-tools:
   - Read
   - Write
   - Edit
-  - Bash
   - Glob
   - Grep
   - Agent

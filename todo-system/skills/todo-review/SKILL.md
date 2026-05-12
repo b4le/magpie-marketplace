@@ -1,5 +1,7 @@
 ---
 name: todo-review
+version: 1.0.0
+tags: [todo, review, roadmap, productivity]
 description: |
   Review and prioritize todos, show roadmap, and manage _INDEX overflow. This skill should be used when reviewing todos, checking status, showing what's on the plate, viewing the roadmap, prioritizing work, deciding what to work on next, or checking for index overflow. It should NOT be used for creating, editing, or deleting todos — use todo-manage for that. Trigger on: "review my todos", "what's on my plate", "todo status", "show roadmap", "todo:review", "what should I work on next", "what's next", "prioritize", "what's left to do", "open items", "todo review", "check overflow", "how's my backlog".
 allowed-tools:

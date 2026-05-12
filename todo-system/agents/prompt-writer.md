@@ -33,7 +33,7 @@ description: |
   </example>
 model: sonnet
 color: cyan
-tools:
+allowed-tools:
   - Read
   - Write
   - Glob
@@ -58,6 +58,7 @@ Your dispatch prompt contains these fields (all provided by the calling skill):
 - **category** -- subfolder under `prompts/todos/` (e.g. `features`, `bugs`, `infrastructure`)
 - **deadline** -- ISO date if calendar-bound, or `none` if state-transition
 - **gate-overrides** -- any per-prompt gate values that differ from project defaults
+- **relevant_files** -- list of absolute file paths the prompt's Read First section should reference
 
 If any field is missing, use sensible defaults: scope from the dispatch context, category `general`, deadline `none`, no gate overrides.
 

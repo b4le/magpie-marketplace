@@ -2,10 +2,7 @@
 allowed-tools:
   - Skill
 description: "Manage todos: add, review, or roadmap"
-arguments:
-  - name: subcommand
-    description: "Sub-command: add <title>, review, or roadmap"
-    required: false
+argument-hint: "<add|review|roadmap> [args]"
 ---
 
 Parse the argument provided after `/todo`:

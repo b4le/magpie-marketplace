@@ -9,9 +9,9 @@ Session-launch prompts are point-in-time artifacts that give a fresh session eve
 ```
 
 - **Date-sensitive** (fires on or before a specific date): include the date.
-  Example: `stina-reply-2026-05-11.md`, `offer-deadline-2026-05-15.md`
+  Example: `alice-reply-2026-05-11.md`, `offer-deadline-2026-05-15.md`
 - **State-transition** (fires after some event, no calendar deadline): omit the date.
-  Example: `formal-accommodation-request.md`, `post-acceptance-followup.md`
+  Example: `vendor-contract-review.md`, `post-acceptance-followup.md`
 
 Slugs are short, kebab-case, and reference the recipient, topic, or action.
 
@@ -98,39 +98,39 @@ Dispatch the plugin's `prompt-writer` agent, one agent per todo, fan-out style. 
 ## Complete Example
 
 ```markdown
-# Reply to Stina with meeting debrief — ship by 2026-05-11
+# Reply to Alice with meeting debrief — ship by 2026-05-11
 
-Stina messaged on Signal asking for a summary of what happened in the May 9
-HR meeting. She was present but wants written confirmation of the key points
-for her own records. This reply must land today (May 11).
+Alice messaged on Slack asking for a summary of what happened in the May 9
+project review meeting. She was present but wants written confirmation of the
+key points for her own records. This reply must land today (May 11).
 
 ## Context
 
-Stina Lindqvist is a colleague and ally. She attended the May 9 meeting with
-Johan (HR) and Adrian (manager) where three topics were discussed:
-1. The redeployment timeline was extended to June 15.
-2. Adrian acknowledged the accommodation request verbally but no written
+Alice is a colleague and collaborator. She attended the May 9 meeting with
+Bob (HR) and Charlie (manager) where three topics were discussed:
+1. The migration timeline was extended to June 15.
+2. Charlie acknowledged the resource request verbally but no written
    confirmation was given.
-3. Johan stated that the role elimination is "business-driven, not personal."
+3. Bob stated that the restructuring is "business-driven, not personal."
 
-Current state: Ben has a draft summary in the vault but it has not been
-reviewed for tone or accuracy. The Signal thread with Stina has 4 prior
-messages, last from her on May 10 asking "can you write up what happened?"
+Current state: the user has a draft summary in the project docs but it has
+not been reviewed for tone or accuracy. The Slack thread with Alice has 4
+prior messages, last from her on May 10 asking "can you write up what happened?"
 
 ## Read First
 
 | Order | Path | Mode |
 |-------|------|------|
-| 1 | `/home/ben/atticus-finch/vault/meetings/2026-05-09-hr-meeting.md` | Full read |
-| 2 | `/home/ben/atticus-finch/vault/comms/signal/stina-lindqvist.md` | Last 30 lines |
-| 3 | `/home/ben/atticus-finch/vault/strategy/tone-guide.md` | Full read |
+| 1 | `/home/user/acme-project/docs/meetings/2026-05-09-review-meeting.md` | Full read |
+| 2 | `/home/user/acme-project/docs/comms/slack/alice-thread.md` | Last 30 lines |
+| 3 | `/home/user/acme-project/docs/strategy/tone-guide.md` | Full read |
 
-Do NOT read: `/home/ben/atticus-finch/vault/legal/counsel-notes.md` (privileged).
+Do NOT read: `/home/user/acme-project/docs/legal/counsel-notes.md` (privileged).
 
 ## Task Flow
 
 1. Read the meeting summary and extract the three key decisions.
-2. Read Stina's last Signal messages for tone and context.
+2. Read Alice's last Slack messages for tone and context.
 3. Draft a reply (3-4 short paragraphs) that:
    - Confirms the three decisions without editorialising.
    - Thanks her for attending.
@@ -143,7 +143,7 @@ Do NOT read: `/home/ben/atticus-finch/vault/legal/counsel-notes.md` (privileged)
 
 - Do not reference legal counsel or any privileged conversations.
 - Do not include financial figures or equity details.
-- Do not speculate about employer intent beyond what was stated in the meeting.
+- Do not speculate about intent beyond what was stated in the meeting.
 - Tone: warm, collegial, factual. No passive aggression.
 
 ### Gates
@@ -157,10 +157,10 @@ review-gate: pre-commit
 
 ## Output Path
 
-`/home/ben/atticus-finch/vault/comms/drafts/stina-reply-2026-05-11.md`
+`/home/user/acme-project/docs/comms/drafts/alice-reply-2026-05-11.md`
 
 ## Success Criterion
 
-A reply ready to paste into Signal that summarises the three meeting decisions
-in Stina's expected tone, with no privileged content.
+A reply ready to paste into Slack that summarises the three meeting decisions
+in Alice's expected tone, with no privileged content.
 ```
