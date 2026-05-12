@@ -95,6 +95,13 @@
             "description": "Automatic session continuity — handoff on exit, checkpoint on compact, resume on start",
             "version": "0.1.0",
             "tags": ["session", "handoff", "resume", "checkpoint", "continuity", "autopilot"]
+        },
+        {
+            "name": "todo-system",
+            "source": "./todo-system",
+            "description": "Portable todo management with paired session-launch prompts, category folders, modular gates, and auto-capture",
+            "version": "1.0.0",
+            "tags": ["todo", "tasks", "prompts", "session-launch", "productivity", "gates", "workflow"]
         }
     ]
 }
