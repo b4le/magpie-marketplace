@@ -20,9 +20,9 @@ Manage structured todo items with paired session-launch prompts. Each todo lives
 
 ## Core Concepts
 
-- **_INDEX** -- central manifest of all todos for a scope. See @references/index-format.md for the full format specification.
-- **Session-launch prompt** -- a point-in-time artifact with 7 fixed sections that gives a fresh session everything it needs. See @references/prompt-template.md for format and naming conventions.
-- **Gates** -- four modular controls (worktree, specialist-routing, parallelization, review-gate) that govern how prompts execute. See @references/gate-configuration.md for values, precedence, and injected steps.
+- **_INDEX** -- central manifest of all todos for a scope. See ${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/references/index-format.md for the full format specification.
+- **Session-launch prompt** -- a point-in-time artifact with 7 fixed sections that gives a fresh session everything it needs. See ${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/references/prompt-template.md for format and naming conventions.
+- **Gates** -- four modular controls (worktree, specialist-routing, parallelization, review-gate) that govern how prompts execute. See ${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/references/gate-configuration.md for values, precedence, and injected steps.
 - **Scope** -- project-level (`<project>/.claude/prompts/todos/`) or root-level (`~/.claude/prompts/todos/`).
 
 ---
@@ -135,7 +135,7 @@ Recalculate the blockquote:
 - Set `Last updated` to current ISO-8601 timestamp
 - Set `Overflow` to `true` if >50 open items or >200 total lines
 
-If overflow triggers, split `## Later` and `## Done` into `roadmap.md` per the overflow rules in @references/index-format.md.
+If overflow triggers, split `## Later` and `## Done` into `roadmap.md` per the overflow rules in ${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/references/index-format.md.
 
 ---
 
@@ -264,7 +264,7 @@ parallelization: none
 review-gate: none
 ```
 
-Per-prompt `### Gates` blocks override project config. Project config overrides root config. See @references/gate-configuration.md for the full precedence table and injected step mappings.
+Per-prompt `### Gates` blocks override project config. Project config overrides root config. See ${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/references/gate-configuration.md for the full precedence table and injected step mappings.
 
 ## Invocation Examples
 
@@ -304,9 +304,9 @@ Run after every write operation:
 
 Detailed format specifications (load as needed):
 
-- **@references/index-format.md** -- _INDEX structure, entry format, overflow handling, category conventions, deduplication rules, complete example
-- **@references/prompt-template.md** -- the 7-section prompt format, file naming, gates extension, freshness convention, complete example
-- **@references/gate-configuration.md** -- the four gates (worktree, specialist-routing, parallelization, review-gate), per-project config format, precedence rules, injected step mappings
+- **${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/references/index-format.md** -- _INDEX structure, entry format, overflow handling, category conventions, deduplication rules, complete example
+- **${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/references/prompt-template.md** -- the 7-section prompt format, file naming, gates extension, freshness convention, complete example
+- **${CLAUDE_PLUGIN_ROOT}/skills/todo-manage/references/gate-configuration.md** -- the four gates (worktree, specialist-routing, parallelization, review-gate), per-project config format, precedence rules, injected step mappings
 
 Scaffold template for prompt creation:
 

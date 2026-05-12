@@ -64,7 +64,7 @@ If any field is missing, use sensible defaults: scope from the dispatch context,
 
 ### Step 2: Read gate configuration
 
-1. Check for `<scope>/.claude/todos.config.md`. If it exists, read the YAML frontmatter to extract gate defaults.
+1. Check for `<scope>/.claude/prompts/todos/todos.config.md`. If it exists, read the YAML frontmatter to extract gate defaults.
 2. If no project config exists, use hardcoded defaults:
    ```yaml
    worktree: skip
