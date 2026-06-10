@@ -1,0 +1,128 @@
+---
+# Workflow State - Initial State
+# This is a snapshot of workflow-state.yaml at the beginning
+
+workflow_id: password-reset-example
+workflow_name: Implement Password Reset Feature
+created_at: 2025-11-24T14:00:00Z
+updated_at: 2025-11-24T14:00:00Z
+status: planning
+
+# Current phase information
+current_phase:
+  name: planning
+  started_at: 2025-11-24T14:00:00Z
+  estimated_completion: 2025-11-24T15:00:00Z
+  progress_percent: 0
+
+# Phase history (tracks completed phases)
+phases:
+  planning:
+    status: in-progress
+    started_at: 2025-11-24T14:00:00Z
+    completed_at: null
+    archived_at: null
+    agents_used: []
+    token_budget: 50000
+    tokens_used: 0
+
+  implementation:
+    status: pending
+    started_at: null
+    completed_at: null
+    archived_at: null
+    agents_used: []
+    token_budget: 60000
+    tokens_used: 0
+
+# Active agents (currently running)
+active_agents: []
+
+# Completed agents
+completed_agents: []
+
+# Questions and decisions
+questions_pending: []
+questions_resolved: []
+
+# Key decisions made during workflow
+decisions: []
+
+# Metrics
+metrics:
+  total_agents_launched: 0
+  total_phases_completed: 0
+  total_tokens_used: 0
+  total_duration_minutes: 0
+
+# Notes and observations
+notes:
+  - "Starting password reset feature implementation workflow"
+  - "Planning phase will analyze requirements and define security approach"
+
+# Next steps (updated as workflow progresses)
+next_steps:
+  - "Launch agent-001 to analyze password reset requirements"
+  - "Define security constraints and token expiry policy"
+  - "Move to implementation phase once planning complete"
+
+---
+
+# NOTE: This file shows multiple states throughout the workflow.
+# In practice, this is ONE file that gets updated as the workflow progresses.
+# Below are commented snapshots showing progression:
+
+# === STATE 2: After Planning Complete (before archival) ===
+# updated_at: 2025-11-24T14:45:00Z
+# status: planning
+# phases:
+#   planning:
+#     status: completed
+#     completed_at: 2025-11-24T14:45:00Z
+#     agents_used: [agent-001]
+#     tokens_used: 12500
+# completed_agents:
+#   - id: agent-001
+#     phase: planning
+#     topic: requirements
+#     tokens_used: 12500
+#     output_paths: [active/planning/agent-001-requirements.md]
+# decisions:
+#   - decision: "Use email-based password reset with magic link"
+#     rationale: "More secure than security questions, better UX than emailed codes"
+#     phase: planning
+#     decided_at: 2025-11-24T14:30:00Z
+
+# === STATE 3: After Planning Archived ===
+# updated_at: 2025-11-24T15:00:00Z
+# status: implementation
+# current_phase:
+#   name: implementation
+#   started_at: 2025-11-24T15:00:00Z
+# phases:
+#   planning:
+#     status: completed
+#     archived_at: 2025-11-24T15:00:00Z
+#   implementation:
+#     status: in-progress
+#     started_at: 2025-11-24T15:00:00Z
+# metrics:
+#   total_phases_completed: 1
+
+# === STATE 4: After Implementation Complete (final) ===
+# updated_at: 2025-11-24T16:30:00Z
+# status: completed
+# phases:
+#   planning:
+#     archived_at: 2025-11-24T15:00:00Z
+#   implementation:
+#     status: completed
+#     completed_at: 2025-11-24T16:30:00Z
+#     archived_at: 2025-11-24T16:30:00Z
+#     agents_used: [agent-002]
+#     tokens_used: 14300
+# metrics:
+#   total_agents_launched: 2
+#   total_phases_completed: 2
+#   total_tokens_used: 26800
+#   total_duration_minutes: 135

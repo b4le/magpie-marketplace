@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/claude-plugins/knowledge-harvester/schemas/ranked.schema.json",
+  "title": "Ranked Candidates",
+  "description": "Schema for Stage 2 output: triaged and scored candidate sources",
+  "version": {
+    "type": "string",
+    "pattern": "^\\d+\\.\\d+\\.\\d+$",
+    "description": "Schema version (semver format)",
+    "default": "1.0.0"
+  },
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "source_type", "path", "metadata", "scores", "combined_score", "decision"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique identifier for the candidate source",
+        "pattern": "^(local|gdrive|web)-\\d{3}$"
+      },
+      "source_type": {
+        "type": "string",
+        "description": "Type of source",
+        "enum": ["local", "google_drive", "web"]
+      },
+      "path": {
+        "type": "string",
+        "description": "Path or URL to the source",
+        "minLength": 1
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Source metadata from enumeration stage",
+        "required": ["size_bytes"],
+        "properties": {
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "preview": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "mime_type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "scores": {
+        "type": "object",
+        "description": "Individual lens scores",
+        "properties": {
+          "relevance": {
+            "type": "number",
+            "description": "Relevance to harvest goals (0-10)",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "freshness": {
+            "type": "number",
+            "description": "Recency/freshness of content (0-10)",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "authority": {
+            "type": "number",
+            "description": "Source authority/credibility (0-10)",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "depth": {
+            "type": "number",
+            "description": "Content depth/comprehensiveness (0-10)",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "uniqueness": {
+            "type": "number",
+            "description": "Uniqueness of information (0-10)",
+            "minimum": 0,
+            "maximum": 10
+          }
+        },
+        "additionalProperties": false
+      },
+      "combined_score": {
+        "type": "number",
+        "description": "Aggregated score from all lenses (0-10)",
+        "minimum": 0,
+        "maximum": 10
+      },
+      "decision": {
+        "type": "string",
+        "description": "Triage decision for this source",
+        "enum": ["include", "exclude", "review"]
+      },
+      "decision_reason": {
+        "type": "string",
+        "description": "Explanation for the triage decision"
+      },
+      "ranking": {
+        "type": "integer",
+        "description": "Relative ranking position (1 = highest score)",
+        "minimum": 1
+      }
+    },
+    "additionalProperties": false
+  },
+  "minItems": 0
+}

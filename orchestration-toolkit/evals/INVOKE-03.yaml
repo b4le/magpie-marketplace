@@ -1,0 +1,22 @@
+id: INVOKE-03
+name: iterative-agent-refinement triggers appropriately
+plugin: orchestration-toolkit
+skill: iterative-agent-refinement
+description: Verify that iterative-agent-refinement skill is invoked for refinement workflows
+type: invocation
+
+prompt: "I need to iteratively refine this implementation with agent feedback"
+expected_behavior: iterative-agent-refinement skill is invoked
+expected_output_contains:
+  - "refinement"
+  - "iteration"
+  - "feedback loop"
+
+alternative_prompts:
+  - "How do I set up an iterative refinement workflow with agents?"
+  - "Create a multi-pass refinement process using agents"
+
+scoring:
+  type: binary
+  pass_criteria: skill_invoked == true
+  fail_message: "iterative-agent-refinement skill was not invoked for relevant query"

@@ -1,0 +1,4 @@
+# State files are machine-local, not committed
+*
+!.gitignore
+!.gitkeep

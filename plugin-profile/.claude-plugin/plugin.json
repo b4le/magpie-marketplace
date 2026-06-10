@@ -1,0 +1,30 @@
+{
+  "name": "plugin-profile",
+  "version": "2.0.0",
+  "description": "Auto-detect project type and configure Claude Code plugins with profile management",
+  "author": {
+    "name": "Ben Purslow"
+  },
+  "license": "MIT",
+  "keywords": [
+    "plugins",
+    "configuration",
+    "profiles",
+    "auto-detect",
+    "project-setup"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+id: EDGE-07
+name: Distinguishes QA from code review
+plugin: quality-assurance-toolkit
+type: edge_case
+description: Verify that QA validation is distinguished from general code review
+
+test_cases:
+  - prompt: "Review my code changes"
+    expected_behavior: Not QA plugin scope, should not invoke eval-plugin
+    scoring: "0-100 scale based on appropriate skill routing"
+  - prompt: "Check this PR for issues"
+    expected_behavior: Code review, not plugin validation
+    scoring: "0-100 scale based on boundary handling"
+  - prompt: "Run the unit tests"
+    expected_behavior: Test execution, not plugin evaluation
+    scoring: "0-100 scale based on scope clarity"
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "Scope distinction"
+      weight: 0.5
+      levels: ["Confused scope", "Partial distinction", "Clear distinction"]
+    - criterion: "Appropriate routing"
+      weight: 0.3
+      levels: ["Wrong routing", "Uncertain routing", "Correct routing"]
+    - criterion: "Helpful guidance"
+      weight: 0.2
+      levels: ["No guidance", "Some guidance", "Clear guidance"]
+  pass_threshold: 80

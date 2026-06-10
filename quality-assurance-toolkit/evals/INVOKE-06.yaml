@@ -1,0 +1,24 @@
+id: INVOKE-06
+name: eval-plugin triggers on validation requests
+plugin: quality-assurance-toolkit
+skill: eval-plugin
+description: Verify that eval-plugin skill is invoked for validation requests
+type: invocation
+
+prompt: "Validate the orchestration-toolkit plugin"
+expected_behavior: eval-plugin skill is invoked
+expected_output_contains:
+  - validation
+  - plugin
+  - structure
+
+alternative_prompts:
+  - "Run evals on this plugin"
+  - "Check if the plugin is correctly structured"
+  - "Evaluate the plugin quality"
+  - "Test the plugin configuration"
+
+scoring:
+  type: binary
+  pass_criteria: skill_invoked == true
+  fail_message: "eval-plugin skill was not invoked for relevant query"

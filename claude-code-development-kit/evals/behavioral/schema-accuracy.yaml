@@ -1,0 +1,160 @@
+# Behavioral eval: schema accuracy
+#
+# Tests that schema examples produce the expected validation outcome.
+# Each test case specifies a schema file (relative to the plugin root),
+# an input object, and whether it should be valid or invalid.
+#
+# These are specification cases—not executable tests. The `expected` field
+# is either "valid" or "invalid". The `reason` field explains why the
+# outcome is expected, so a future test runner can produce useful output.
+
+tests:
+  # --- plugin.schema.json: valid cases ---
+
+  - name: "minimal plugin.json validates"
+    schema: "schemas/plugin.schema.json"
+    input: {"name": "test"}
+    expected: valid
+    reason: >
+      Only `name` is required by the plugin schema. All other fields are
+      optional, so a single-field object is the minimum valid document.
+
+  - name: "full plugin.json with all optional fields validates"
+    schema: "schemas/plugin.schema.json"
+    input:
+      name: "my-plugin"
+      displayName: "My Plugin"
+      version: "1.0.0"
+      description: "A complete plugin manifest for testing purposes"
+      author: "Community"
+      license: "MIT"
+      keywords: ["claude-code", "testing"]
+    expected: valid
+    reason: >
+      All fields present are valid types and values that satisfy the schema's
+      pattern, length, and format constraints.
+
+  - name: "plugin.json with object author validates"
+    schema: "schemas/plugin.schema.json"
+    input:
+      name: "my-plugin"
+      author:
+        name: "Platform Team"
+        email: "platform@example.com"
+    expected: valid
+    reason: >
+      The `author` field accepts either a string or an object with a required
+      `name` field plus optional `email` and `url`.
+
+  - name: "plugin.json with skills array validates"
+    schema: "schemas/plugin.schema.json"
+    input:
+      name: "my-plugin"
+      skills:
+        - name: "my-skill"
+          path: "./skills/my-skill"
+          description: "A skill that does something useful and specific"
+    expected: valid
+    reason: >
+      Skills can be defined as objects with `name` and `path` (both required)
+      and an optional `description`.
+
+  - name: "plugin.json name missing is invalid"
+    schema: "schemas/plugin.schema.json"
+    input: {"version": "1.0.0"}
+    expected: invalid
+    reason: >
+      `name` is the only required field in the plugin schema. An object
+      without it must fail validation.
+
+  - name: "plugin.json with uppercase name is invalid"
+    schema: "schemas/plugin.schema.json"
+    input: {"name": "MyPlugin"}
+    expected: invalid
+    reason: >
+      The `name` pattern requires kebab-case (lowercase letters, digits, and
+      hyphens only). Uppercase letters do not match.
+
+  - name: "plugin.json with unknown property is invalid"
+    schema: "schemas/plugin.schema.json"
+    input:
+      name: "my-plugin"
+      unknownField: "some value"
+    expected: invalid
+    reason: >
+      The plugin schema sets `additionalProperties: false`, so any property
+      not listed in the schema definition is rejected.
+
+  - name: "plugin.json with invalid semver is invalid"
+    schema: "schemas/plugin.schema.json"
+    input:
+      name: "my-plugin"
+      version: "v1.0"
+    expected: invalid
+    reason: >
+      The `version` pattern requires full semver format (x.y.z). A string
+      like "v1.0" does not match and must fail.
+
+  # --- skill-frontmatter.schema.json: valid cases ---
+
+  - name: "minimal skill frontmatter validates"
+    schema: "schemas/skill-frontmatter.schema.json"
+    input:
+      name: "test-skill"
+      description: "A test skill that demonstrates the minimum required fields"
+    expected: valid
+    reason: >
+      Both `name` and `description` are required. The description meets the
+      20-character minimum. All other fields are optional.
+
+  - name: "full skill frontmatter with optional fields validates"
+    schema: "schemas/skill-frontmatter.schema.json"
+    input:
+      name: "authoring-skills"
+      description: "Guide for creating Claude Code skills with YAML frontmatter and best practices"
+      allowed-tools:
+        - "Read"
+        - "Write"
+        - "Edit"
+      version: "1.0.0"
+      created: "2025-11-20"
+      last_updated: "2026-02-28"
+      tags:
+        - "skills"
+        - "authoring"
+    expected: valid
+    reason: >
+      All fields are within their allowed values and types. The allowed-tools
+      list contains only enum values defined by the schema.
+
+  - name: "skill frontmatter with description too short is invalid"
+    schema: "schemas/skill-frontmatter.schema.json"
+    input:
+      name: "test-skill"
+      description: "Too short"
+    expected: invalid
+    reason: >
+      The `description` field enforces a minimum length of 20 characters.
+      "Too short" is 9 characters and must fail validation.
+
+  - name: "skill frontmatter missing description is invalid"
+    schema: "schemas/skill-frontmatter.schema.json"
+    input:
+      name: "my-skill"
+    expected: invalid
+    reason: >
+      Both `name` and `description` are required. An object with only `name`
+      must fail validation.
+
+  - name: "skill frontmatter with invalid tool in allowed-tools is invalid"
+    schema: "schemas/skill-frontmatter.schema.json"
+    input:
+      name: "my-skill"
+      description: "A skill for testing allowed-tools validation against the enum"
+      allowed-tools:
+        - "Read"
+        - "NotARealTool"
+    expected: invalid
+    reason: >
+      The `allowed-tools` items are constrained to an explicit enum. Any
+      value outside that set must fail validation.

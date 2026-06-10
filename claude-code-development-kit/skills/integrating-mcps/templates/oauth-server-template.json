@@ -1,0 +1,181 @@
+{
+  "description": "MCP server configuration with OAuth 2.0 authentication template",
+
+  "mcpServers": {
+    "oauth-example": {
+      "type": "http",
+      "url": "https://api.example.com/mcp/v1",
+
+      // OAuth 2.0 Configuration
+      //
+      // IMPORTANT — Documented vs. implementation fields:
+      // The Claude Code MCP documentation only formally documents two fields in the
+      // "oauth" JSON config object: "clientId" and "callbackPort". Fields such as
+      // "authorizationUrl", "tokenUrl", "scopes", "pkce", "resource", and "audience"
+      // are NOT part of the documented configuration schema — they are shown here for
+      // informational purposes only; support may vary by implementation.
+      //
+      // The recommended approach for pre-configured OAuth is:
+      //   claude mcp add-json my-server \
+      //     '{"type":"http","url":"...","oauth":{"clientId":"...","callbackPort":8080}}' \
+      //     --client-secret
+      //
+      "oauth": {
+        // Documented: OAuth client ID (from provider)
+        "clientId": "${OAUTH_CLIENT_ID}",
+
+        // Documented: Local callback port for OAuth redirect (match your registered redirect URI)
+        "callbackPort": 8080,
+
+        // NOT in documented schema — implementation may vary:
+        // Authorization endpoint (user login)
+        "authorizationUrl": "https://auth.example.com/oauth/authorize",
+
+        // NOT in documented schema — implementation may vary:
+        // Token endpoint (exchange code for token)
+        "tokenUrl": "https://auth.example.com/oauth/token",
+
+        // NOT in documented schema — implementation may vary:
+        // Requested permission scopes
+        "scopes": [
+          "read:data",
+          "write:data",
+          "admin:settings"
+        ],
+
+        // NOT in documented schema — implementation may vary:
+        // Enable PKCE (Proof Key for Code Exchange)
+        "pkce": true,
+
+        // NOT in documented schema — implementation may vary:
+        // RFC 8707 resource indicator
+        "resource": "https://api.example.com",
+
+        // NOT in documented schema — implementation may vary:
+        // Audience claim (RFC 8707)
+        "audience": "https://api.example.com"
+      },
+
+      // Environment variables (keep secrets out of config file)
+      "env": {
+        "OAUTH_CLIENT_ID": "your-client-id-here"
+      }
+    },
+
+    // Example: GitHub OAuth
+    // NOTE: Only "clientId" and "callbackPort" are documented oauth config fields.
+    // Other fields below are not part of the documented schema — implementation may vary.
+    "github-mcp": {
+      "type": "http",
+      "url": "https://api.github.com/mcp",
+      "oauth": {
+        "clientId": "${GITHUB_CLIENT_ID}",
+        "callbackPort": 8080,
+        "authorizationUrl": "https://github.com/login/oauth/authorize",
+        "tokenUrl": "https://github.com/login/oauth/access_token",
+        "scopes": ["repo", "read:user"],
+        "pkce": true
+      },
+      "env": {
+        "GITHUB_CLIENT_ID": "your-github-client-id"
+      }
+    },
+
+    // Example: Google OAuth
+    // NOTE: Only "clientId" and "callbackPort" are documented oauth config fields.
+    // Other fields below are not part of the documented schema — implementation may vary.
+    "google-mcp": {
+      "type": "http",
+      "url": "https://api.google.com/mcp",
+      "oauth": {
+        "clientId": "${GOOGLE_CLIENT_ID}",
+        "callbackPort": 8080,
+        "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+        "tokenUrl": "https://oauth2.googleapis.com/token",
+        "scopes": [
+          "https://www.googleapis.com/auth/drive.readonly",
+          "https://www.googleapis.com/auth/spreadsheets"
+        ],
+        "pkce": true,
+        "audience": "https://www.googleapis.com"
+      },
+      "env": {
+        "GOOGLE_CLIENT_ID": "your-google-client-id.apps.googleusercontent.com"
+      }
+    },
+
+    // Example: Microsoft OAuth (Azure AD)
+    // NOTE: Only "clientId" and "callbackPort" are documented oauth config fields.
+    // Other fields below are not part of the documented schema — implementation may vary.
+    "microsoft-mcp": {
+      "type": "http",
+      "url": "https://graph.microsoft.com/mcp",
+      "oauth": {
+        "clientId": "${MICROSOFT_CLIENT_ID}",
+        "callbackPort": 8080,
+        "authorizationUrl": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "tokenUrl": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "scopes": [
+          "User.Read",
+          "Files.Read.All"
+        ],
+        "pkce": true
+      },
+      "env": {
+        "MICROSOFT_CLIENT_ID": "your-microsoft-client-id"
+      }
+    }
+  },
+
+  // OAuth Flow Notes:
+  //
+  // 1. AUTHORIZATION FLOW:
+  //    - User initiates OAuth in Claude Code
+  //    - Browser opens authorizationUrl with clientId, scopes, PKCE challenge
+  //    - User logs in and grants permissions
+  //    - Provider redirects back with authorization code
+  //    - Claude Code exchanges code for access token at tokenUrl
+  //
+  // 2. PKCE (Proof Key for Code Exchange):
+  //    - Recommended for all OAuth flows (especially public clients)
+  //    - Prevents authorization code interception attacks
+  //    - Code verifier (random string) → Code challenge (SHA256 hash)
+  //    - Set "pkce": true to enable
+  //
+  // 3. RFC 8707 RESOURCE INDICATORS:
+  //    - "resource": Identifies the API server(s) the token can access
+  //    - "audience": Identifies intended recipients of the token
+  //    - Improves security by limiting token scope to specific services
+  //    - Not all providers support these (optional)
+  //
+  // 4. SCOPES:
+  //    - Request minimum permissions needed
+  //    - Provider-specific scope names (check API documentation)
+  //    - User sees requested scopes during authorization
+  //
+  // 5. CLIENT CREDENTIALS:
+  //    - clientId: Public identifier for your OAuth application
+  //    - clientSecret: Supported via the --client-secret CLI flag (prompts with masked input;
+  //      stored securely in your system keychain on macOS or a credentials file — never stored
+  //      in the config file itself). If the provider uses a public OAuth client, omit this flag.
+  //    - Register your OAuth app with the provider first
+  //
+  // 6. TOKEN MANAGEMENT:
+  //    - Claude Code handles token storage securely
+  //    - Tokens automatically refreshed when expired (if refresh token provided)
+  //    - Revoke tokens through provider's OAuth settings
+  //
+  // 7. TROUBLESHOOTING:
+  //    - Invalid client: Check clientId is correct
+  //    - Scope error: Verify scopes are supported by provider
+  //    - Redirect URI mismatch: Check OAuth app configuration
+  //    - PKCE required: Ensure "pkce": true is set
+  //
+  // 8. SECURITY BEST PRACTICES:
+  //    - Always use HTTPS URLs
+  //    - Enable PKCE for protection against code interception
+  //    - Request minimum required scopes
+  //    - Store clientId in environment variables (not hardcoded)
+  //    - Client secrets are passed via --client-secret flag (never stored in config files)
+  //    - Review OAuth app permissions periodically
+}

@@ -1,0 +1,41 @@
+# Workflow State Template
+# Copy to .development/{project}/workflow-state.yaml
+#
+# Tracks overall workflow state across all phases.
+# Update this file as the project progresses.
+
+# Project identifier (use kebab-case)
+project: ""
+
+# When this workflow was created
+created: ""
+
+# Overall status: pending | in_progress | completed | blocked
+status: pending
+
+# Phases in this workflow
+# Add phases based on project type:
+# - Engineering: planning, execution, review
+# - Research: research, analysis, synthesis, recommendations
+# - Custom: whatever makes sense for your project
+phases: []
+  # Example:
+  # - name: planning
+  #   status: pending
+  #   agents: []
+  # - name: execution
+  #   status: pending
+  #   agents: []
+  # - name: review
+  #   status: pending
+  #   agents: []
+
+# Currently active phase
+current_phase: ""
+
+# Team name for cleanup (from TeamCreate)
+# Used by TeamDelete when workflow completes
+team_name: ""
+
+# Optional notes or context
+notes: ""

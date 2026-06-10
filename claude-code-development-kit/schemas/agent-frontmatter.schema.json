@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.ai/schemas/agent-frontmatter.schema.json",
+  "title": "Claude Code Agent Frontmatter",
+  "description": "Schema for validating YAML frontmatter in agent .md files",
+  "type": "object",
+  "required": ["name", "description"],
+  "anyOf": [
+    { "required": ["tools"] },
+    { "required": ["allowed-tools"] }
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Agent identifier (kebab-case). If omitted, the filename (minus .md) is used as the agent name.",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+      "minLength": 1,
+      "maxLength": 64,
+      "examples": ["code-reviewer", "security-auditor", "cloud-architect"]
+    },
+    "description": {
+      "type": "string",
+      "description": "When and why to use this agent - used for agent discovery.",
+      "minLength": 20,
+      "maxLength": 2000,
+      "examples": [
+        "Performs thorough code review focusing on correctness, style, and potential bugs. Use when reviewing pull requests or auditing code quality.",
+        "Audits infrastructure and application code for security vulnerabilities. Use when reviewing authentication flows, input validation, or dependency exposure."
+      ]
+    },
+    "tools": {
+      "description": "Tools this agent is permitted to use. Accepts a YAML array or a comma-separated string of known built-in tool names or MCP tool patterns (mcp__<server>__<tool>).",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Comma-separated list of tool names (parsed from YAML scalar)"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "tools-enum.json#/definitions/toolName"
+          },
+          "uniqueItems": true
+        }
+      ],
+      "examples": [
+        ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
+        "Read, Grep, Glob, WebFetch"
+      ]
+    },
+    "allowed-tools": {
+      "description": "Alias for 'tools' — tools this agent is permitted to use. Some agent files use this hyphenated form. Accepts a YAML array or a comma-separated string.",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Comma-separated list of tool names (parsed from YAML scalar)"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "tools-enum.json#/definitions/toolName"
+          },
+          "uniqueItems": true
+        }
+      ],
+      "examples": [
+        ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
+        "Read, Grep, Glob"
+      ]
+    },
+    "model": {
+      "type": "string",
+      "description": "The model to use when this agent is invoked. Use 'inherit' to use whatever model the parent context is running.",
+      "enum": ["opus", "sonnet", "haiku", "inherit"],
+      "examples": ["opus", "sonnet", "haiku", "inherit"]
+    },
+    "model_rationale": {
+      "type": "string",
+      "description": "Explains why a specific model was chosen for this agent. Recommended whenever 'model' is set to a non-default value.",
+      "examples": [
+        "Uses opus for deep reasoning over complex security vulnerability patterns",
+        "Uses haiku for fast, low-cost summarisation tasks that do not require advanced reasoning"
+      ]
+    },
+    "color": {
+      "type": "string",
+      "description": "Display color for the agent. Used in UI contexts that render agent identity.",
+      "enum": ["blue", "cyan", "green", "yellow", "magenta", "red"],
+      "examples": ["blue", "green", "magenta"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the agent",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.]+)?$",
+      "examples": ["1.0.0", "2.1.0-beta"]
+    },
+    "user-invocable": {
+      "type": "boolean",
+      "description": "Whether this agent can be directly invoked by the user. When false, the agent is only available for model-initiated delegation.",
+      "default": true
+    },
+    "system_prompt": {
+      "type": "string",
+      "description": "The system prompt that defines the agent's behavior, instructions, and persona. This is the core content of YAML-based agent definitions.",
+      "minLength": 1
+    },
+    "maxTurns": {
+      "type": "integer",
+      "description": "Maximum number of agentic turns (API round-trips) before the agent stops. Controls execution budget.",
+      "minimum": 1,
+      "maximum": 100,
+      "examples": [2, 3, 5, 10]
+    },
+    "permissionMode": {
+      "type": "string",
+      "description": "Controls how the agent handles permission prompts.",
+      "enum": ["default", "acceptEdits", "dontAsk", "bypassPermissions", "plan"]
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Hook configurations scoped to this agent's execution. Uses the same event names and handler schema as hooks.json.",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(SessionStart|UserPromptSubmit|PreToolUse|PermissionRequest|PostToolUse|PostToolUseFailure|Notification|SubagentStart|SubagentStop|Stop|TeammateIdle|TaskCompleted|ConfigChange|WorktreeCreate|WorktreeRemove|PreCompact|SessionEnd|Setup|InstructionsLoaded)(\\/[a-zA-Z0-9_*-]+)?$": {
+          "$ref": "hooks.schema.json#/definitions/hookEntryArray"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "code-reviewer",
+      "description": "Performs thorough code review focusing on correctness, maintainability, and potential bugs. Use when reviewing pull requests, auditing code quality, or assessing a new codebase.",
+      "tools": ["Read", "Grep", "Glob"],
+      "model": "sonnet",
+      "model_rationale": "Sonnet balances review quality and speed for typical code review tasks",
+      "color": "blue",
+      "version": "1.0.0",
+      "user-invocable": true
+    },
+    {
+      "name": "security-auditor",
+      "description": "Audits code and infrastructure for security vulnerabilities. Use when reviewing authentication flows, input validation, dependency exposure, or hardcoded secrets.",
+      "allowed-tools": ["Read", "Grep", "Glob", "WebFetch"],
+      "model": "opus",
+      "model_rationale": "Uses opus for deeper reasoning over subtle vulnerability patterns and complex attack surfaces",
+      "color": "red",
+      "version": "1.0.0"
+    },
+    {
+      "name": "doc-writer",
+      "description": "Generates and updates technical documentation from source code and comments. Use when producing API docs, README files, or inline documentation.",
+      "tools": ["Read", "Write", "Edit", "Glob", "Grep"],
+      "color": "green",
+      "version": "1.0.0",
+      "user-invocable": false
+    }
+  ]
+}

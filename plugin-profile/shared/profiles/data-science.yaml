@@ -1,0 +1,7 @@
+name: Data Science
+description: Jupyter notebooks and data analysis workflows
+extends: python
+
+plugins:
+  enable:
+    - data-engineering@claude-code-workflows

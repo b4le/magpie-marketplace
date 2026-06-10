@@ -1,0 +1,107 @@
+{
+    "name": "magpie-marketplace",
+    "description": "A collection of shiny, useful Claude Code plugins",
+    "owner": {
+        "name": "Ben Purslow"
+    },
+    "plugins": [
+        {
+            "name": "archaeology",
+            "source": "./archaeology",
+            "description": "Dig through Claude Code session history — survey projects, extract domain patterns, analyse workstyles, and conserve narrative artifacts.",
+            "version": "1.4.0",
+            "tags": ["archaeology", "history", "patterns", "survey", "workstyle", "conservation", "excavation", "dig", "conserve", "nuggets", "spelunk"]
+        },
+        {
+            "name": "unicode-library",
+            "source": "./unicode-library",
+            "description": "Curated, tested Unicode character library for CLI visual design. The reference standard for branded terminal output in Claude Code skills, commands, and agents.",
+            "version": "1.0.0",
+            "tags": ["unicode", "characters", "terminal", "branding", "cli", "design-system", "visual"]
+        },
+        {
+            "name": "claude-code-development-kit",
+            "source": "./claude-code-development-kit",
+            "description": "Complete toolkit for building Claude Code extensions - skills, commands, plugins, and supporting infrastructure. Includes guides for skill authoring, prompt engineering, command creation, plugin development, and memory management.",
+            "version": "2.1.0",
+            "tags": ["claude-code", "skills", "commands", "plugins", "development", "authoring"]
+        },
+        {
+            "name": "expert-review",
+            "source": "./expert-review",
+            "description": "Spawn expert sub-agents to review, iterate, and improve work at checkpoints. Supports parallel expert reviews with conflict resolution via domain precedence.",
+            "version": "1.2.0",
+            "tags": ["review", "agents", "orchestration", "code-quality", "multi-agent", "code-review", "worktree"]
+        },
+        {
+            "name": "iterative-usability",
+            "source": "./iterative-usability",
+            "description": "Agents that improve how Claude Code explores codebases and researches topics — writing persistent findings to disk instead of bloating the main context window.",
+            "version": "1.1.0",
+            "tags": ["exploration", "research", "context-management", "dual-return", "agents", "web-research", "codebase-exploration"]
+        },
+        {
+            "name": "knowledge-harvester",
+            "source": "./knowledge-harvester",
+            "description": "Multi-agent knowledge harvesting, validation, and synthesis from multiple sources",
+            "version": "0.1.0",
+            "tags": ["knowledge", "harvesting", "orchestration", "synthesis", "multi-agent"]
+        },
+        {
+            "name": "mode-plugin",
+            "source": "./mode-plugin",
+            "description": "Persistent interaction modes for Claude Code responses - creative brainstorming, challenger stress-testing, and teaching explanations.",
+            "version": "1.0.0",
+            "tags": ["output-styles", "modes", "creative", "challenger", "teaching", "brainstorming"]
+        },
+        {
+            "name": "gen-plugin",
+            "source": "./gen-plugin",
+            "description": "One-shot artifact generators for different output formats - executive briefs, technical deep dives, and talking points.",
+            "version": "1.0.0",
+            "tags": ["output-styles", "generators", "exec-brief", "tech-deep-dive", "talking-points", "artifacts"]
+        },
+        {
+            "name": "quality-assurance-toolkit",
+            "source": "./quality-assurance-toolkit",
+            "description": "Validation and quality assurance tools for plugins and skills",
+            "version": "2.0.0",
+            "tags": ["validation", "quality", "plugins", "skills", "eval"]
+        },
+        {
+            "name": "orchestration-toolkit",
+            "source": "./orchestration-toolkit",
+            "description": "Composable pipeline for task decomposition and parallel agent execution. Includes decompose skill, orchestrate command, fan-out/team dispatch, and agent coordination patterns.",
+            "version": "3.0.0",
+            "tags": ["orchestration", "decompose", "pipeline", "agents", "teams", "workflows", "multi-agent", "fan-out", "dispatch"]
+        },
+        {
+            "name": "plugin-profile",
+            "source": "./plugin-profile",
+            "description": "Auto-detect project type and configure Claude Code plugins with profile management",
+            "version": "2.0.0",
+            "tags": ["plugins", "configuration", "profiles", "auto-detect", "project-setup"]
+        },
+        {
+            "name": "session-budget",
+            "source": "./session-budget",
+            "description": "Scope estimator that scores tasks by complexity, caps sessions at ~8 points, and recommends splitting work across sessions when overloaded.",
+            "version": "1.2.0",
+            "tags": ["session", "budget", "scope", "complexity", "planning", "productivity"]
+        },
+        {
+            "name": "session-autopilot",
+            "source": "./session-autopilot",
+            "description": "Automatic session continuity — handoff on exit, checkpoint on compact, resume on start.",
+            "version": "0.1.0",
+            "tags": ["session", "handoff", "resume", "checkpoint", "continuity", "autopilot"]
+        },
+        {
+            "name": "todo-system",
+            "source": "./todo-system",
+            "description": "Portable todo management with paired session-launch prompts, category folders, modular gates, and auto-capture.",
+            "version": "1.0.0",
+            "tags": ["todo", "tasks", "prompts", "session-launch", "productivity", "gates", "workflow", "project-management"]
+        }
+    ]
+}

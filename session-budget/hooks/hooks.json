@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PLUGIN_ROOT/hooks/scripts/session-start.sh\"",
+            "timeout": 3,
+            "statusMessage": "Checking session budget..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if the user's message contains planning language — phrases like \"plan this session\", \"scope check\", \"session budget\", \"is this too much\", \"how should I split\", \"how long will this take\", \"can we fit this in\", \"what's the complexity\", \"estimate this\", \"how many sessions\", or similar intent to scope or plan work. If planning language is detected, emit: {\"systemMessage\": \"The session-budget skill is available to help scope and plan this session. You can score tasks by complexity (simple=1, medium=2, complex=3), cap sessions at ~8 points per agent, split large plans across sessions with handoffs, and front-load critical work. Invoke the skill by suggesting a complexity budget if the user is planning a multi-step session.\"}. If no planning language is detected, emit: {}"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PLUGIN_ROOT/hooks/scripts/budget-tracker.sh\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

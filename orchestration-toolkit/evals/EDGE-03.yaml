@@ -1,0 +1,30 @@
+id: EDGE-03
+name: Simple tasks rejected for orchestration
+plugin: orchestration-toolkit
+type: edge_case
+description: Verify that simple tasks are not over-engineered with orchestration
+
+test_cases:
+  - prompt: "Fix this typo in the README"
+    expected_behavior: Direct execution recommended, not orchestration
+    scoring: "0-100 scale based on appropriateness of response"
+  - prompt: "Run the tests"
+    expected_behavior: Direct execution without suggesting agents
+    scoring: "0-100 scale based on simplicity of approach"
+  - prompt: "Update the version number"
+    expected_behavior: No suggestion to use multi-agent workflows
+    scoring: "0-100 scale based on avoiding over-engineering"
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "Avoids over-engineering"
+      weight: 0.5
+      levels: ["Suggests agents for simple task", "Mixed approach", "Recommends direct execution"]
+    - criterion: "Task appropriateness assessment"
+      weight: 0.3
+      levels: ["No assessment", "Basic assessment", "Clear assessment"]
+    - criterion: "Helpful guidance"
+      weight: 0.2
+      levels: ["Unhelpful", "Somewhat helpful", "Helpful"]
+  pass_threshold: 80

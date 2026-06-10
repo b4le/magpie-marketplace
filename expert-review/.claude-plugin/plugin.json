@@ -1,0 +1,18 @@
+{
+  "name": "expert-review",
+  "version": "1.2.0",
+  "description": "Spawn expert sub-agents to review, iterate, and improve work at checkpoints. Supports parallel expert reviews with conflict resolution via domain precedence.",
+  "author": {
+    "name": "Ben Purslow"
+  },
+  "license": "MIT",
+  "keywords": [
+    "review",
+    "agents",
+    "orchestration",
+    "code-quality",
+    "multi-agent",
+    "code-review",
+    "worktree"
+  ]
+}

@@ -1,0 +1,21 @@
+id: STRUCT-02
+name: orchestration-toolkit plugin configuration
+plugin: orchestration-toolkit
+type: structure
+description: Validate plugin.json structure and all skill metadata files
+
+checks:
+  - file_exists: ".claude-plugin/plugin.json"
+  - file_valid_json: ".claude-plugin/plugin.json"
+  - skill_count: 4
+  - skill_files_present:
+    - "skills/developing-with-agent-teams/SKILL.md"
+    - "skills/orchestration-guide/SKILL.md"
+    - "skills/iterative-agent-refinement/SKILL.md"
+    - "skills/multi-agent-workflows/SKILL.md"
+
+validation_script: "./validate-structure.sh"
+
+scoring:
+  type: binary
+  pass_criteria: all_checks_pass == true

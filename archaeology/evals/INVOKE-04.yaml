@@ -1,0 +1,28 @@
+id: INVOKE-04
+name: archaeology excavation mode invocation
+plugin: archaeology
+skill: archaeology
+description: Verify excavation mode triggers correctly including dry-run and concurrency flags
+type: invocation
+
+prompt: "/archaeology excavation"
+expected_behavior: |
+  - Skill is invoked and init banner is displayed with excavation sigil (✦)
+  - Excavation workflow executes cross-project portfolio scan
+  - Projects are discovered, each surveyed, and portfolio report generated
+  - --dry-run flag shows projects that would be scanned without running surveys
+  - --max-concurrent flag overrides default parallelism of 3
+
+alternative_prompts:
+  - "/archaeology excavation --dry-run"
+  - "/archaeology excavation --max-concurrent 5"
+  - "/archaeology excavation --scan-paths \"~/Work,~/Side\""
+
+expected_output_contains:
+  - "project"
+  - "portfolio"
+
+scoring:
+  type: binary
+  pass_criteria: skill_invoked == true
+  fail_message: "Excavation mode did not trigger or produced unexpected output"

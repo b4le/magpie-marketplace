@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://claude.ai/schemas/output-style-frontmatter.schema.json",
+  "title": "Claude Code Output Style Frontmatter",
+  "description": "Schema for validating YAML frontmatter in output style .md files",
+  "type": "object",
+  "required": [],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Style identifier (kebab-case). Optional — if omitted, the filename (minus .md) serves as the style name.",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+      "minLength": 1,
+      "maxLength": 64,
+      "examples": ["executive-brief", "tech-deep-dive", "analytical-documentation"]
+    },
+    "description": {
+      "type": "string",
+      "description": "When and why to use this style — used for Claude's style discovery and selection.",
+      "maxLength": 500,
+      "examples": [
+        "Structured analysis and documentation style with critique, optimization, and stakeholder alignment focus",
+        "Concise executive-facing style. Use when producing summaries, status updates, or decision briefs for senior stakeholders."
+      ]
+    },
+    "keep-coding-instructions": {
+      "type": "boolean",
+      "description": "Whether to retain the default coding instructions when this style is active. Set to false to suppress coding-specific directives in non-engineering contexts.",
+      "default": true
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the output style.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.]+)?$",
+      "examples": ["1.0.0", "2.1.0-beta"]
+    },
+    "author": {
+      "type": "string",
+      "description": "Output style author name.",
+      "minLength": 1,
+      "maxLength": 100,
+      "examples": ["Platform Team", "Community", "Content Guild"]
+    }
+  },
+  "examples": [
+    {
+      "name": "executive-brief",
+      "description": "Concise executive-facing style. Use when producing summaries, status updates, or decision briefs for senior stakeholders.",
+      "keep-coding-instructions": false,
+      "version": "1.0.0",
+      "author": "Platform Team"
+    },
+    {
+      "name": "analytical-documentation",
+      "description": "Structured analysis and documentation style with critique, optimization, and stakeholder alignment focus",
+      "keep-coding-instructions": true,
+      "version": "1.2.0"
+    },
+    {
+      "description": "Step-by-step tutorial style optimised for onboarding. Use when writing guides, walkthroughs, or how-to documents."
+    }
+  ]
+}

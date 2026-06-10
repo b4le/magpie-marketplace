@@ -1,0 +1,7 @@
+{
+    "description": "Plugins exclusive to this marketplace that are not synced to other sources",
+    "plugins": [
+        "archaeology",
+        "unicode-library"
+    ]
+}

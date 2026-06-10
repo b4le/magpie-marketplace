@@ -1,0 +1,16 @@
+{
+  "name": "knowledge-harvester",
+  "version": "0.1.0",
+  "description": "Multi-agent knowledge harvesting, validation, and synthesis from multiple sources",
+  "author": {
+    "name": "Ben Purslow"
+  },
+  "license": "MIT",
+  "keywords": [
+    "knowledge",
+    "harvesting",
+    "orchestration",
+    "synthesis",
+    "multi-agent"
+  ]
+}

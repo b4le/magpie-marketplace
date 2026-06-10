@@ -1,0 +1,11 @@
+{
+  "name": "orchestration-toolkit",
+  "version": "3.0.0",
+  "description": "Composable pipeline for task decomposition and parallel agent execution. Includes decompose skill, orchestrate command, fan-out/team dispatch, and agent coordination patterns.",
+  "author": { "name": "Ben Purslow" },
+  "license": "MIT",
+  "keywords": [
+    "orchestration", "decompose", "pipeline", "agents", "teams",
+    "workflows", "multi-agent", "fan-out", "dispatch"
+  ]
+}

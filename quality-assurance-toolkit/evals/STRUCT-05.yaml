@@ -1,0 +1,18 @@
+id: STRUCT-05
+name: quality-assurance-toolkit plugin configuration
+plugin: quality-assurance-toolkit
+type: structure
+description: Validate plugin.json structure and all skill metadata files
+
+checks:
+  - file_exists: ".claude-plugin/plugin.json"
+  - file_valid_json: ".claude-plugin/plugin.json"
+  - skill_count: 1
+  - skill_files_present:
+    - "skills/eval-plugin/SKILL.md"
+
+validation_script: "./validate-structure.sh"
+
+scoring:
+  type: binary
+  pass_criteria: all_checks_pass == true

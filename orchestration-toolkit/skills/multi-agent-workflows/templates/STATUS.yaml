@@ -1,0 +1,290 @@
+---
+# Phase Status Template
+# Location: .development/workflows/{workflow-id}/active/{phase}/STATUS.yaml
+# Purpose: Track current state of phase and active agents
+
+phase: REPLACE_WITH_PHASE_NAME  # planning | research | design | execution | review
+status: pending                  # pending | in-progress | needs-input | completed | failed
+last_updated: REPLACE_WITH_TIMESTAMP  # YYYY-MM-DDTHH:MM:SSZ
+started_at: null
+completed_at: null
+
+# Active agents currently working in this phase
+active_agents: []
+# Example:
+# - id: agent-001
+#   topic: requirements-analysis
+#   status: in-progress
+#   started_at: 2025-11-24T10:15:00Z
+#   updated_at: 2025-11-24T10:45:00Z
+#   output_location: active/planning/agent-001-requirements.md
+#   estimated_completion: null
+
+# Completed agents in this phase
+completed_agents: []
+# Example:
+# - id: agent-001
+#   topic: requirements-analysis
+#   status: completed
+#   started_at: 2025-11-24T10:15:00Z
+#   completed_at: 2025-11-24T10:45:00Z
+#   tokens_used: 12500
+#   output_paths:
+#     - active/planning/agent-001-requirements.md
+
+# Failed agents (encountered errors)
+failed_agents: []
+# Example:
+# - id: agent-002
+#   topic: architecture-design
+#   status: failed
+#   started_at: 2025-11-24T11:00:00Z
+#   failed_at: 2025-11-24T11:15:00Z
+#   error: "Cannot access database schema files"
+#   recovery_action: "Provide database access or mock schema"
+
+# Questions pending orchestrator input
+questions_pending: []
+# Example:
+# - question: "Should we use REST or GraphQL?"
+#   asked_by: agent-002
+#   asked_at: 2025-11-24T11:00:00Z
+#   priority: high
+#   blocking: true
+#   context: "Both viable, REST simpler but GraphQL more flexible"
+#   options:
+#     - REST
+#     - GraphQL
+#     - Both
+#   recommendation: REST
+
+# Questions resolved
+questions_resolved: []
+# Example:
+# - question: "Should we use REST or GraphQL?"
+#   answer: "REST for simplicity"
+#   answered_by: orchestrator
+#   answered_at: 2025-11-24T11:15:00Z
+#   asked_by: agent-002
+
+# Metrics for this phase
+metrics:
+  agents_launched: 0
+  agents_completed: 0
+  agents_failed: 0
+  total_tokens_used: 0
+  token_budget: 50000              # Total budget allocated for phase
+  token_budget_remaining: 50000
+  progress_percent: 0              # 0-100 based on completed vs total expected agents
+
+# Blockers and issues
+blockers: []
+# Example:
+# - description: "Waiting for database schema access"
+#   severity: high
+#   blocking_agents: [agent-002]
+#   reported_at: 2025-11-24T11:15:00Z
+#   resolved: false
+#   resolution: null
+#   resolved_at: null
+
+# Signal files (existence indicates status)
+# Orchestrator should create/delete these files based on status:
+# - NEEDS-INPUT.md exists when questions_pending is not empty
+# - BLOCKED.md exists when blockers exist with severity=high
+# - COMPLETED.md exists when status=completed
+signal_files:
+  needs_input: false    # NEEDS-INPUT.md exists
+  blocked: false        # BLOCKED.md exists
+  completed: false      # COMPLETED.md exists
+
+# Phase completion criteria
+completion_criteria:
+  all_agents_finished: false      # All active_agents moved to completed_agents
+  no_questions_pending: true      # questions_pending is empty
+  no_critical_blockers: true      # No blockers with severity=critical or high
+  outputs_validated: false        # Orchestrator reviewed and validated outputs
+  within_token_budget: true       # total_tokens_used <= token_budget * 1.2 (20% overage OK)
+
+# Notes and observations
+notes: []
+# Example:
+# - "Agent-001 completed faster than expected (30 min vs 60 min estimated)"
+# - "Token usage higher than budgeted due to complex requirements"
+
+---
+
+# Status Management Guide
+
+## Update Triggers
+
+Update this STATUS.yaml when:
+1. **Agent starts**: Add to `active_agents`, update `started_at`
+2. **Agent completes**: Move from `active_agents` to `completed_agents`, update `completed_at`, `tokens_used`
+3. **Agent fails**: Move to `failed_agents`, record error
+4. **Question asked**: Add to `questions_pending`
+5. **Question answered**: Move from `questions_pending` to `questions_resolved`
+6. **Blocker identified**: Add to `blockers`
+7. **Blocker resolved**: Update blocker `resolved: true`, set `resolved_at`
+8. **Phase completes**: Set `status: completed`, `completed_at`
+
+## Status Values
+
+**Phase Status**:
+- `pending` - Phase not started yet
+- `in-progress` - One or more agents actively working
+- `needs-input` - One or more agents blocked on orchestrator decision
+- `completed` - All agents finished, outputs validated
+- `failed` - Phase failed due to unrecoverable errors
+
+**Agent Status**:
+- `in-progress` - Agent currently executing
+- `completed` - Agent finished successfully
+- `failed` - Agent encountered unrecoverable error
+- `needs-input` - Agent blocked on question/decision
+
+## Orchestrator Actions Based on Status
+
+**When `status: needs-input`**:
+1. Read `questions_pending`
+2. Decide answers (or ask user via AskUserQuestion)
+3. Move questions to `questions_resolved` with answers
+4. Pass answers to blocked agents via `questions_answered` in protocol
+5. Update `status: in-progress` when agents can resume
+
+**When `status: completed`**:
+1. Verify `completion_criteria` all true
+2. Launch cleanup agent to archive phase
+3. Update workflow-state.yaml
+4. Transition to next phase
+
+**When `status: failed`**:
+1. Review `failed_agents` for errors
+2. Determine recovery action
+3. Either retry agents or escalate to user
+
+## Signal Files
+
+Create these files in phase folder to signal status visually:
+
+**NEEDS-INPUT.md** (create when questions pending):
+```markdown
+# Input Required
+
+This phase is blocked pending orchestrator decisions.
+
+**Questions Pending**: [count from questions_pending]
+
+See STATUS.yaml `questions_pending` for details.
+```
+
+**BLOCKED.md** (create when high-severity blockers exist):
+```markdown
+# Phase Blocked
+
+Critical blockers preventing progress.
+
+**Blockers**: [count from blockers where severity=high]
+
+See STATUS.yaml `blockers` for details.
+```
+
+**COMPLETED.md** (create when phase completes):
+```markdown
+# Phase Complete
+
+All agents finished successfully.
+
+**Agents Completed**: [count from completed_agents]
+**Total Tokens**: [total_tokens_used]
+
+Ready for archival.
+```
+
+## Metrics Calculation
+
+**progress_percent**:
+```
+(agents_completed / expected_total_agents) * 100
+```
+
+**token_budget_remaining**:
+```
+token_budget - total_tokens_used
+```
+
+**within_token_budget**:
+```
+total_tokens_used <= (token_budget * 1.2)  # 20% overage acceptable
+```
+
+## Example Workflow
+
+### 1. Phase Start
+```yaml
+phase: planning
+status: in-progress
+started_at: 2025-11-24T10:00:00Z
+active_agents:
+  - id: agent-001
+    topic: requirements
+    status: in-progress
+    started_at: 2025-11-24T10:00:00Z
+metrics:
+  agents_launched: 1
+```
+
+### 2. Agent Completes
+```yaml
+active_agents: []
+completed_agents:
+  - id: agent-001
+    topic: requirements
+    status: completed
+    tokens_used: 12500
+    output_paths:
+      - active/planning/agent-001-requirements.md
+metrics:
+  agents_completed: 1
+  total_tokens_used: 12500
+  progress_percent: 50  # If 2 agents expected
+```
+
+### 3. Agent Needs Input
+```yaml
+status: needs-input
+active_agents:
+  - id: agent-002
+    topic: architecture
+    status: needs-input
+questions_pending:
+  - question: "REST or GraphQL?"
+    asked_by: agent-002
+    blocking: true
+signal_files:
+  needs_input: true  # Create NEEDS-INPUT.md
+```
+
+### 4. Phase Completes
+```yaml
+status: completed
+completed_at: 2025-11-24T12:30:00Z
+completed_agents:
+  - id: agent-001
+    ...
+  - id: agent-002
+    ...
+completion_criteria:
+  all_agents_finished: true
+  no_questions_pending: true
+  no_critical_blockers: true
+  outputs_validated: true
+  within_token_budget: true
+signal_files:
+  completed: true  # Create COMPLETED.md
+```
+
+---
+
+**Template Version**: 1.0.0
+**Last Updated**: 2025-11-24

@@ -1,0 +1,28 @@
+id: INVOKE-03
+name: archaeology conserve mode invocation
+plugin: archaeology
+skill: archaeology
+description: Verify conserve mode triggers correctly including no-export variant
+type: invocation
+
+prompt: "/archaeology conserve"
+expected_behavior: |
+  - Skill is invoked and init banner is displayed with conserve sigil (◇)
+  - Conservation workflow executes
+  - Narrative artifacts are extracted and written as art-NNN.md files
+  - exhibition.md is generated summarising artifacts
+  - --no-export flag suppresses write to central work-log
+
+alternative_prompts:
+  - "/archaeology conserve \"My Project\""
+  - "/archaeology conserve --no-export"
+  - "preserve artifacts for this project"
+
+expected_output_contains:
+  - "artifact"
+  - "conserve"
+
+scoring:
+  type: binary
+  pass_criteria: skill_invoked == true
+  fail_message: "Conserve mode did not trigger or produced unexpected output"

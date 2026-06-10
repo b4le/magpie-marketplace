@@ -1,0 +1,104 @@
+---
+# Phase Status - Initial State (Before Agent-001)
+# This shows STATUS.yaml when planning phase starts
+
+phase: planning
+status: pending
+last_updated: 2025-11-24T14:00:00Z
+started_at: null
+completed_at: null
+
+# Active agents currently working in this phase
+active_agents: []
+
+# Completed agents in this phase
+completed_agents: []
+
+# Failed agents (encountered errors)
+failed_agents: []
+
+# Questions pending orchestrator input
+questions_pending: []
+
+# Questions resolved
+questions_resolved: []
+
+# Metrics for this phase
+metrics:
+  agents_launched: 0
+  agents_completed: 0
+  agents_failed: 0
+  total_tokens_used: 0
+  token_budget: 50000
+  token_budget_remaining: 50000
+  progress_percent: 0
+
+# Blockers and issues
+blockers: []
+
+# Signal files (existence indicates status)
+signal_files:
+  needs_input: false
+  blocked: false
+  completed: false
+
+# Phase completion criteria
+completion_criteria:
+  all_agents_finished: false
+  no_questions_pending: true
+  no_critical_blockers: true
+  outputs_validated: false
+  within_token_budget: true
+
+# Notes and observations
+notes: []
+
+---
+
+# === STATE 2: After Agent-001 Completes ===
+# (This would replace the above in the actual file)
+
+# phase: planning
+# status: completed
+# last_updated: 2025-11-24T14:45:00Z
+# started_at: 2025-11-24T14:15:00Z
+# completed_at: 2025-11-24T14:45:00Z
+
+# completed_agents:
+#   - id: agent-001
+#     topic: requirements-analysis
+#     status: completed
+#     started_at: 2025-11-24T14:15:00Z
+#     completed_at: 2025-11-24T14:45:00Z
+#     tokens_used: 12500
+#     output_paths:
+#       - active/planning/agent-001-requirements.md
+
+# questions_resolved:
+#   - question: "How long should password reset tokens remain valid?"
+#     answer: "1 hour for security best practices"
+#     answered_by: orchestrator
+#     answered_at: 2025-11-24T14:30:00Z
+#     asked_by: agent-001
+
+# metrics:
+#   agents_launched: 1
+#   agents_completed: 1
+#   total_tokens_used: 12500
+#   token_budget_remaining: 37500
+#   progress_percent: 100
+
+# completion_criteria:
+#   all_agents_finished: true
+#   no_questions_pending: true
+#   no_critical_blockers: true
+#   outputs_validated: true
+#   within_token_budget: true
+
+# signal_files:
+#   completed: true
+
+# notes:
+#   - "Agent-001 completed requirements analysis in 30 minutes"
+#   - "Token usage within budget (25% of allocated)"
+#   - "Ready for archival and transition to implementation"

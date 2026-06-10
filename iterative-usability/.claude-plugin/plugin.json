@@ -1,0 +1,8 @@
+{
+  "name": "iterative-usability",
+  "version": "1.1.0",
+  "description": "Agents that improve how Claude Code explores codebases and researches topics — writing persistent findings to disk instead of bloating the main context window.",
+  "author": { "name": "Ben Purslow" },
+  "license": "MIT",
+  "keywords": ["exploration", "research", "context-management", "dual-return", "agents", "web-research", "codebase-exploration"]
+}

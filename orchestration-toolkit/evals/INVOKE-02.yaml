@@ -1,0 +1,23 @@
+id: INVOKE-02
+name: orchestration-guide triggers on delegation queries
+plugin: orchestration-toolkit
+skill: orchestration-guide
+description: Verify that orchestration-guide skill is invoked when appropriate
+type: invocation
+
+prompt: "How should I delegate this complex task to agents?"
+expected_behavior: orchestration-guide skill is invoked
+expected_output_contains:
+  - "decision framework"
+  - "subagents"
+  - "agent teams"
+
+alternative_prompts:
+  - "Should I use subagents or agent teams for this?"
+  - "Help me decide how to orchestrate this work"
+  - "What orchestration pattern should I use?"
+
+scoring:
+  type: binary
+  pass_criteria: skill_invoked == true
+  fail_message: "orchestration-guide skill was not invoked for relevant query"

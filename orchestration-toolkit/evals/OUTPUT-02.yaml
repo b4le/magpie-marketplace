@@ -1,0 +1,33 @@
+id: OUTPUT-02
+name: orchestration-guide provides phase-structured output
+plugin: orchestration-toolkit
+skill: orchestration-guide
+type: output_quality
+description: Verify that orchestration guidance includes decomposed phases and coordination patterns
+
+prompts:
+  - context: "complex feature development"
+    prompt: "Help me orchestrate a multi-agent workflow for building a new feature"
+    expected_contains:
+      - decomposed phases or numbered steps
+      - agent role definitions
+      - coordination patterns
+      - task dependencies
+      - phase sequencing
+
+scoring:
+  type: rubric
+  rubric:
+    - criterion: "Phase decomposition clarity"
+      weight: 0.3
+      levels: ["No decomposition", "Unclear phases", "Clear phase boundaries"]
+    - criterion: "Agent role definitions"
+      weight: 0.25
+      levels: ["No roles", "Vague roles", "Well-defined roles"]
+    - criterion: "Coordination patterns"
+      weight: 0.25
+      levels: ["No patterns", "Basic patterns", "Detailed patterns"]
+    - criterion: "Completeness"
+      weight: 0.2
+      levels: ["Incomplete", "Partially complete", "Complete"]
+  pass_threshold: 70

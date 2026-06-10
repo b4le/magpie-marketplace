@@ -1,0 +1,28 @@
+id: INVOKE-06
+name: archaeology list command invocation
+plugin: archaeology
+skill: archaeology
+description: Verify list command displays available commands and domains
+type: invocation
+
+prompt: "/archaeology list"
+expected_behavior: |
+  - Skill is invoked and init banner is displayed
+  - Commands table is rendered with all modes (survey, list, workstyle, conserve, excavation, domains)
+  - Domains table is rendered with status and description for each domain
+  - No sigils appear in the domains table (sigils are mode-state only)
+
+alternative_prompts:
+  - "what domains does archaeology support"
+  - "show archaeology commands"
+
+expected_output_contains:
+  - "survey"
+  - "workstyle"
+  - "conserve"
+  - "orchestration"
+
+scoring:
+  type: binary
+  pass_criteria: skill_invoked == true
+  fail_message: "List command did not trigger or produced incomplete output"

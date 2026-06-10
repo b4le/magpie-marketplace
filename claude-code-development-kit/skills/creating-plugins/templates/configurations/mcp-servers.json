@@ -1,0 +1,15 @@
+{
+  "servers": {
+    "company-api": {
+      "transport": "http",
+      "url": "https://api.company.com/mcp",
+      "description": "Company internal API access"
+    },
+    "local-db": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["mcp-postgres", "${DATABASE_URL}"],
+      "description": "Local PostgreSQL access"
+    }
+  }
+}

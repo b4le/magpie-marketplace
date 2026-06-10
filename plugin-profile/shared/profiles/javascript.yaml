@@ -1,0 +1,8 @@
+name: JavaScript Development
+description: JavaScript projects with TypeScript LSP for enhanced IDE features
+extends: core
+
+plugins:
+  enable:
+    - typescript-lsp@claude-plugins-official
+    - context7@claude-plugins-official

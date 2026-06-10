@@ -1,0 +1,14 @@
+{
+  "name": "local-dev",
+  "owner": {
+    "name": "Local Developer"
+  },
+  "plugins": [
+    {
+      "name": "my-plugin",
+      "source": "./plugins/my-plugin",
+      "version": "0.1.0",
+      "description": "Local plugin under development"
+    }
+  ]
+}

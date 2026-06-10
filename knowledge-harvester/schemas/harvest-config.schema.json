@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/claude-plugins/knowledge-harvester/schemas/harvest-config.schema.json",
+  "title": "Knowledge Harvester Configuration",
+  "description": "Configuration schema for the knowledge-harvester plugin",
+  "type": "object",
+  "required": ["version", "name", "sources"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version (semver format)",
+      "default": "1.0.0"
+    },
+    "name": {
+      "type": "string",
+      "description": "Unique name for this harvest configuration",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the harvest purpose"
+    },
+    "sources": {
+      "type": "object",
+      "description": "Source configurations for knowledge harvesting",
+      "minProperties": 1,
+      "properties": {
+        "local": {
+          "type": "array",
+          "description": "Local filesystem sources",
+          "items": {
+            "$ref": "#/$defs/localSource"
+          },
+          "minItems": 1
+        },
+        "google_drive": {
+          "type": "array",
+          "description": "Google Drive folder sources",
+          "items": {
+            "$ref": "#/$defs/googleDriveSource"
+          },
+          "minItems": 1
+        },
+        "web": {
+          "type": "array",
+          "description": "Web URL or search sources",
+          "items": {
+            "$ref": "#/$defs/webSource"
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "triage": {
+      "$ref": "#/$defs/triageConfig"
+    },
+    "limits": {
+      "$ref": "#/$defs/limitsConfig"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "localSource": {
+      "type": "object",
+      "description": "Local filesystem source configuration",
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path to the local directory or file (supports ~ expansion)",
+          "minLength": 1
+        },
+        "depth": {
+          "type": "integer",
+          "description": "Maximum directory traversal depth",
+          "minimum": 1,
+          "default": 3
+        },
+        "include": {
+          "type": "array",
+          "description": "Glob patterns to include",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude": {
+          "type": "array",
+          "description": "Glob patterns to exclude",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "googleDriveSource": {
+      "type": "object",
+      "description": "Google Drive source configuration",
+      "required": ["folder_id"],
+      "properties": {
+        "folder_id": {
+          "type": "string",
+          "description": "Google Drive folder ID",
+          "minLength": 1
+        },
+        "export_format": {
+          "type": "string",
+          "description": "Export format for Google Docs",
+          "enum": ["markdown", "html", "plain_text"],
+          "default": "markdown"
+        }
+      },
+      "additionalProperties": false
+    },
+    "webSource": {
+      "type": "object",
+      "description": "Web source configuration - requires either url or search",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "Web URL to fetch",
+          "format": "uri"
+        },
+        "search": {
+          "type": "string",
+          "description": "Search query to find web sources",
+          "minLength": 1
+        }
+      },
+      "oneOf": [
+        { "required": ["url"] },
+        { "required": ["search"] }
+      ],
+      "additionalProperties": false
+    },
+    "triageConfig": {
+      "type": "object",
+      "description": "Configuration for triaging and scoring candidate sources",
+      "properties": {
+        "lenses": {
+          "type": "array",
+          "description": "Scoring lenses to apply to candidates",
+          "items": {
+            "type": "string",
+            "enum": ["relevance", "recency", "authority", "depth", "uniqueness"]
+          },
+          "default": ["relevance"]
+        },
+        "threshold": {
+          "type": "integer",
+          "description": "Minimum score threshold (0-10 scale) for a source to be harvested",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 7
+        },
+        "aggregation": {
+          "type": "string",
+          "description": "How to aggregate multiple lens scores",
+          "enum": ["weighted_average", "minimum", "maximum", "product"],
+          "default": "weighted_average"
+        }
+      },
+      "additionalProperties": false
+    },
+    "limitsConfig": {
+      "type": "object",
+      "description": "Resource limits for the harvest operation",
+      "properties": {
+        "max_candidates": {
+          "type": "integer",
+          "description": "Maximum number of candidate sources to enumerate",
+          "minimum": 1,
+          "default": 100
+        },
+        "max_sources_harvested": {
+          "type": "integer",
+          "description": "Maximum number of sources to actually harvest after triage",
+          "minimum": 1,
+          "default": 20
+        },
+        "max_tokens_per_source": {
+          "type": "integer",
+          "description": "Maximum tokens to extract per source",
+          "minimum": 1,
+          "default": 50000
+        },
+        "timeout_minutes": {
+          "type": "integer",
+          "description": "Maximum time in minutes for the entire harvest operation",
+          "minimum": 1,
+          "default": 30
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
