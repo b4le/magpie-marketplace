@@ -49,7 +49,7 @@ Flow: Authorization Code + PKCE
 - Token management overhead on client side
 
 ### Real-World Example
-**Spotify API**: Uses OAuth 2.0 with PKCE for user authorization, enabling third-party apps to access user data with explicit consent.
+**GitHub API**: Uses OAuth 2.0 with PKCE for user authorization, enabling third-party apps to access user data with explicit consent.
 
 ---
 

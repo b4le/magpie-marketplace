@@ -17,7 +17,7 @@ Spawn expert sub-agents to review, iterate, and improve work at orchestration ch
 ### Via Marketplace
 
 ```bash
-claude plugin install expert-review@content-platform-marketplace
+claude plugin install expert-review@magpie-marketplace
 ```
 
 ### Manual Installation
@@ -127,7 +127,7 @@ If `/expert-review` finds no experts, ensure domain-specific agent plugins are i
 
 ## Contributing
 
-Contributions are welcome. Please open an issue or pull request against the `content-platform-marketplace` repository.
+Contributions are welcome. Please open an issue or pull request against the `magpie-marketplace` repository.
 
 ## License
 

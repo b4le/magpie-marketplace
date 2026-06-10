@@ -1,5 +1,5 @@
 #!/bin/bash
-# validate-marketplace.sh - Master validation script for Content Platform Marketplace
+# validate-marketplace.sh - Master validation script for Magpie Marketplace
 # Orchestrates validation of all plugins and their components
 # Usage: ./validate-marketplace.sh [options]
 # Exit 0 on pass, exit 1 on fail
@@ -117,7 +117,7 @@ print_plugin_header() {
 
 show_help() {
     cat << EOF
-validate-marketplace.sh v${VERSION} - Content Platform Marketplace Validator
+validate-marketplace.sh v${VERSION} - Magpie Marketplace Validator
 
 USAGE:
     ./validate-marketplace.sh [OPTIONS] [MARKETPLACE_ROOT]
@@ -929,7 +929,7 @@ print_summary() {
     local total_failed=$((PLUGINS_FAILED + SKILLS_FAILED + COMMANDS_FAILED + HOOKS_FAILED + STYLES_FAILED + AGENTS_FAILED))
 
     if [[ $total_failed -gt 0 ]]; then
-        echo -e "${RED}${BOLD}✗ Content Platform Marketplace validation FAILED${NC}"
+        echo -e "${RED}${BOLD}✗ Magpie Marketplace validation FAILED${NC}"
         if [[ ${#ERRORS[@]} -gt 0 ]]; then
             echo ""
             echo "Errors:"
@@ -939,7 +939,7 @@ print_summary() {
         fi
         return 1
     elif [[ ${#WARNINGS[@]} -gt 0 ]]; then
-        echo -e "${YELLOW}${BOLD}✓ Content Platform Marketplace validation PASSED WITH WARNINGS${NC}"
+        echo -e "${YELLOW}${BOLD}✓ Magpie Marketplace validation PASSED WITH WARNINGS${NC}"
         echo ""
         echo "Warnings:"
         for warning in "${WARNINGS[@]}"; do
@@ -947,7 +947,7 @@ print_summary() {
         done
         return 0
     else
-        echo -e "${GREEN}${BOLD}✓ Content Platform Marketplace validation PASSED${NC}"
+        echo -e "${GREEN}${BOLD}✓ Magpie Marketplace validation PASSED${NC}"
         return 0
     fi
 }
@@ -1021,7 +1021,7 @@ main() {
 
     if [[ "$JSON_OUTPUT" != "true" ]]; then
         echo ""
-        echo -e "${BOLD}=== Content Platform Marketplace Validation ===${NC}"
+        echo -e "${BOLD}=== Magpie Marketplace Validation ===${NC}"
         echo ""
     fi
 

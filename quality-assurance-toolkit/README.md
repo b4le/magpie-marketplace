@@ -16,7 +16,7 @@ Validation and quality assurance tools for plugins and skills.
 ### Via Marketplace
 
 ```bash
-claude plugin install quality-assurance-toolkit@content-platform-marketplace
+claude plugin install quality-assurance-toolkit@magpie-marketplace
 ```
 
 ### Manual Installation
@@ -26,17 +26,17 @@ Add this plugin to your Claude Code settings (`.claude/settings.json`):
 ```json
 {
   "plugins": [
-    "/path/to/content-platform-marketplace/quality-assurance-toolkit"
+    "/path/to/magpie-marketplace/quality-assurance-toolkit"
   ]
 }
 ```
 
-Or add the marketplace to include all Content Platform plugins:
+Or add the marketplace to include all plugins:
 
 ```json
 {
   "plugins": [
-    "/path/to/content-platform-marketplace"
+    "/path/to/magpie-marketplace"
   ]
 }
 ```

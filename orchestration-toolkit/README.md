@@ -18,7 +18,7 @@ Agent orchestration patterns for Claude Code - subagents, parallel agents, phase
 ### Via Marketplace
 
 ```bash
-claude plugin install orchestration-toolkit@content-platform-marketplace
+claude plugin install orchestration-toolkit@magpie-marketplace
 ```
 
 ### Manual Installation

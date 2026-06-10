@@ -818,7 +818,7 @@ Task({
 ### "MCP tools not available in sub-agent"
 
 **Cause**: Agent was launched with `run_in_background: true` (default or inferred)
-**Impact**: Sub-agents cannot access MCP tools (Groove, Jira, Google Drive, etc.)
+**Impact**: Sub-agents cannot access MCP tools (Jira, Confluence, Google Drive, etc.)
 **Fix**:
 ```javascript
 // Always set run_in_background: false for MCP access

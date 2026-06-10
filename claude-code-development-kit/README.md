@@ -78,16 +78,16 @@ Skills follow a verb-prefix pattern to signal intent at a glance:
 
 ```bash
 # Clone the marketplace repository
-git clone git@<your-marketplace-repo>.git
+git clone git@github.com:your-org/magpie-marketplace.git
 
 # The plugin lives at:
-# content-platform-marketplace/claude-code-development-kit
+# magpie-marketplace/claude-code-development-kit
 
 # Add to your Claude Code settings
 # In ~/.claude/settings.json, add to plugins array:
 {
   "plugins": [
-    "/path/to/content-platform-marketplace/claude-code-development-kit"
+    "/path/to/magpie-marketplace/claude-code-development-kit"
   ]
 }
 ```

@@ -21,7 +21,7 @@ Restart Claude Code after adding.
 
 ## MCP Tools Failing in Agents
 
-**Symptom:** Spawned agents cannot access MCP tools (Groove, Aika, code-search, etc.).
+**Symptom:** Spawned agents cannot access MCP tools (Jira, Confluence, code-search, etc.).
 
 **Causes and solutions:**
 
@@ -30,11 +30,11 @@ Restart Claude Code after adding.
 
 ```python
 # Wrong — orchestrator fetches directly or agent runs in background
-Task(description="Research using Aika...")
+Task(description="Research using Confluence...")
 
 # Correct — foreground sub-agent with dual return
 Task(
-    description="Fetch Aika results, write to local-state/prefetch/{session}/, return summary + path",
+    description="Fetch Confluence results, write to local-state/prefetch/{session}/, return summary + path",
     run_in_background=False
 )
 ```

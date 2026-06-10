@@ -44,7 +44,7 @@ ARGUMENTS:
     agent-path    Path to the agent .md file (e.g., agents/my-agent.md)
 
 EXAMPLES:
-    ./validate-agent.sh ./agents/cocam-advisor.md
+    ./validate-agent.sh ./agents/my-advisor.md
     ./validate-agent.sh /path/to/plugin/agents/my-agent.md
 
 VALIDATION RULES:

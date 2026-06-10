@@ -54,7 +54,7 @@ is_enabled() {
 # Format: "primary|secondary1 secondary2 secondary3"
 declare -a conflict_rules=(
     "superpowers@claude-plugins-official|tdd-workflows@claude-code-workflows debugging-toolkit@claude-code-workflows comprehensive-review@claude-code-workflows"
-    "orchestration-toolkit@content-platform-marketplace|agent-teams@claude-code-workflows agent-orchestration@claude-code-workflows"
+    "orchestration-toolkit@magpie-marketplace|agent-teams@claude-code-workflows agent-orchestration@claude-code-workflows"
 )
 
 # Collect conflicts

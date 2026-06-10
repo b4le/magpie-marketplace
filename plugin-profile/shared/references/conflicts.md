@@ -6,7 +6,7 @@ Known overlapping plugins that can cause confusion. When both are enabled, prefe
 
 | Conflict | Plugins | Resolution |
 |----------|---------|------------|
-| Multi-agent Orchestration | `orchestration-toolkit@content-platform-marketplace` vs `agent-teams@claude-code-workflows` vs `agent-orchestration@claude-code-workflows` | Use `orchestration-toolkit` as primary |
+| Multi-agent Orchestration | `orchestration-toolkit@magpie-marketplace` vs `agent-teams@claude-code-workflows` vs `agent-orchestration@claude-code-workflows` | Use `orchestration-toolkit` as primary |
 | TDD Workflows | `superpowers@claude-plugins-official` vs `tdd-workflows@claude-code-workflows` | `superpowers` includes TDD; disable standalone |
 | Debugging | `superpowers@claude-plugins-official` vs `debugging-toolkit@claude-code-workflows` | `superpowers` includes debugging; disable standalone |
 | Code Review | `superpowers@claude-plugins-official` vs `comprehensive-review@claude-code-workflows` | Use `superpowers` for standard review |
@@ -16,7 +16,7 @@ Known overlapping plugins that can cause confusion. When both are enabled, prefe
 | Conflict | Plugins | Resolution |
 |----------|---------|------------|
 | Code Refactoring | `code-simplifier@claude-plugins-official` vs `code-refactoring@claude-code-workflows` | `code-simplifier` for simplification; `code-refactoring` for legacy modernization |
-| Security | `security-guidance@claude-plugins-official` vs `developing-securely@content-platform-marketplace` vs `security-scanning@claude-code-workflows` | Different aspects; can coexist |
+| Security | `security-guidance@claude-plugins-official` vs `security-scanning@claude-code-workflows` | Different aspects; can coexist |
 
 ## How to Check for Conflicts
 
@@ -56,10 +56,10 @@ conflicts:
   - primary: superpowers@claude-plugins-official
     secondary: comprehensive-review@claude-code-workflows
     severity: high
-  - primary: orchestration-toolkit@content-platform-marketplace
+  - primary: orchestration-toolkit@magpie-marketplace
     secondary: agent-teams@claude-code-workflows
     severity: high
-  - primary: orchestration-toolkit@content-platform-marketplace
+  - primary: orchestration-toolkit@magpie-marketplace
     secondary: agent-orchestration@claude-code-workflows
     severity: high
 ```

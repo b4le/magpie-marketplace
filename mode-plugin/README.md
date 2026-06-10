@@ -17,7 +17,7 @@ Persistent interaction modes that change how Claude responds until explicitly ex
 ### Via Marketplace
 
 ```bash
-claude plugin install mode-plugin@content-platform-marketplace
+claude plugin install mode-plugin@magpie-marketplace
 ```
 
 ### Manual Installation

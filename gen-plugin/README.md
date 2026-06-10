@@ -15,7 +15,7 @@ One-shot artifact generators that produce formatted output for different audienc
 ### Via Marketplace
 
 ```bash
-claude plugin install gen-plugin@content-platform-marketplace
+claude plugin install gen-plugin@magpie-marketplace
 ```
 
 ### Manual Installation

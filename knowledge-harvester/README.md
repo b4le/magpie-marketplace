@@ -47,7 +47,7 @@ Knowledge Harvester is a Claude Code plugin that implements a 6-stage funnel pip
 ### Via Marketplace
 
 ```bash
-claude plugin install knowledge-harvester@content-platform-marketplace
+claude plugin install knowledge-harvester@magpie-marketplace
 ```
 
 ### Manual Installation

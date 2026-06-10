@@ -32,4 +32,4 @@ Before proceeding:
 
 ## Rationale
 
-Research from multi-agent systems (Spotify Honk, PwC audit agents) shows that adding judge verification between pipeline stages can improve end-to-end accuracy by 7x. The key mechanism: agents self-correct ~50% of quality failures when given explicit feedback, and judge vetoes prevent ~25% of bad outputs from propagating to downstream stages.
+Research from multi-agent systems shows that adding judge verification between pipeline stages can improve end-to-end accuracy by 7x. The key mechanism: agents self-correct ~50% of quality failures when given explicit feedback, and judge vetoes prevent ~25% of bad outputs from propagating to downstream stages.

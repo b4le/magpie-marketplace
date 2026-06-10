@@ -63,11 +63,11 @@ When bundling agents in a plugin, document the `tools` requirements clearly. Use
 
 ### MCP Tool Access
 
-Background agents cannot access MCP tools due to known platform bugs (#13254, #21560). MCP tools such as Groove and Aika require foreground execution. When spawning an agent via the Agent tool, set `run_in_background` to `false` to ensure MCP access works:
+Background agents cannot access MCP tools due to known platform bugs (#13254, #21560). MCP tools such as Jira and Confluence require foreground execution. When spawning an agent via the Agent tool, set `run_in_background` to `false` to ensure MCP access works:
 
 ```
 Agent tool — subagent_type: "general-purpose", run_in_background: false
-Prompt: "Use the Groove MCP to look up issue COCAM-1234."
+Prompt: "Use the Jira MCP to look up issue PROJ-1234."
 ```
 
 Global MCP servers (configured in `~/.claude/mcp.json`) work correctly. Project-scoped MCP servers may not work with custom subagent types (#13898).

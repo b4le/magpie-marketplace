@@ -20,3 +20,6 @@ Desktop.ini
 .idea/
 .vscode/
 *.iml
+
+# Runtime state (prefetch data, agent blockers)
+local-state/

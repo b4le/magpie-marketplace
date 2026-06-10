@@ -13,14 +13,14 @@
       "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
       "minLength": 1,
       "maxLength": 100,
-      "examples": ["content-platform-marketplace", "team-tools"]
+      "examples": ["magpie-marketplace", "team-tools"]
     },
     "description": {
       "type": "string",
       "description": "Human-readable description of the marketplace purpose",
       "minLength": 10,
       "maxLength": 500,
-      "examples": ["Content Platform Marketplace for technical documentation and development tools"]
+      "examples": ["Plugin marketplace for development tools and extensions"]
     },
     "owner": {
       "$ref": "#/definitions/owner"
@@ -45,7 +45,7 @@
           "description": "Name of the owner (person, team, or organization)",
           "minLength": 1,
           "maxLength": 100,
-          "examples": ["content-platform", "Platform Engineering"]
+          "examples": ["community", "Platform Engineering"]
         },
         "email": {
           "type": "string",
@@ -151,10 +151,10 @@
   },
   "examples": [
     {
-      "name": "content-platform-marketplace",
-      "description": "Content Platform Marketplace for technical documentation and development tools",
+      "name": "magpie-marketplace",
+      "description": "Plugin marketplace for development tools and extensions",
       "owner": {
-        "name": "content-platform"
+        "name": "community"
       },
       "plugins": [
         {

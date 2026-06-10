@@ -88,4 +88,4 @@ For ad-hoc fan-out that doesn't match a preset, use the Agent tool directly with
 
 ## Rationale
 
-Research from METR benchmarks shows task completion drops from 54% to 37% as orchestration complexity rises. The primary failure modes are specification ambiguity (agents interpret goals differently) and coordination overhead (agents block each other or produce conflicting outputs). The "N agents × 1 item × fixed pipeline" pattern from ccswarm eliminates both by construction. Spotify's Honk pattern validates this in production: deterministic gates between phases catch 25% of errors before they propagate.
+Research from METR benchmarks shows task completion drops from 54% to 37% as orchestration complexity rises. The primary failure modes are specification ambiguity (agents interpret goals differently) and coordination overhead (agents block each other or produce conflicting outputs). The "N agents x 1 item x fixed pipeline" pattern from ccswarm eliminates both by construction. Deterministic gates between phases catch 25% of errors before they propagate.

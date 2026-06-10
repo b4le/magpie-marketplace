@@ -444,7 +444,7 @@ The root node is at `cavern_map.root`. All other tunnel nodes are in `cavern_map
     "children": ["tunnel-silent-refresh", "tunnel-pkce-flow"],
     "nugget_ids": ["nug-001.md", "nug-002.md"],
     "sessions_searched": [
-      "~/.claude/projects/-Users-benpurslow-Developer-workspace-mcp/abc123.jsonl"
+      "~/.claude/projects/-Users-dev-workspace-project/abc123.jsonl"
     ],
     "discovered_at": "2026-03-09T10:14:00Z",
     "last_dug": "2026-03-09T10:22:00Z"
@@ -459,7 +459,7 @@ The root node is at `cavern_map.root`. All other tunnel nodes are in `cavern_map
       "children": [],
       "nugget_ids": ["nug-003.md", "nug-004.md", "nug-005.md"],
       "sessions_searched": [
-        "~/.claude/projects/-Users-benpurslow-Developer-workspace-mcp/def456.jsonl"
+        "~/.claude/projects/-Users-dev-workspace-project/def456.jsonl"
       ],
       "discovered_at": "2026-03-09T10:14:00Z",
       "last_dug": "2026-03-09T10:22:00Z"

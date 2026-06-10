@@ -7,7 +7,7 @@ description: Verify that eval-plugin provides actionable validation output
 
 prompts:
   - context: "plugin validation"
-    prompt: "Validate the cocam-onboarding plugin and show me the results"
+    prompt: "Validate the example-plugin plugin and show me the results"
     expected_contains:
       - pass/fail status for checks
       - specific errors or warnings if any
