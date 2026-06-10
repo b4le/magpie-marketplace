@@ -98,53 +98,58 @@ Dispatch the plugin's `prompt-writer` agent, one agent per todo, fan-out style. 
 ## Complete Example
 
 ```markdown
-# Reply to Alice with meeting debrief — ship by 2026-05-11
+# Write post-incident review for checkout outage — ship by 2026-05-11
 
-Alice messaged on Slack asking for a summary of what happened in the May 9
-project review meeting. She was present but wants written confirmation of the
-key points for her own records. This reply must land today (May 11).
+The payments team needs a post-incident review document for the May 9
+checkout service outage. The on-call engineer has raw notes but no
+structured write-up. This review must be published to the engineering
+wiki by end of day May 11.
 
 ## Context
 
-Alice is a colleague and collaborator. She attended the May 9 meeting with
-Bob (HR) and Charlie (manager) where three topics were discussed:
-1. The migration timeline was extended to June 15.
-2. Charlie acknowledged the resource request verbally but no written
-   confirmation was given.
-3. Bob stated that the restructuring is "business-driven, not personal."
+On May 9, the checkout service experienced a 47-minute outage caused by
+a misconfigured database connection pool after the v2.8 deploy. Three
+areas need to be covered in the review:
+1. The root cause: connection pool max was set to 10 instead of 100
+   in the new config format.
+2. Detection gap: alerting fired at 12 minutes, but the runbook was
+   outdated and pointed to a decommissioned dashboard.
+3. Resolution: the deploy was rolled back at minute 38, and connections
+   recovered by minute 47.
 
-Current state: the user has a draft summary in the project docs but it has
-not been reviewed for tone or accuracy. The Slack thread with Alice has 4
-prior messages, last from her on May 10 asking "can you write up what happened?"
+Current state: the on-call engineer posted raw timeline notes in the
+incident Slack channel. A draft template exists in the project docs but
+has not been filled in. The engineering manager asked for the write-up
+on May 10 in the incident thread.
 
 ## Read First
 
 | Order | Path | Mode |
 |-------|------|------|
-| 1 | `/home/user/acme-project/docs/meetings/2026-05-09-review-meeting.md` | Full read |
-| 2 | `/home/user/acme-project/docs/comms/slack/alice-thread.md` | Last 30 lines |
-| 3 | `/home/user/acme-project/docs/strategy/tone-guide.md` | Full read |
+| 1 | `/home/user/checkout-service/docs/incidents/2026-05-09-timeline.md` | Full read |
+| 2 | `/home/user/checkout-service/docs/incidents/templates/post-incident-template.md` | Full read |
+| 3 | `/home/user/checkout-service/docs/runbooks/checkout-alerting.md` | Lines 1-40 |
 
-Do NOT read: `/home/user/acme-project/docs/legal/counsel-notes.md` (privileged).
+Do NOT read: `/home/user/checkout-service/docs/incidents/internal-pager-logs.md` (contains PII).
 
 ## Task Flow
 
-1. Read the meeting summary and extract the three key decisions.
-2. Read Alice's last Slack messages for tone and context.
-3. Draft a reply (3-4 short paragraphs) that:
-   - Confirms the three decisions without editorialising.
-   - Thanks her for attending.
-   - Notes that written confirmation from HR is still pending.
-4. Apply tone guide constraints (warm but factual, no legal language).
+1. Read the incident timeline and extract the three key areas (root cause, detection, resolution).
+2. Read the post-incident template to understand the required sections.
+3. Draft the review document that:
+   - States the root cause clearly with the specific misconfiguration.
+   - Documents the detection gap and alerting timeline.
+   - Lists the resolution steps and recovery confirmation.
+4. Add an action items section with owners and due dates.
 5. Run review-gate check before writing final output.
-6. Write the final reply to the output path.
+6. Write the final document to the output path.
 
 ## Guardrails
 
-- Do not reference legal counsel or any privileged conversations.
-- Do not include financial figures or equity details.
-- Do not speculate about intent beyond what was stated in the meeting.
-- Tone: warm, collegial, factual. No passive aggression.
+- Do not assign blame to individuals; focus on systemic causes.
+- Do not include customer-identifying information or PII.
+- Do not speculate about impact beyond what was measured during the incident.
+- Tone: factual, blameless, constructive.
 
 ### Gates
 
@@ -157,10 +162,10 @@ review-gate: pre-commit
 
 ## Output Path
 
-`/home/user/acme-project/docs/comms/drafts/alice-reply-2026-05-11.md`
+`/home/user/checkout-service/docs/incidents/reviews/2026-05-09-checkout-outage.md`
 
 ## Success Criterion
 
-A reply ready to paste into Slack that summarises the three meeting decisions
-in Alice's expected tone, with no privileged content.
+A blameless post-incident review covering root cause, detection gap, and
+resolution with concrete action items, ready for wiki publication.
 ```

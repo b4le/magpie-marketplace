@@ -340,7 +340,7 @@ run_validator() {
         return 2
     fi
 
-    local temp_log="${TMPDIR:-/tmp}/validate_$$.log"
+    local temp_log=$(mktemp)
 
     if "$validator_path" "$target" > "$temp_log" 2>&1; then
         rm -f "$temp_log" 2>/dev/null

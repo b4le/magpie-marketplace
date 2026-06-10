@@ -99,7 +99,7 @@ Move completed items to `## Done (last 7 days)` with `[x]` and a `completed:` da
 ## Complete Example
 
 ```markdown
-# Todos — atticus-finch
+# Todos — api-v3-migration
 
 > **Items:** 4 open, 1 done (last 7 days)
 > **Last updated:** 2026-05-12T14:30:00Z
@@ -107,29 +107,29 @@ Move completed items to `## Done (last 7 days)` with `[x]` and a `completed:` da
 
 ## Now
 
-### Legal
+### Endpoints
 
-- [ ] **P1** Draft formal accommodation request `added:2026-05-10` `prompt:legal/formal-accommodation-request.md`
-  Blocked on acceptance email landing; fires as state-transition prompt.
+- [ ] **P1** Update REST endpoints to v3 schema `added:2026-05-10` `prompt:endpoints/v3-schema-update.md`
+  Blocked on OpenAPI spec review; fires as state-transition prompt.
 
 ### Comms
 
-- [ ] **P1** Reply to Stina re meeting debrief `added:2026-05-11` `prompt:comms/stina-reply-2026-05-11.md`
+- [ ] **P1** Notify platform team of deprecation timeline `added:2026-05-11` `prompt:comms/platform-deprecation-notice-2026-05-11.md`
   Date-sensitive, must ship today.
 
 ## Soon
 
-### Evidence
+### Docs
 
-- [ ] **P2** Compile timeline gaps for Q1 `added:2026-05-08` `prompt:evidence/q1-timeline-gaps.md`
-  Three witness statements still outstanding.
+- [ ] **P2** Write migration guide for API consumers `added:2026-05-08` `prompt:docs/consumer-migration-guide.md`
+  Three partner teams still need example payloads.
 
 ## Later
 
-- [ ] **P3** Update Peter Toth on current status `added:2026-05-05` `prompt:update-peter-toth.md`
-  Low-urgency ally update, no deadline.
+- [ ] **P3** Fix flaky integration tests in CI `added:2026-05-05` `prompt:fix-flaky-integration-tests.md`
+  Intermittent timeout in the v2 compatibility suite, no deadline.
 
 ## Done (last 7 days)
 
-- [x] **Prepare union brief** `completed:2026-05-09` `prompt:legal/union-brief.md`
+- [x] **P2** Add v3 request validation middleware `added:2026-05-01` `completed:2026-05-09` `prompt:endpoints/v3-validation-middleware.md`
 ```
