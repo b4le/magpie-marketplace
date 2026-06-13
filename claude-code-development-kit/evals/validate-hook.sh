@@ -632,8 +632,8 @@ if [[ "$SECURITY_ONLY" != "true" ]]; then
     fi
 
     # Variable quoting heuristic
-    QUOTED_VARS=$(grep -oE '"\$[a-zA-Z_][a-zA-Z0-9_]*"|\$\{[a-zA-Z_][a-zA-Z0-9_]*\}' "$HOOK_PATH" | wc -l | tr -d ' ')
-    UNQUOTED_VARS=$(grep -oE '[^"]\$[a-zA-Z_][a-zA-Z0-9_]*[^"}]' "$HOOK_PATH" 2>/dev/null | wc -l | tr -d ' ')
+    QUOTED_VARS=$(grep -oE '"\$[a-zA-Z_][a-zA-Z0-9_]*"|\$\{[a-zA-Z_][a-zA-Z0-9_]*\}' "$HOOK_PATH" 2>/dev/null | wc -l | tr -d ' ' || true)
+    UNQUOTED_VARS=$(grep -nE '[^"'"'"']\$[a-zA-Z_][a-zA-Z0-9_]*[^"'"'"'}]' "$HOOK_PATH" 2>/dev/null | grep -v '\\$' | wc -l | tr -d ' ' || true)
 
     if [[ $QUOTED_VARS -gt 0 ]]; then
         log_info "Found $QUOTED_VARS quoted variable references (good practice)"

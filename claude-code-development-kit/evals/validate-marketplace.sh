@@ -342,7 +342,12 @@ run_validator() {
 
     local temp_log=$(mktemp)
 
-    if "$validator_path" "$target" > "$temp_log" 2>&1; then
+    set +e
+    "$validator_path" "$target" > "$temp_log" 2>&1
+    local validator_exit=$?
+    set -e
+
+    if [[ $validator_exit -eq 0 ]]; then
         rm -f "$temp_log" 2>/dev/null
         return 0
     else
@@ -399,14 +404,14 @@ validate_plugin() {
                 local full_path="$plugin_root/$skill_path"
 
                 if [[ -d "$full_path" ]]; then
-                    ((skills_count++))
-                    ((SKILLS_TOTAL++))
+                    ((++skills_count))
+                    ((++SKILLS_TOTAL))
 
                     if run_validator "validate-skill.sh" "$full_path" "skill"; then
-                        ((skills_pass++))
-                        ((SKILLS_PASSED++))
+                        ((++skills_pass))
+                        ((++SKILLS_PASSED))
                     else
-                        ((SKILLS_FAILED++))
+                        ((++SKILLS_FAILED))
                     fi
                 fi
             done <<< "$skill_paths"
@@ -417,14 +422,14 @@ validate_plugin() {
     if [[ $skills_count -eq 0 && -d "$plugin_root/skills" ]]; then
         for skill_dir in "$plugin_root/skills"/*/; do
             [[ ! -d "$skill_dir" ]] && continue
-            ((skills_count++))
-            ((SKILLS_TOTAL++))
+            ((++skills_count))
+            ((++SKILLS_TOTAL))
 
             if run_validator "validate-skill.sh" "$skill_dir" "skill"; then
-                ((skills_pass++))
-                ((SKILLS_PASSED++))
+                ((++skills_pass))
+                ((++SKILLS_PASSED))
             else
-                ((SKILLS_FAILED++))
+                ((++SKILLS_FAILED))
             fi
         done
     fi
@@ -452,14 +457,14 @@ validate_plugin() {
                 local full_path="$plugin_root/$cmd_path"
 
                 if [[ -f "$full_path" ]]; then
-                    ((commands_count++))
-                    ((COMMANDS_TOTAL++))
+                    ((++commands_count))
+                    ((++COMMANDS_TOTAL))
 
                     if run_validator "validate-command.sh" "$full_path" "command"; then
-                        ((commands_pass++))
-                        ((COMMANDS_PASSED++))
+                        ((++commands_pass))
+                        ((++COMMANDS_PASSED))
                     else
-                        ((COMMANDS_FAILED++))
+                        ((++COMMANDS_FAILED))
                     fi
                 fi
             done <<< "$command_paths"
@@ -470,14 +475,14 @@ validate_plugin() {
     if [[ $commands_count -eq 0 && -d "$plugin_root/commands" ]]; then
         for cmd_file in "$plugin_root/commands"/*.md; do
             [[ ! -f "$cmd_file" ]] && continue
-            ((commands_count++))
-            ((COMMANDS_TOTAL++))
+            ((++commands_count))
+            ((++COMMANDS_TOTAL))
 
             if run_validator "validate-command.sh" "$cmd_file" "command"; then
-                ((commands_pass++))
-                ((COMMANDS_PASSED++))
+                ((++commands_pass))
+                ((++COMMANDS_PASSED))
             else
-                ((COMMANDS_FAILED++))
+                ((++COMMANDS_FAILED))
             fi
         done
     fi
@@ -513,41 +518,40 @@ validate_plugin() {
                 local full_path="$plugin_root/$hook_path"
 
                 if [[ -f "$full_path" ]]; then
-                    ((hooks_count++))
-                    ((HOOKS_TOTAL++))
+                    ((++hooks_count))
+                    ((++HOOKS_TOTAL))
 
                     if run_validator "validate-hook.sh" "$full_path" "hook"; then
-                        ((hooks_pass++))
-                        ((HOOKS_PASSED++))
+                        ((++hooks_pass))
+                        ((++HOOKS_PASSED))
                     else
-                        ((HOOKS_FAILED++))
+                        ((++HOOKS_FAILED))
                     fi
                 fi
             done <<< "$hook_paths"
         fi
     fi
 
-    # Fallback: check hooks/scripts directories
+    # Fallback: check hook files under hooks/. scripts/ is a utility directory
+    # and must not be treated as hook source.
     if [[ $hooks_count -eq 0 ]]; then
-        for hook_dir in "$plugin_root/hooks" "$plugin_root/scripts"; do
-            if [[ -d "$hook_dir" ]]; then
-                for hook_file in "$hook_dir"/*; do
-                    [[ ! -f "$hook_file" ]] && continue
-                    [[ "$hook_file" =~ \.md$ ]] && continue
-                    [[ "$hook_file" =~ \.json$ ]] && continue
+        if [[ -d "$plugin_root/hooks" ]]; then
+            while IFS= read -r hook_file; do
+                [[ -z "$hook_file" ]] && continue
+                [[ "$hook_file" =~ \.md$ ]] && continue
+                [[ "$hook_file" =~ \.json$ ]] && continue
 
-                    ((hooks_count++))
-                    ((HOOKS_TOTAL++))
+                ((++hooks_count))
+                ((++HOOKS_TOTAL))
 
-                    if run_validator "validate-hook.sh" "$hook_file" "hook"; then
-                        ((hooks_pass++))
-                        ((HOOKS_PASSED++))
-                    else
-                        ((HOOKS_FAILED++))
-                    fi
-                done
-            fi
-        done
+                if run_validator "validate-hook.sh" "$hook_file" "hook"; then
+                    ((++hooks_pass))
+                    ((++HOOKS_PASSED))
+                else
+                    ((++HOOKS_FAILED))
+                fi
+            done < <(find "$plugin_root/hooks" -type f | sort)
+        fi
     fi
 
     if [[ $hooks_count -gt 0 ]]; then
@@ -573,14 +577,14 @@ validate_plugin() {
                 local full_path="$plugin_root/$style_path"
 
                 if [[ -f "$full_path" ]]; then
-                    ((styles_count++))
-                    ((STYLES_TOTAL++))
+                    ((++styles_count))
+                    ((++STYLES_TOTAL))
 
                     if run_validator "validate-output-style.sh" "$full_path" "output-style"; then
-                        ((styles_pass++))
-                        ((STYLES_PASSED++))
+                        ((++styles_pass))
+                        ((++STYLES_PASSED))
                     else
-                        ((STYLES_FAILED++))
+                        ((++STYLES_FAILED))
                     fi
                 fi
             done <<< "$style_paths"
@@ -591,14 +595,14 @@ validate_plugin() {
     if [[ $styles_count -eq 0 && -d "$plugin_root/output-styles" ]]; then
         for style_file in "$plugin_root/output-styles"/*.md; do
             [[ ! -f "$style_file" ]] && continue
-            ((styles_count++))
-            ((STYLES_TOTAL++))
+            ((++styles_count))
+            ((++STYLES_TOTAL))
 
             if run_validator "validate-output-style.sh" "$style_file" "output-style"; then
-                ((styles_pass++))
-                ((STYLES_PASSED++))
+                ((++styles_pass))
+                ((++STYLES_PASSED))
             else
-                ((STYLES_FAILED++))
+                ((++STYLES_FAILED))
             fi
         done
     fi
@@ -626,24 +630,24 @@ validate_plugin() {
                 local full_path="$plugin_root/$agent_path"
 
                 if [[ -f "$full_path" || -d "$full_path" ]]; then
-                    ((agents_count++))
-                    ((AGENTS_TOTAL++))
+                    ((++agents_count))
+                    ((++AGENTS_TOTAL))
 
                     # Try validate-agent.sh if it exists
                     if [[ -x "$SCRIPT_DIR/validate-agent.sh" ]]; then
                         if run_validator "validate-agent.sh" "$full_path" "agent"; then
-                            ((agents_pass++))
-                            ((AGENTS_PASSED++))
+                            ((++agents_pass))
+                            ((++AGENTS_PASSED))
                         else
-                            ((AGENTS_FAILED++))
+                            ((++AGENTS_FAILED))
                         fi
                     else
                         # Basic validation: check file exists and has content
                         if [[ -f "$full_path" && -s "$full_path" ]]; then
-                            ((agents_pass++))
-                            ((AGENTS_PASSED++))
+                            ((++agents_pass))
+                            ((++AGENTS_PASSED))
                         else
-                            ((AGENTS_FAILED++))
+                            ((++AGENTS_FAILED))
                         fi
                     fi
                 fi
@@ -655,23 +659,23 @@ validate_plugin() {
     if [[ $agents_count -eq 0 && -d "$plugin_root/agents" ]]; then
         for agent_file in "$plugin_root/agents"/*.md; do
             [[ ! -f "$agent_file" ]] && continue
-            ((agents_count++))
-            ((AGENTS_TOTAL++))
+            ((++agents_count))
+            ((++AGENTS_TOTAL))
 
             if [[ -x "$SCRIPT_DIR/validate-agent.sh" ]]; then
                 if run_validator "validate-agent.sh" "$agent_file" "agent"; then
-                    ((agents_pass++))
-                    ((AGENTS_PASSED++))
+                    ((++agents_pass))
+                    ((++AGENTS_PASSED))
                 else
-                    ((AGENTS_FAILED++))
+                    ((++AGENTS_FAILED))
                 fi
             else
                 # Basic validation: check file exists and has content
                 if [[ -s "$agent_file" ]]; then
-                    ((agents_pass++))
-                    ((AGENTS_PASSED++))
+                    ((++agents_pass))
+                    ((++AGENTS_PASSED))
                 else
-                    ((AGENTS_FAILED++))
+                    ((++AGENTS_FAILED))
                 fi
             fi
         done
@@ -703,7 +707,7 @@ validate_plugin() {
             local declared_skills
             declared_skills=$(declared_paths "skills")
             if [[ -n "$declared_skills" ]]; then
-                ((orphan_checks_run++))
+                ((++orphan_checks_run))
                 for skill_dir in "$plugin_root/skills"/*/; do
                     [[ ! -d "$skill_dir" ]] && continue
                     local skill_name
@@ -721,7 +725,7 @@ validate_plugin() {
             local declared_commands
             declared_commands=$(declared_paths "commands")
             if [[ -n "$declared_commands" ]]; then
-                ((orphan_checks_run++))
+                ((++orphan_checks_run))
                 for cmd_file in "$plugin_root/commands"/*.md; do
                     [[ ! -f "$cmd_file" ]] && continue
                     local cmd_name
@@ -739,7 +743,7 @@ validate_plugin() {
             local declared_agents
             declared_agents=$(declared_paths "agents")
             if [[ -n "$declared_agents" ]]; then
-                ((orphan_checks_run++))
+                ((++orphan_checks_run))
                 for agent_file in "$plugin_root/agents"/*.md; do
                     [[ ! -f "$agent_file" ]] && continue
                     local agent_name
@@ -757,7 +761,7 @@ validate_plugin() {
             local declared_styles
             declared_styles=$(declared_paths "outputStyles")
             if [[ -n "$declared_styles" ]]; then
-                ((orphan_checks_run++))
+                ((++orphan_checks_run))
                 for style_file in "$plugin_root/output-styles"/*.md; do
                     [[ ! -f "$style_file" ]] && continue
                     local style_name
@@ -781,12 +785,12 @@ validate_plugin() {
     fi
 
     # Update plugin counters
-    ((PLUGINS_TOTAL++))
+    ((++PLUGINS_TOTAL))
     if [[ "$plugin_failed" == "true" ]]; then
-        ((PLUGINS_FAILED++))
+        ((++PLUGINS_FAILED))
         return 1
     else
-        ((PLUGINS_PASSED++))
+        ((++PLUGINS_PASSED))
         return 0
     fi
 }
@@ -820,7 +824,7 @@ validate_cross_references() {
             # Check the plugin directory itself exists on disk
             if [[ -n "$source_path" && ! -d "$plugin_root" ]]; then
                 log_error "Cross-ref: marketplace entry '$mkt_name' references directory '$source_path' which does not exist (plugin may have been renamed or deleted)"
-                ((cross_errors++))
+                ((++cross_errors))
                 continue
             fi
 
@@ -832,7 +836,7 @@ validate_cross_references() {
 
             if [[ -z "$plugin_json" ]]; then
                 log_error "Cross-ref: marketplace entry '$mkt_name' has no plugin.json at $source_path"
-                ((cross_errors++))
+                ((++cross_errors))
                 continue
             fi
 
@@ -841,7 +845,7 @@ validate_cross_references() {
             actual_name=$(jq -r '.name // empty' "$plugin_json" 2>/dev/null)
             if [[ -n "$actual_name" && "$actual_name" != "$mkt_name" ]]; then
                 log_error "Cross-ref: marketplace name '$mkt_name' does not match plugin.json name '$actual_name' at $source_path"
-                ((cross_errors++))
+                ((++cross_errors))
             else
                 log_success "Cross-ref: name match for '$mkt_name'"
             fi
@@ -1089,7 +1093,7 @@ main() {
     local plugin_num=0
     while IFS= read -r plugin_name; do
         [[ -z "$plugin_name" ]] && continue
-        ((plugin_num++))
+        ((++plugin_num))
 
         # Get plugin source directory
         local plugin_source
@@ -1108,8 +1112,8 @@ main() {
 
         if [[ ! -d "$plugin_root" ]]; then
             log_error "Plugin directory not found: $plugin_root"
-            ((PLUGINS_TOTAL++))
-            ((PLUGINS_FAILED++))
+            ((++PLUGINS_TOTAL))
+            ((++PLUGINS_FAILED))
             continue
         fi
 

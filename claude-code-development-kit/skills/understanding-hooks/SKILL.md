@@ -237,7 +237,7 @@ See @examples/hook-examples.md for 5 detailed command hook examples:
 
 **Risks include:**
 - File modification or deletion
-- Data exfiltration
+- Sensitive data leakage
 - Credential access
 - Network requests
 - System-level changes

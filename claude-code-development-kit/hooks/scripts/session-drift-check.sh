@@ -119,29 +119,34 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Update cache
-# ---------------------------------------------------------------------------
-echo "$CURRENT_TIME" > "$CACHE_FILE" 2>/dev/null || true
-debug "cache updated"
-
-# ---------------------------------------------------------------------------
 # Output warnings if any
 # ---------------------------------------------------------------------------
 if [[ ${#WARNINGS[@]} -gt 0 ]]; then
-  WARNING_TEXT=$(printf '- %s\\n' "${WARNINGS[@]}")
+  WARNING_TEXT=$(printf -- '- %s\n' "${WARNINGS[@]}")
   debug "emitting ${#WARNINGS[@]} warnings"
 
   # Clear fail-open trap before intentional output
   trap - EXIT
 
-  jq -cn \
+  if jq -cn \
     --arg warnings "$WARNING_TEXT" \
     '{
       "systemMessage": ("Dev-kit drift detected:\n" + $warnings + "\nRun /devkit-maintain to investigate.")
-    }' 2>/dev/null || true
+    }' 2>/dev/null; then
+    echo "$CURRENT_TIME" > "$CACHE_FILE" 2>/dev/null || true
+    debug "cache updated after warning output"
+  else
+    debug "warning output failed — cache not updated"
+  fi
 
   exit 0
 fi
+
+# ---------------------------------------------------------------------------
+# Update cache after a clean pass
+# ---------------------------------------------------------------------------
+echo "$CURRENT_TIME" > "$CACHE_FILE" 2>/dev/null || true
+debug "cache updated after clean pass"
 
 debug "all checks passed — no warnings"
 trap - EXIT
