@@ -2,6 +2,8 @@
 # SessionStart hook for plugin-profile
 # Detects when a project has no plugin configuration and suggests running /plugin-profile:init
 
+set -e
+
 # Check if .claude/settings.local.json exists and has at least one entry in enabledPlugins.
 # If not, emit a hookSpecificOutput reminder to the user via Claude's additionalContext field.
 

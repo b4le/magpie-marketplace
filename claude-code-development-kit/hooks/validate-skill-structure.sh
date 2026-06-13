@@ -11,7 +11,7 @@
 set -e
 
 # Allow custom skills directory via environment variable or use default
-SKILLS_DIR="${SKILLS_DIR:-$HOME/.claude/skills}"
+SKILLS_DIR="${SKILLS_DIR:-${HOME}/.claude/skills}"
 
 # When invoked as a Claude Code hook, input comes as JSON on stdin
 # with tool_input.file_path containing the path to the written/edited file.
@@ -74,9 +74,9 @@ check_frontmatter() {
     # Check description length (should be 200-400 characters)
     local desc_length=$(echo "$frontmatter" | grep "^description:" | cut -d':' -f2- | tr -d '\n' | wc -c | tr -d ' ')
     if [ "$desc_length" -lt 200 ]; then
-        WARNINGS+=("$skill_name: Description too short ($desc_length chars, recommend 200-400)")
+        WARNINGS+=("${skill_name}: Description too short (${desc_length} chars, recommend 200-400)")
     elif [ "$desc_length" -gt 400 ]; then
-        WARNINGS+=("$skill_name: Description too long ($desc_length chars, recommend 200-400)")
+        WARNINGS+=("${skill_name}: Description too long (${desc_length} chars, recommend 200-400)")
     fi
 }
 
@@ -87,7 +87,7 @@ check_line_count() {
     local line_count=$(wc -l < "$file" | tr -d ' ')
 
     if [ "$line_count" -gt 500 ]; then
-        ERRORS+=("$skill_name: Exceeds 500 line limit ($line_count lines). Use @path imports to reduce size.")
+        ERRORS+=("${skill_name}: Exceeds 500 line limit (${line_count} lines). Use @path imports to reduce size.")
     fi
 }
 
@@ -100,10 +100,10 @@ check_path_imports() {
     # Find all @path imports
     grep "@path:" "$file" 2>/dev/null | while read -r line; do
         local import_path=$(echo "$line" | sed 's/.*@path: *\(.*\)/\1/' | tr -d ' ')
-        local full_path="$skill_dir/$import_path"
+        local full_path="${skill_dir}/${import_path}"
 
         if [ ! -f "$full_path" ]; then
-            ERRORS+=("$skill_name: Invalid @path import '$import_path' - file not found")
+            ERRORS+=("${skill_name}: Invalid @path import '${import_path}' - file not found")
         fi
     done
 }
@@ -122,7 +122,7 @@ if [ -n "$1" ]; then
 else
     # Main validation loop for all skills
     if [ ! -d "$SKILLS_DIR" ]; then
-        echo -e "${YELLOW}Skills directory not found: $SKILLS_DIR${NC}"
+        echo -e "${YELLOW}Skills directory not found: ${SKILLS_DIR}${NC}"
         echo "Set SKILLS_DIR environment variable to specify a custom location."
         exit 0
     fi
@@ -151,7 +151,7 @@ echo ""
 if [ ${#ERRORS[@]} -gt 0 ]; then
     echo -e "${RED}=== ERRORS ===${NC}"
     for error in "${ERRORS[@]}"; do
-        echo -e "  - $error"
+        printf '  - %s\n' "$error"
     done
     echo ""
 fi
@@ -159,7 +159,7 @@ fi
 if [ ${#WARNINGS[@]} -gt 0 ]; then
     echo -e "${YELLOW}=== WARNINGS ===${NC}"
     for warning in "${WARNINGS[@]}"; do
-        echo -e "  - $warning"
+        printf '  - %s\n' "$warning"
     done
     echo ""
 fi

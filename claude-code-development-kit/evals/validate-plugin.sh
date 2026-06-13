@@ -292,7 +292,7 @@ if [[ -n "${SKILL_PATHS:-}" ]]; then
                 log_success "Skill passed: $skill_path"
             else
                 log_error "Skill failed validation: $skill_path"
-                ((COMPONENT_ERRORS++))
+                ((++COMPONENT_ERRORS))
                 # Show key errors
                 grep -E "^\[ERROR\]" "$TEMP_LOG" 2>/dev/null | head -3 | while read -r line; do
                     echo "    $line"
@@ -317,7 +317,7 @@ else
                     log_success "Skill passed: $(basename "$skill_dir")"
                 else
                     log_error "Skill failed: $(basename "$skill_dir")"
-                    ((COMPONENT_ERRORS++))
+                    ((++COMPONENT_ERRORS))
                 fi
                 rm -f "$TEMP_LOG" 2>/dev/null
             fi
@@ -351,7 +351,7 @@ if [[ -n "${COMMAND_PATHS:-}" ]]; then
                 log_success "Command passed: $cmd_path"
             else
                 log_error "Command failed validation: $cmd_path"
-                ((COMPONENT_ERRORS++))
+                ((++COMPONENT_ERRORS))
             fi
             rm -f "$TEMP_LOG" 2>/dev/null
         fi
@@ -370,7 +370,7 @@ else
                     log_success "Command passed: $(basename "$cmd_file")"
                 else
                     log_error "Command failed: $(basename "$cmd_file")"
-                    ((COMPONENT_ERRORS++))
+                    ((++COMPONENT_ERRORS))
                 fi
                 rm -f "$TEMP_LOG" 2>/dev/null
             fi
@@ -400,21 +400,25 @@ if [[ -n "${HOOK_PATHS:-}" ]]; then
 
         if [[ -x "$SCRIPT_DIR/validate-hook.sh" ]]; then
             TEMP_LOG="${TMPDIR:-/tmp}/hook_validation_$$.log"
-            if "$SCRIPT_DIR/validate-hook.sh" "$FULL_PATH" > "$TEMP_LOG" 2>&1; then
+            set +e
+            "$SCRIPT_DIR/validate-hook.sh" "$FULL_PATH" > "$TEMP_LOG" 2>&1
+            hook_exit=$?
+            set -e
+            if [[ $hook_exit -eq 0 ]]; then
                 log_success "Hook passed: $hook_path"
             else
                 log_error "Hook failed validation: $hook_path"
-                ((COMPONENT_ERRORS++))
+                ((++COMPONENT_ERRORS))
             fi
             rm -f "$TEMP_LOG" 2>/dev/null
         fi
     done <<< "$HOOK_PATHS"
 else
-    # Only scan the dedicated hooks/ directory. scripts/ is a utility directory
-    # and must not be treated as a hook source — doing so causes false positives
-    # for plugins that have utility scripts but no hooks.
+    # Only scan the dedicated hooks/ directory. Top-level scripts/ is a utility
+    # directory and must not be treated as a hook source.
     if [[ -d "$PLUGIN_ROOT/hooks" ]]; then
-        for hook_file in "$PLUGIN_ROOT/hooks"/*; do
+        while IFS= read -r hook_file; do
+            [[ -z "$hook_file" ]] && continue
             [[ ! -f "$hook_file" ]] && continue
             [[ "$hook_file" =~ \.md$ ]] && continue    # Skip markdown docs
             [[ "$hook_file" =~ \.json$ ]] && continue  # Skip JSON config files
@@ -424,15 +428,19 @@ else
 
             if [[ -x "$SCRIPT_DIR/validate-hook.sh" ]]; then
                 TEMP_LOG="${TMPDIR:-/tmp}/hook_validation_$$.log"
-                if "$SCRIPT_DIR/validate-hook.sh" "$hook_file" > "$TEMP_LOG" 2>&1; then
+                set +e
+                "$SCRIPT_DIR/validate-hook.sh" "$hook_file" > "$TEMP_LOG" 2>&1
+                hook_exit=$?
+                set -e
+                if [[ $hook_exit -eq 0 ]]; then
                     log_success "Hook passed: $(basename "$hook_file")"
                 else
                     log_error "Hook failed: $(basename "$hook_file")"
-                    ((COMPONENT_ERRORS++))
+                    ((++COMPONENT_ERRORS))
                 fi
                 rm -f "$TEMP_LOG" 2>/dev/null
             fi
-        done
+        done < <(find "$PLUGIN_ROOT/hooks" -type f | sort)
     else
         log_info "No hooks declared — skipping hook validation"
     fi
@@ -603,7 +611,7 @@ if [[ -n "${STYLE_PATHS:-}" ]]; then
                 log_success "Output style passed: $style_path"
             else
                 log_error "Output style failed: $style_path"
-                ((COMPONENT_ERRORS++))
+                ((++COMPONENT_ERRORS))
             fi
             rm -f "$TEMP_LOG" 2>/dev/null
         fi
@@ -622,7 +630,7 @@ else
                     log_success "Output style passed: $(basename "$style_file")"
                 else
                     log_error "Output style failed: $(basename "$style_file")"
-                    ((COMPONENT_ERRORS++))
+                    ((++COMPONENT_ERRORS))
                 fi
                 rm -f "$TEMP_LOG" 2>/dev/null
             fi
@@ -656,7 +664,7 @@ if [[ -n "${AGENT_PATHS:-}" ]]; then
                 log_success "Agent passed: $agent_path"
             else
                 log_error "Agent failed validation: $agent_path"
-                ((COMPONENT_ERRORS++))
+                ((++COMPONENT_ERRORS))
                 grep -E "^\[ERROR\]" "$TEMP_LOG" 2>/dev/null | head -3 | while read -r line; do
                     echo "    $line"
                 done
@@ -680,7 +688,7 @@ else
                     log_success "Agent passed: $(basename "$agent_file")"
                 else
                     log_error "Agent failed: $(basename "$agent_file")"
-                    ((COMPONENT_ERRORS++))
+                    ((++COMPONENT_ERRORS))
                 fi
                 rm -f "$TEMP_LOG" 2>/dev/null
             fi
