@@ -1,0 +1,10 @@
+{
+  "name": "roadmap",
+  "version": "1.0.0",
+  "description": "Standardised project-level roadmap management in .claude/roadmap/ — scaffold, track, and archive feature roadmaps.",
+  "author": { "name": "Ben Purslow" },
+  "license": "MIT",
+  "skills": ["skills/roadmap"],
+  "commands": [],
+  "hooks": []
+}

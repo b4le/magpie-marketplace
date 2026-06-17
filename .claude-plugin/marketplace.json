@@ -102,6 +102,13 @@
             "description": "Portable todo management with paired session-launch prompts, category folders, modular gates, and auto-capture.",
             "version": "1.0.0",
             "tags": ["todo", "tasks", "prompts", "session-launch", "productivity", "gates", "workflow", "project-management"]
+        },
+        {
+            "name": "roadmap",
+            "source": "./roadmap",
+            "description": "Standardised project-level roadmap management in .claude/roadmap/ — scaffold, track, and archive feature roadmaps.",
+            "version": "1.0.0",
+            "tags": ["roadmap", "features", "backlog", "planning", "tracking", "project-management"]
         }
     ]
 }
