@@ -11,7 +11,7 @@ The knowledge-harvester plugin has complete infrastructure but no runnable code:
 - 251 tests passing
 - 7 ADRs documenting architectural decisions
 - Security hardening (sanitize.py with 79 tests)
-- Agent YAML configs (4 agents defined)
+- Agent configs (4 agents defined)
 
 ## Goal
 
@@ -45,7 +45,7 @@ extractions.jsonl    output/knowledge.md
 
 **Reference:**
 - Schema: `schemas/candidates.schema.json`
-- Agent config: `agents/local-enumerator.yaml`
+- Agent config: `agents/local-enumerator.md`
 - Tests: `tests/test_enumerate_local.py`
 
 #### Agent 2: triage-scorer
@@ -61,7 +61,7 @@ extractions.jsonl    output/knowledge.md
 
 **Reference:**
 - Schema: `schemas/ranked.schema.json`
-- Agent config: `agents/triage-scorer.yaml`
+- Agent config: `agents/triage-scorer.md`
 - Tests: `tests/test_triage_scoring.py`
 - Concurrency: See `docs/concurrency.md` for batching (5-10 per batch)
 
@@ -90,7 +90,7 @@ extractions.jsonl    output/knowledge.md
 
 **Reference:**
 - Schema: `schemas/extractions.schema.json`
-- Agent config: `agents/extractor.yaml`
+- Agent config: `agents/extractor.md`
 - Tests: `tests/test_agent_behaviors.py::TestExtractor`
 - Batching: See `skills/internals/extract.md`
 
@@ -105,7 +105,7 @@ extractions.jsonl    output/knowledge.md
 - Create output/manifest.json
 
 **Reference:**
-- Agent config: `agents/synthesizer.yaml`
+- Agent config: `agents/synthesizer.md`
 - Template: `templates/synthesis.md.hbs`
 - Tests: `tests/test_agent_behaviors.py::TestSynthesizer`
 
@@ -185,7 +185,7 @@ Use test-driven development - run existing tests as you implement.
 | Purpose | Path |
 |---------|------|
 | Schemas | `schemas/*.json` |
-| Agent configs | `agents/*.yaml` |
+| Agent configs | `agents/*.md` |
 | Security | `lib/sanitize.py` |
 | Tests | `tests/test_*.py` |
 | ADRs | `docs/adr/*.md` |

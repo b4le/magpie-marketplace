@@ -36,7 +36,7 @@ You are the team lead coordinating 3 critical fixes before production.
 **Ownership:** Schema and agent threshold consistency
 **Files:**
 - MODIFY: `schemas/harvest-config.schema.json` (change threshold from 0-1 to 0-10 scale)
-- MODIFY: `agents/triage-scorer.yaml` (ensure threshold parameter documented)
+- MODIFY: `agents/triage-scorer.md` (ensure threshold parameter documented)
 - MODIFY: `tests/test_config_schema.py` (update threshold tests)
 
 **Task:**
@@ -50,7 +50,7 @@ The schema currently uses 0-1 scale (default 0.5) but the triage-scorer agent us
 **Ownership:** Security hardening for path inputs
 **Files:**
 - CREATE: `~/.claude/plugins/knowledge-harvester/lib/sanitize.py`
-- MODIFY: `agents/local-enumerator.yaml` (add pre-validation section)
+- MODIFY: `agents/local-enumerator.md` (add pre-validation section)
 - CREATE: `tests/test_sanitize.py`
 
 **Task:**
@@ -60,7 +60,7 @@ Add input sanitization layer to prevent command injection:
    - `validate_glob_pattern(pattern: str) -> bool` - reject dangerous patterns
    - `quote_for_shell(value: str) -> str` - proper shell escaping
 2. Add tests covering: path traversal attempts, shell metacharacters, null bytes
-3. Update local-enumerator.yaml to reference validation requirements
+3. Update local-enumerator.md to reference validation requirements
 4. Run tests: `pytest tests/test_sanitize.py -v`
 
 ### 3. e2e-tester
@@ -197,7 +197,7 @@ Create JSON schemas for intermediate pipeline files:
 ### 4. security-hardener
 **Ownership:** Credential and path security
 **Files:**
-- MODIFY: `agents/local-enumerator.yaml` (add path validation rules)
+- MODIFY: `agents/local-enumerator.md` (add path validation rules)
 - CREATE: `docs/security.md`
 - MODIFY: `skills/internals/harvest.md` (add rclone credential guidance)
 
