@@ -201,7 +201,7 @@ Return consolidated JSON:
 
 ```json
 {
-  "status": "success",
+  "status": "complete",
   "config_validation": {
     "status": "valid",
     "expert_count": 3,
