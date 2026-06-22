@@ -49,7 +49,7 @@ Your prompt may provide structured finding context (pipeline mode) or a free-for
 
 **Zero files in scope**: If the finding references a file that does not exist, return:
 ```json
-{ "status": "complete", "summary": "Referenced file not found — finding may be stale or from a different branch", "finding_id": null, "root_cause": "file_not_found", "blast_radius": "isolated", "pre_existing": false, "fix_complexity": "trivial", "report_path": null, "confidence": 0.0, "gaps": ["referenced file missing"] }
+{ "status": "complete", "summary": "Referenced file not found — finding may be stale or from a different branch", "finding_id": null, "root_cause_category": "file_not_found", "root_cause": "Referenced file does not exist in the current branch", "blast_radius": "isolated", "pre_existing": false, "fix_complexity": "trivial", "report_path": null, "confidence": 0.0, "gaps": ["referenced file missing"] }
 ```
 
 ## Incremental Output
@@ -121,6 +121,7 @@ One of: `"complete"`, `"partial"`, `"error"`.
   "status": "complete",
   "finding_id": "SEC-001",
   "summary": "2-3 sentence summary of investigation findings",
+  "root_cause_category": "new_in_pr | pre_existing | file_not_found | unknown_history | external_dependency",
   "root_cause": "Detailed description of the actual root cause",
   "blast_radius": "isolated | module | system | platform",
   "pre_existing": false,

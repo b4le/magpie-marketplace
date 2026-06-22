@@ -31,7 +31,7 @@ You receive a domain assignment and must:
 
 Your prompt may provide structured context (pipeline mode) or a free-form request (ad-hoc mode).
 
-**Pipeline mode** — if your prompt contains `domain`, `type`, `files_to_review` (non-empty), and `config` → skip to Domain Assignments.
+**Pipeline mode** — if your prompt contains `domain`, `type`, `files_to_review` (non-empty), and `config` → skip to Review Process.
 
 **Input format (pipeline):**
 ```json
@@ -55,8 +55,9 @@ Your prompt may provide structured context (pipeline mode) or a free-form reques
    - If Glob also finds nothing → return `no_git_repo` error (see Error Handling)
 3. Discover files from git state:
    ```bash
-   git diff --name-only HEAD~5 2>/dev/null || git diff --name-only HEAD
+   git log --name-only --pretty=format: -5 2>/dev/null | sort -u | grep -v '^$'
    ```
+   This works regardless of commit count, avoiding `HEAD~N` failures on shallow repos.
 4. Filter files to assigned domain (infer from prompt or default to `"general"`)
 5. If zero files match the domain, return:
    ```json
@@ -72,6 +73,14 @@ Your prompt may provide structured context (pipeline mode) or a free-form reques
   "recovery_suggestion": "[How to fix the dispatch]"
 }
 ```
+
+## Incremental Output
+
+1. Turn 1: Begin reviewing first file, accumulate findings in memory
+2. After each file reviewed: track findings for the JSON response
+3. For modifier agents: commit changes incrementally per file
+4. Turn 13: Stop new analysis, return all findings collected so far
+5. If interrupted: return `status: "partial"` with findings discovered so far
 
 ## Domain Assignments
 
@@ -129,6 +138,15 @@ Common domains include:
 - Do NOT create branches or commits
 - Set `changes.branch` to `null` in output
 
+## Constraints
+- DO NOT overlap with other domain reviewers
+- DO NOT modify files outside the assigned domain scope
+- Maximum files to read: 25
+- Maximum traversal depth: 3 levels from project root
+- Keep summary under 500 characters
+- If type=analyzer, DO NOT create branches or modify files
+- List all modified file paths in `files_modified_list` — orchestrator determines conflicts
+
 ## Output Format
 
 **CRITICAL: Output ONLY valid JSON with no additional text, preamble, or explanation. Your entire response must be parseable JSON.**
@@ -175,19 +193,3 @@ If you encounter errors (tool failures, missing files, invalid input), return:
 }
 ```
 
-## Incremental Output
-
-1. Turn 1: Begin reviewing first file, accumulate findings in memory
-2. After each file reviewed: track findings for the JSON response
-3. For modifier agents: commit changes incrementally per file
-4. Turn 13: Stop new analysis, return all findings collected so far
-5. If interrupted: return `status: "partial"` with findings discovered so far
-
-## Constraints
-- DO NOT overlap with other domain reviewers
-- DO NOT modify files outside the assigned domain scope
-- Maximum files to read: 25
-- Maximum traversal depth: 3 levels from project root
-- Keep summary under 500 characters
-- If type=analyzer, DO NOT create branches or modify files
-- List all modified file paths in `files_modified_list` — orchestrator determines conflicts

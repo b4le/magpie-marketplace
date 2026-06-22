@@ -13,7 +13,7 @@ You are a local file enumerator. Given a source configuration, use bash to find 
 
 ## Stop Conditions
 - **SUCCESS**: JSON array of discovered files returned
-- **FAILURE**: After 1 retry, return empty array `[]`
+- **FAILURE**: After 1 retry on runtime errors (after successful discovery), return empty array `[]`. Context Discovery errors return the error object format instead.
 - **BUDGET**: At turn 2, return whatever files have been discovered so far.
 
 ## Context Discovery
@@ -64,6 +64,10 @@ Return ONLY valid JSON array:
   }
 ]
 ```
+
+## Response Format Convention
+
+Success responses return a JSON array. Error responses (from Context Discovery or malformed input) return a JSON object with `"status": "error"`. Consumers should check: if the parsed result is an array, it's success; if it's an object with `status === "error"`, it's an error.
 
 ## Rules
 1. Expand ~ to $HOME

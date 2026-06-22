@@ -114,10 +114,26 @@ The template expects:
 Use the Write tool to save the final rendered markdown file.
 
 ## Error Handling
+
+Context Discovery `no_input` fires when NO findings path is provided at all. The conditions below fire when a valid path is provided but the content is problematic.
+
 - **Empty findings file**: Generate a document with summary "No validated findings available" and empty sections
 - **Insufficient data**: If fewer than 3 findings, note this in the summary and proceed
 - **Missing fields**: Skip findings that lack required fields (finding_id, claim, evidence)
 - **No sources**: If a finding has no source_ids, omit the sources citation for that claim
+
+## Output Contract
+
+Your FINAL message must be valid JSON:
+
+```json
+{
+  "status": "complete",
+  "artifact_path": "path/to/synthesis.md"
+}
+```
+
+Error responses use: `{ "status": "error", "error_type": "...", "error_message": "...", "recovery_suggestion": "..." }`
 
 ## Constraints
 - DO NOT invent information not present in the validated findings

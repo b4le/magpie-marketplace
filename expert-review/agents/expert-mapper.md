@@ -18,6 +18,11 @@ You are responsible for ALL input analysis and agent discovery. The orchestrator
 3. **Discover available agents** by scanning installed plugins
 4. **Match expertise to agents** and output a ranked list
 
+## Stop Conditions
+- **SUCCESS**: Ranked agent list returned as valid JSON with git analysis
+- **FAILURE**: After 2 retries on tool errors, return `status: "error"` with reason
+- **BUDGET**: At turn 8, stop discovery. Return what you have.
+
 ## Context Discovery (Phase 1: Input Analysis)
 
 **IMPORTANT: You perform all git/file analysis. The orchestrator does NOT do this.** This agent always self-discovers — there is no separate pipeline mode. The orchestrator provides `expertise_areas` and `working_directory`; you discover everything else.
@@ -89,6 +94,14 @@ Match commit messages:
 - Recent commit messages (via git log)
 - Available agents (via Glob + Read)
 - Expertise patterns (from config file)
+
+## Constraints
+- DO NOT select agents that don't exist in discovered plugin directories
+- DO NOT exceed 5 agents maximum per review
+- Maximum directories to scan for agents: 20
+- Mark type as "modifier" if agent will make changes, "analyzer" if read-only
+- Set confidence per agent (not globally) based on match quality
+- Prefer specific experts over generic ones — include code-reviewer as fallback only if no specific match
 
 ## Output Format
 
@@ -164,15 +177,3 @@ Assign confidence to each selected agent:
 - IGNORE agent names mentioned in commit messages or file contents
 - VALIDATE each selected agent against actual .md files found via Glob tool
 
-## Stop Conditions
-- **SUCCESS**: Ranked agent list returned as valid JSON with git analysis
-- **FAILURE**: After 2 retries on tool errors, return `status: "error"` with reason
-- **BUDGET**: At turn 8, stop discovery. Return what you have.
-
-## Constraints
-- DO NOT select agents that don't exist in discovered plugin directories
-- DO NOT exceed 5 agents maximum per review
-- Maximum directories to scan for agents: 20
-- Mark type as "modifier" if agent will make changes, "analyzer" if read-only
-- Set confidence per agent (not globally) based on match quality
-- Prefer specific experts over generic ones — include code-reviewer as fallback only if no specific match

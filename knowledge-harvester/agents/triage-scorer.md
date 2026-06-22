@@ -110,4 +110,3 @@ Return ONLY valid JSON. The `score` MUST be an integer (0-10, no decimals):
 3. Apply lens-specific criteria from the guidance above
 4. Be selective - when in doubt, score lower
 5. decision = "harvest" if score >= threshold (default 7), else "skip"
-6. Score MUST be an integer (0, 1, 2, ... 10) - no decimals

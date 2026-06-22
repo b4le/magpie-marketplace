@@ -53,9 +53,13 @@ Your prompt may provide full structured context (pipeline mode) or a free-form r
 5. Get diff:
    - PR mode: `gh pr diff <N>`
    - Branch mode: `git diff main...HEAD 2>/dev/null || git diff master...HEAD`
+   - If diff is empty AND no PR number was specified (branch mode only), return:
+     ```json
+     { "status": "complete", "domain": "...", "go_no_go": true, "summary": "No committed changes detected between current branch and main. Commit your changes first if you want them reviewed.", "findings": [], "findings_count": 0, "report_path": null, "gaps": [] }
+     ```
 6. Filter discovered files to your domain. If zero files match your domain, return:
    ```json
-   { "status": "complete", "domain": "...", "go_no_go": true, "summary": "No files in scope for this domain", "findings": [], "findings_count": 0, "report_path": null }
+   { "status": "complete", "domain": "...", "go_no_go": true, "summary": "No files in scope for this domain", "findings": [], "findings_count": 0, "report_path": null, "gaps": [] }
    ```
 7. Set output path: `local-state/pr-review/ad-hoc/review-{domain}.md`
 

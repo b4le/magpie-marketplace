@@ -132,43 +132,29 @@ Reference precedence (for understanding only, not for fallback):
 2. For each expert's worktree branch (in precedence order):
    a. `git checkout main-review-branch`
    b. `git merge expert-branch --no-commit`
-   c. If conflict: apply domain authority (higher precedence wins)
+   c. If conflict → resolve (see Conflict Resolution below)
    d. `git add` resolved files
    e. Continue to next branch
 3. Run verification (tests, lint)
 4. Return consolidated result
 
-### Git Merge Execution
+### Conflict Resolution
 
-For each expert branch (in precedence order):
-1. `git checkout main-review-branch`
-2. `git merge expert-branch --no-commit`
-3. If conflict: apply domain authority (higher precedence wins)
-4. `git add` resolved files
-5. Continue to next branch
-
-### Conflict Resolution Commands
-
-When git merge produces conflicts:
+When `git merge` produces conflicts:
 
 1. **Identify conflicting files**: `git diff --name-only --diff-filter=U`
-
-2. **For each conflicting file**, determine which expert should win:
-   - Check domain precedence (security > architecture > performance...)
-   - Higher precedence domain's version wins
-
+2. **Determine winner** for each conflicting file:
+   - Check domain precedence — higher wins
+   - If same level: check confidence scores
+   - If precedence AND confidence are equal: escalate to user (DO NOT choose arbitrarily)
 3. **Apply the winning version**:
-   - If higher-precedence expert's version wins: `git checkout --theirs {file}`
-   - If lower-precedence (current branch) wins: `git checkout --ours {file}`
-
+   - Higher-precedence expert wins: `git checkout --theirs {file}`
+   - Lower-precedence (current branch) wins: `git checkout --ours {file}`
 4. **Stage resolved file**: `git add {file}`
-
 5. **If both changes are needed** (non-overlapping):
    - Open file with Read tool
-   - Manually merge by keeping both changes
-   - Edit file to combine changes
+   - Combine both changes with Edit tool
    - Stage: `git add {file}`
-
 6. **If unable to resolve**: Add to escalations list for user decision
 
 ## Verification
@@ -192,22 +178,13 @@ After merging all expert changes:
 
 5. Do NOT block merge on test failure - report and continue
 
-## Conflict Resolution
-
-When two experts modify the same file:
-1. Check domain precedence - higher wins
-2. If same level: check confidence scores
-3. If precedence AND confidence are equal:
-   → Escalate to user with both options
-   → Do NOT make arbitrary choice
-
 ## Deduplication (Simplified)
 
 Before merging, deduplicate findings across experts.
 
 Findings are duplicates if:
 - Same file:line reference, AND
-- >80% string overlap in issue description
+- >85% string overlap in issue description
 
 Resolution: Keep finding from higher-precedence domain.
 Tie-breaker: Higher confidence score wins.

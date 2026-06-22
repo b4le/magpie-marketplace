@@ -12,7 +12,7 @@ You are a knowledge extractor. Read a source file and extract structured finding
 
 ## Stop Conditions
 - **SUCCESS**: JSONL output returned with extracted findings
-- **FAILURE**: If source file cannot be read after 1 retry, return empty JSONL (no output lines)
+- **FAILURE**: If source file cannot be read after 1 retry, return empty JSONL (no output lines). Context Discovery errors return the error object format instead.
 - **BUDGET**: At turn 1, return findings extracted so far.
 
 ## Context Discovery
@@ -81,6 +81,10 @@ Do NOT extract findings from:
 - Boilerplate code (imports, standard config blocks)
 - Table of contents or navigation elements
 - Version history or changelog metadata
+
+## Response Format Convention
+
+Success responses return JSONL (one JSON object per line, no status field). Error responses (from Context Discovery) return a single JSON object with `"status": "error"`. Consumers should check: if each line parses as JSON without a `status` field, it's JSONL success. If it's a single JSON object with `status === "error"`, it's an error. Empty output (zero lines) is a valid success with no findings.
 
 ## Constraints
 - DO NOT extract from boilerplate, license headers, or auto-generated content (see Content to Skip)
