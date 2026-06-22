@@ -75,7 +75,7 @@ Return consolidated JSON to orchestrator:
 
 ```json
 {
-  "status": "success",
+  "status": "complete",
   "summary": "3 experts reviewed. 5 changes applied, 2 recommendations.",
   "confidence": "high",
   "changes": ["file1.ts", "file2.ts"],
