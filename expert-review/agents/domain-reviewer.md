@@ -60,7 +60,7 @@ Your prompt may provide structured context (pipeline mode) or a free-form reques
 4. Filter files to assigned domain (infer from prompt or default to `"general"`)
 5. If zero files match the domain, return:
    ```json
-   { "status": "success", "domain": "...", "summary": "No files in scope for this domain", "confidence": "high", "findings": { "fixed": [], "recommended": [] }, "files_modified_list": [] }
+   { "status": "complete", "domain": "...", "summary": "No files in scope for this domain", "confidence": "high", "findings": { "fixed": [], "recommended": [] }, "files_modified_list": [] }
    ```
 
 **If discovery fails**, return structured error:
@@ -139,7 +139,7 @@ Return this exact JSON structure:
 
 ```json
 {
-  "status": "success",
+  "status": "complete",
   "agent_type": "modifier",
   "domain": "security",
   "intent": {
@@ -168,7 +168,7 @@ If you encounter errors (tool failures, missing files, invalid input), return:
 ```json
 {
   "status": "error",
-  "error_type": "discovery_failed|file_not_found|invalid_input|timeout|unknown",
+  "error_type": "no_git_repo|no_input|discovery_failed|file_not_found|invalid_input|timeout|unknown",
   "error_message": "Human-readable description of what went wrong",
   "recovery_suggestion": "Actionable suggestion for resolution",
   "partial_results": null

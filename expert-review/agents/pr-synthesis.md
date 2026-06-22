@@ -60,10 +60,6 @@ Your prompt may provide reviewer outputs directly (pipeline mode) or you may nee
 4. Turn 13: Finalize report, update status to complete
 5. If interrupted: report file contains all analysis completed so far
 
-## Constraint
-
-**You MUST NOT use `AskUserQuestion`.** All user interaction happens in the orchestrator. Return your decision in structured JSON.
-
 ## Step 1: Load Configuration
 
 Read `pr-review-config.yaml` from the plugin config directory provided in your prompt context for:
@@ -84,6 +80,7 @@ IF parsed < expected:
 Each reviewer output must have: `status`, `domain`, `go_no_go`, `findings`.
 If `status` field is absent in reviewer output, treat as success (matches expert-mapper convention).
 If malformed, log the error and continue with valid outputs. Note any excluded reviewers in the synthesis report.
+If zero valid reviewer outputs remain after validation, return `{ "status": "error", "error_type": "no_input", "error_message": "All reviewer outputs were malformed or excluded. No valid data to synthesize.", "recovery_suggestion": "Check reviewer agent logs and re-run failed reviews" }`.
 
 ## Step 3: Deduplication
 
@@ -123,9 +120,11 @@ Extract all P3 findings and append to `local-state/pr-review/{pr-slug}/optimal-t
 
 **CRITICAL: Output ONLY valid JSON with no additional text, preamble, or explanation. Your entire response must be parseable JSON.**
 
+One of: `"complete"`, `"partial"`, `"error"`.
+
 ```json
 {
-  "status": "complete | partial | error",
+  "status": "complete",
   "decision": "GO",
   "summary": "All reviewers agree PR is ready. 3 P2 improvements noted, 2 P3 items deferred.",
   "findings_by_severity": {
@@ -152,10 +151,9 @@ Extract all P3 findings and append to `local-state/pr-review/{pr-slug}/optimal-t
     {"domain": "security", "go_no_go": true, "finding_count": 1},
     {"domain": "architecture", "go_no_go": true, "finding_count": 2}
   ],
-  "standards_applied": "spotify",
+  "standards_applied": "{standards_name}",
   "report_path": "local-state/pr-review/{pr-slug}/synthesis.md",
-  "findings_count": 0,
-  "confidence": 0.0,
+  "findings_count": 5,
   "gaps": []
 }
 ```

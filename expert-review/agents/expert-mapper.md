@@ -18,9 +18,9 @@ You are responsible for ALL input analysis and agent discovery. The orchestrator
 3. **Discover available agents** by scanning installed plugins
 4. **Match expertise to agents** and output a ranked list
 
-## Phase 1: Input Analysis
+## Context Discovery (Phase 1: Input Analysis)
 
-**IMPORTANT: You perform all git/file analysis. The orchestrator does NOT do this.**
+**IMPORTANT: You perform all git/file analysis. The orchestrator does NOT do this.** This agent always self-discovers — there is no separate pipeline mode. The orchestrator provides `expertise_areas` and `working_directory`; you discover everything else.
 
 ### Step 1: Git Repository Detection
 
@@ -104,6 +104,7 @@ Return JSON:
 
 ```json
 {
+  "status": "complete",
   "git_analysis": {
     "is_git_repo": true,
     "commit_count": 12,
@@ -145,7 +146,7 @@ If you encounter errors (tool failures, missing files, invalid input), return:
 }
 ```
 
-**Note:** Success responses should NOT include a "status" field. Only error responses use the error envelope format above.
+**Note:** Success responses include `"status": "complete"`. Error responses use the error envelope format above.
 
 ## Confidence Level Definitions
 

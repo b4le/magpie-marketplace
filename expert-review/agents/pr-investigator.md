@@ -75,8 +75,9 @@ Your prompt may provide structured finding context (pipeline mode) or a free-for
 - Limit traversal to 3 levels deep from the flagged location
 
 ### Phase 3: Root Cause Analysis
+- If not in a git repo (Glob-fallback mode from Context Discovery), skip new-vs-pre-existing analysis. Set `pre_existing` to `null` and note the gap.
 - Is this a new issue introduced by the PR? Check `git diff main...HEAD` for the relevant code
-- Or is it pre-existing? Check `git log --follow -p -- {file}` for when the pattern was introduced
+- Or is it pre-existing? Check `git log --follow -p -5 -- {file}` (bounded to last 5 commits) for when the pattern was introduced
 - Identify the actual root cause (not just the symptom)
 
 ### Phase 4: Blast Radius Assessment
@@ -113,9 +114,11 @@ Assess impact dimensions:
 
 **CRITICAL: Output ONLY valid JSON with no additional text, preamble, or explanation. Your entire response must be parseable JSON.**
 
+One of: `"complete"`, `"partial"`, `"error"`.
+
 ```json
 {
-  "status": "complete | partial | error",
+  "status": "complete",
   "finding_id": "SEC-001",
   "summary": "2-3 sentence summary of investigation findings",
   "root_cause": "Detailed description of the actual root cause",

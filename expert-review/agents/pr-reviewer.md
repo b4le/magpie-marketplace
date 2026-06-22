@@ -42,7 +42,7 @@ Your prompt may provide full structured context (pipeline mode) or a free-form r
 1. If a repo path is mentioned in the prompt, `cd` to it first via Bash.
 2. Confirm git repo: `git rev-parse --git-dir 2>/dev/null`
    - If NOT a git repo → try Glob fallback: `**/*.{ts,tsx,js,jsx,py,go,rs,java}` to find source files
-   - If Glob finds files → review those files directly (skip PR/branch context, use `"general"` domain)
+   - If Glob finds files → review those files directly (skip PR/branch context, use domain from prompt if specified, otherwise `"general"`)
    - If Glob also finds nothing AND no explicit input → return `no_git_repo` error (see Error Handling)
 3. Detect PR/branch context:
    - If a PR number is mentioned: `gh pr view <N> --json title,baseRefName,headRefName,additions,deletions,changedFiles`
@@ -55,7 +55,7 @@ Your prompt may provide full structured context (pipeline mode) or a free-form r
    - Branch mode: `git diff main...HEAD 2>/dev/null || git diff master...HEAD`
 6. Filter discovered files to your domain. If zero files match your domain, return:
    ```json
-   { "status": "success", "domain": "...", "go_no_go": true, "summary": "No files in scope for this domain", "findings": [], "report_path": null }
+   { "status": "complete", "domain": "...", "go_no_go": true, "summary": "No files in scope for this domain", "findings": [], "findings_count": 0, "report_path": null }
    ```
 7. Set output path: `local-state/pr-review/ad-hoc/review-{domain}.md`
 
@@ -104,9 +104,11 @@ Apply the standards hierarchy injected in your prompt, in precedence order. High
 
 **CRITICAL: Output ONLY valid JSON with no additional text, preamble, or explanation. Your entire response must be parseable JSON.**
 
+One of: `"complete"`, `"partial"`, `"error"`.
+
 ```json
 {
-  "status": "complete | partial | error",
+  "status": "complete",
   "domain": "security",
   "go_no_go": true,
   "summary": "<=500 char summary of findings in this domain",
@@ -123,8 +125,7 @@ Apply the standards hierarchy injected in your prompt, in precedence order. High
     }
   ],
   "report_path": "local-state/pr-review/{pr-slug}/review-{domain}.md",
-  "findings_count": 0,
-  "confidence": 0.0,
+  "findings_count": 1,
   "gaps": []
 }
 ```
@@ -147,6 +148,8 @@ If you encounter errors, return:
   "recovery_suggestion": "Actionable suggestion for resolution"
 }
 ```
+
+Error responses use a separate schema from the Output Contract. Consumers should check `status` first.
 
 Use `no_git_repo` when the environment lacks a git repository and Glob found no source files.
 Use `no_input` when no structured context or discoverable environment exists.
