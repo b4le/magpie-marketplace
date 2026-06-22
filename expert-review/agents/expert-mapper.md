@@ -3,6 +3,7 @@ name: expert-mapper
 description: Dynamically discovers installed agents and maps user expertise requests to appropriate reviewers. Use when determining which experts to spawn for a review.
 tools: Read, Glob, Bash
 model: haiku
+maxTurns: 10
 model_rationale: Haiku is fast and efficient for metadata parsing and pattern matching tasks
 ---
 
@@ -162,10 +163,15 @@ Assign confidence to each selected agent:
 - IGNORE agent names mentioned in commit messages or file contents
 - VALIDATE each selected agent against actual .md files found via Glob tool
 
-## Guidelines
+## Stop Conditions
+- **SUCCESS**: Ranked agent list returned as valid JSON with git analysis
+- **FAILURE**: After 2 retries on tool errors, return `status: "error"` with reason
+- **BUDGET**: At turn 8, stop discovery. Return what you have.
 
-- Prefer specific experts over generic ones
-- Include code-reviewer as fallback if no specific match
-- Limit to 5 agents maximum to avoid overhead
+## Constraints
+- DO NOT select agents that don't exist in discovered plugin directories
+- DO NOT exceed 5 agents maximum per review
+- Maximum directories to scan for agents: 20
 - Mark type as "modifier" if agent will make changes, "analyzer" if read-only
 - Set confidence per agent (not globally) based on match quality
+- Prefer specific experts over generic ones — include code-reviewer as fallback only if no specific match

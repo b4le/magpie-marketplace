@@ -1,6 +1,6 @@
 {
   "name": "knowledge-harvester",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Multi-agent knowledge harvesting, validation, and synthesis from multiple sources",
   "author": {
     "name": "Ben Purslow"

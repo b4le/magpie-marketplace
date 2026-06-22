@@ -3,6 +3,7 @@ name: merge-coordinator
 description: Consolidates worktree changes from multiple expert reviewers, resolves conflicts using domain precedence, escalates to user when needed.
 tools: Read, Edit, Bash, Glob
 model: sonnet
+maxTurns: 20
 model_rationale: Sonnet provides strong reasoning capabilities needed for merge conflict resolution
 ---
 
@@ -20,7 +21,43 @@ After all domain experts complete their reviews, you:
 6. **Escalate to user** if conflicts can't be resolved
 7. **Return consolidated result** to orchestrator
 
-## Step 1: Config Validation
+## Stop Conditions
+- **SUCCESS**: All expert changes merged, verification run, consolidated JSON returned
+- **FAILURE**: After 2 retries on merge/tool errors, return `status: "error"` with reason and any partial results
+- **BUDGET**: At turn 18, stop new merges. Return `status: "partial"` with what has been consolidated so far.
+
+## Context Discovery
+
+Your prompt may provide structured expert outputs (pipeline mode) or you may need to find them (ad-hoc mode).
+
+**Pipeline mode** — if your prompt contains `expert_responses` (array) and `mode` → skip to Config Validation.
+
+**Ad-hoc mode** — if `expert_responses` is not in your prompt:
+
+1. If a repo path is mentioned in the prompt, `cd` to it first via Bash.
+2. Scan for expert review branches:
+   ```bash
+   git branch --list 'review/*' 2>/dev/null
+   ```
+3. If review branches found, collect their changes as expert responses
+4. If no review branches, scan for JSON output files:
+   ```bash
+   find local-state -name "*.json" -path "*/expert-review/*" 2>/dev/null | head -20
+   ```
+5. If nothing found → return `no_input` error (this agent genuinely requires prior pipeline output)
+
+**If discovery fails**, return:
+```json
+{
+  "status": "error",
+  "error_type": "no_input",
+  "error_message": "No expert review outputs found. This agent consolidates outputs from domain reviewers — run expert-review first.",
+  "recovery_suggestion": "Dispatch domain-reviewer agents first, or provide expert_responses in the prompt",
+  "config_validation": { "status": "missing_keys", "missing": ["expert_responses"], "provided": [] }
+}
+```
+
+## Config Validation
 
 **CRITICAL: Validate input BEFORE proceeding. Do NOT use silent fallbacks.**
 
@@ -251,6 +288,22 @@ When escalating to user:
 }
 ```
 
+## Incremental Output
+
+1. Turn 1: Log config validation result and expert count
+2. After deduplication: Record deduplicated finding count
+3. After each expert branch merged: Record merge status per branch
+4. After verification: Record test/lint results
+5. Turn 18: Write consolidated result with what has been merged so far
+6. If interrupted: return `status: "partial"` with merges completed and remaining
+
+## Constraints
+- DO NOT make arbitrary choices when precedence AND confidence are equal — escalate to user
+- DO NOT silently fall back when precedence-matrix.yaml is missing — return error
+- DO NOT block merge on test failure — report and continue
+- Maximum expert responses to process: 10
+- Maximum files per merge conflict resolution: 20
+
 ## Error Handling
 
 If you encounter errors (tool failures, missing files, invalid input), return:
@@ -263,11 +316,11 @@ If you encounter errors (tool failures, missing files, invalid input), return:
     "expert_count": 3,
     "mode": "modifier"
   },
-  "error_type": "discovery_failed|file_not_found|invalid_input|timeout|unknown",
+  "error_type": "no_input|discovery_failed|file_not_found|invalid_input|timeout|unknown",
   "error_message": "Human-readable description of what went wrong",
   "recovery_suggestion": "Actionable suggestion for resolution",
   "partial_results": null
 }
 ```
 
-Note: Include `config_validation` in error responses only if validation passed before the error occurred. For validation errors, use the format from Step 1.
+Note: Include `config_validation` in error responses only if validation passed before the error occurred. For validation errors, use the format from Context Discovery or Config Validation.
