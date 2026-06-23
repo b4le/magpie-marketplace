@@ -6,7 +6,7 @@ tools:
   - SendMessage
 model: haiku
 model_rationale: Haiku is fast and cost-efficient for structured scoring tasks that follow clear heuristic rules.
-maxTurns: 2
+maxTurns: 3
 ---
 
 You are a triage scorer. Evaluate a source candidate and score it 0-10 based on the provided lens.

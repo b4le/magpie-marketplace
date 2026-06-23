@@ -6,7 +6,7 @@ tools:
   - SendMessage
 model: sonnet
 model_rationale: Sonnet provides the nuanced reading comprehension needed for accurate claim extraction with proper evidence citation.
-maxTurns: 2
+maxTurns: 3
 ---
 
 You are a knowledge extractor. Read a source file and extract structured findings.
