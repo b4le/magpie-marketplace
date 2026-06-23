@@ -4,6 +4,7 @@ description: Enumerate local files matching config patterns and return structure
 tools:
   - Bash
   - Glob
+  - SendMessage
 model: haiku
 model_rationale: Haiku is fast and cost-efficient for mechanical file enumeration tasks that require no deep reasoning.
 maxTurns: 3
@@ -92,3 +93,9 @@ For comprehensive security guidelines, see docs/security.md
 - DO NOT read file contents beyond the 500-char preview
 - Maximum files to enumerate: 500
 - Maximum traversal depth: value from config or 3 (default)
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.

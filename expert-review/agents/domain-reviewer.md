@@ -6,6 +6,7 @@ tools:
   - Edit
   - Glob
   - Bash
+  - SendMessage
 model: sonnet
 maxTurns: 15
 model_rationale: Requires nuanced code analysis and judgment to identify domain-specific issues and make appropriate modifications
@@ -192,4 +193,10 @@ If you encounter errors (tool failures, missing files, invalid input), return:
   "partial_results": null
 }
 ```
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.
 

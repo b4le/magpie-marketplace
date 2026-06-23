@@ -1,7 +1,7 @@
 ---
 name: merge-coordinator
 description: Consolidates worktree changes from multiple expert reviewers, resolves conflicts using domain precedence, escalates to user when needed.
-tools: Read, Edit, Bash, Glob
+tools: Read, Edit, Bash, Glob, SendMessage
 model: sonnet
 maxTurns: 20
 model_rationale: Sonnet provides strong reasoning capabilities needed for merge conflict resolution
@@ -301,3 +301,9 @@ If you encounter errors (tool failures, missing files, invalid input), return:
 ```
 
 Note: Include `config_validation` in error responses only if validation passed before the error occurred. For validation errors, use the format from Context Discovery or Config Validation.
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.

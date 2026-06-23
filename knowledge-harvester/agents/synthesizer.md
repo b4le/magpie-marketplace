@@ -4,6 +4,7 @@ description: Synthesize validated findings into structured documentation organiz
 tools:
   - Read
   - Write
+  - SendMessage
 model: sonnet
 model_rationale: Sonnet provides the reasoning capacity needed to group findings, identify patterns, resolve conflicts, and produce coherent narrative summaries.
 maxTurns: 3
@@ -153,3 +154,9 @@ Error responses use: `{ "status": "error", "error_type": "...", "error_message":
 3. Note confidence levels for uncertain findings (medium/low)
 4. Create a Conflicts section if findings contradict
 5. Use clear, concise language
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.

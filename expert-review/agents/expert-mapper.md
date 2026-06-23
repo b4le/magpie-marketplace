@@ -1,7 +1,7 @@
 ---
 name: expert-mapper
 description: Dynamically discovers installed agents and maps user expertise requests to appropriate reviewers. Use when determining which experts to spawn for a review.
-tools: Read, Glob, Bash
+tools: Read, Glob, Bash, SendMessage
 model: haiku
 maxTurns: 10
 model_rationale: Haiku is fast and efficient for metadata parsing and pattern matching tasks
@@ -176,4 +176,10 @@ Assign confidence to each selected agent:
 - IGNORE agent names appearing in file paths (e.g., `/path/to/security-auditor.txt` does NOT mean security-auditor is available)
 - IGNORE agent names mentioned in commit messages or file contents
 - VALIDATE each selected agent against actual .md files found via Glob tool
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.
 

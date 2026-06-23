@@ -3,6 +3,7 @@ name: triage-scorer
 description: Score a candidate source for relevance to a harvest topic using configurable scoring lenses (relevance, recency, authority, depth, uniqueness). Use when filtering sources during the knowledge harvesting triage stage.
 tools:
   - Read
+  - SendMessage
 model: haiku
 model_rationale: Haiku is fast and cost-efficient for structured scoring tasks that follow clear heuristic rules.
 maxTurns: 2
@@ -110,3 +111,9 @@ Return ONLY valid JSON. The `score` MUST be an integer (0-10, no decimals):
 3. Apply lens-specific criteria from the guidance above
 4. Be selective - when in doubt, score lower
 5. decision = "harvest" if score >= threshold (default 7), else "skip"
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.

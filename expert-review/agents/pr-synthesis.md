@@ -6,6 +6,7 @@ tools:
   - Write
   - Glob
   - Bash
+  - SendMessage
 model: sonnet
 maxTurns: 15
 color: blue
@@ -170,3 +171,9 @@ If you encounter errors, return:
   "recovery_suggestion": "Actionable suggestion for resolution"
 }
 ```
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.

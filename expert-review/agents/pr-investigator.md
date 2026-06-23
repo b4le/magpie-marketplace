@@ -7,6 +7,7 @@ tools:
   - Glob
   - Grep
   - Bash
+  - SendMessage
 model: sonnet
 maxTurns: 20
 color: blue
@@ -154,3 +155,9 @@ If you encounter errors, return:
 
 Use `no_git_repo` when the environment lacks a git repository and Glob found no source files.
 Use `no_input` when no structured context or discoverable environment exists.
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.

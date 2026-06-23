@@ -3,6 +3,7 @@ name: extractor
 description: Extract structured findings from a harvested source with evidence citations and confidence scores. Use when extracting discrete, factual claims from source files during the knowledge harvesting extraction stage.
 tools:
   - Read
+  - SendMessage
 model: sonnet
 model_rationale: Sonnet provides the nuanced reading comprehension needed for accurate claim extraction with proper evidence citation.
 maxTurns: 2
@@ -104,3 +105,9 @@ Success responses return JSONL (one JSON object per line, no status field). Erro
 5. Confidence 0.0-1.0 based on calibration guidelines above
 6. Max {max_findings} findings per source
 7. Prefer quality over quantity
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.

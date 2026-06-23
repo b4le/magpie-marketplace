@@ -47,6 +47,7 @@ tools:
   - Grep
   - WebFetch
   - WebSearch
+  - SendMessage
 permissionMode: acceptEdits
 maxTurns: 40
 user-invocable: true
@@ -214,3 +215,9 @@ Date: YYYY-MM-DD
 - Gap analysis: `${CLAUDE_PLUGIN_ROOT}/docs/2026-03-11-devkit-gap-analysis.md`
 
 > **Fallback:** If `$CLAUDE_PLUGIN_ROOT` is not set in the shell environment, resolve it by running: `find . -name 'plugin.json' -path '*/.claude-plugin/*' -print -quit | xargs dirname | xargs dirname` from the working directory, or by locating the `.claude-plugin/plugin.json` file relative to the current directory.
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.

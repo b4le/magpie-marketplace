@@ -27,7 +27,7 @@ description: |
   assistant: "I'll use the explore agent to locate and analyze the resolver files."
   <commentary>File discovery + structural analysis task.</commentary>
   </example>
-tools: [Read, Write, Glob, Grep, Bash]
+tools: [Read, Write, Glob, Grep, Bash, SendMessage]
 permissionMode: acceptEdits
 model: sonnet
 model_rationale: "Sonnet balances speed with reliable instruction-following for constraint enforcement, synthesis quality, and prompt injection resistance."
@@ -163,3 +163,9 @@ If any item fails, fix it before returning.
 - **Be concrete.** Show actual file paths, function names, and line numbers — not vague descriptions.
 - **Stop when answered.** Don't exhaust your turn budget if the question is clearly answered early — but still complete Steps 3 and 4.
 - **Note uncertainty.** If you're unsure about something, say so in Open Questions rather than guessing.
+
+## Teammate Mode
+
+If dispatched as a teammate, call SendMessage to return your findings
+to the team lead when done. Use your structured output JSON as the
+message content and include a one-line summary.
